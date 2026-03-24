@@ -230,4 +230,26 @@ abstract final class AppColors {
   static List<Color> chartColorsFor(Brightness brightness) {
     return brightness == Brightness.dark ? chartColorsDark : chartColors;
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // LEGACY ALIASES — Backward compatibility with existing code
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// Alias for [primary].
+  static const Color teal = primary;
+
+  /// Alias for [primary300].
+  static const Color tealLight = primary300;
+
+  /// Alias for [primary900].
+  static const Color tealDark = primary900;
+
+  /// Alias for [secondary].
+  static const Color saffron = secondary;
+
+  /// Alias for [secondary200].
+  static const Color saffronLight = secondary200;
+
+  /// Alias for [secondary900].
+  static const Color saffronDark = secondary900;
 }
