@@ -121,22 +121,8 @@ class _VoiceWaveformState extends State<VoiceWaveform>
     // Combine a sine wave with the live audio level for organic motion.
     final sinValue =
         (math.sin((phase + time) * 2 * math.pi) + 1) / 2; // 0..1
-    final base = 0.15;
+    const base = 0.15;
     final audioContribution = widget.audioLevel * 0.6;
     return base + sinValue * (0.25 + audioContribution);
   }
-}
-
-/// A convenience alias so the widget can be used with [AnimatedBuilder].
-class AnimatedBuilder extends AnimatedWidget {
-  const AnimatedBuilder({
-    required super.listenable,
-    required this.builder,
-    super.key,
-  });
-
-  final Widget Function(BuildContext context, Widget? child) builder;
-
-  @override
-  Widget build(BuildContext context) => builder(context, null);
 }
