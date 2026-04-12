@@ -17,16 +17,33 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build landing page
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Create web platform
+        run: flutter create --project-name paisa_track --org com.paisatrack --platforms web .
+
+      - name: Restore source files
         run: |
-          mkdir -p build/web
-          cp web/index.html build/web/index.html
+          git checkout -- lib/ pubspec.yaml analysis_options.yaml
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Flutter web
+        run: flutter build web --release --base-href "/Finance-App/"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
