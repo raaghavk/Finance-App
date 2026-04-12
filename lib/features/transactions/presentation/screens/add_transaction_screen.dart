@@ -1,347 +1,386 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:paisa_track/core/enums/transaction_type.dart';
+import 'package:paisa_track/core/providers/app_providers.dart';
+import 'package:paisa_track/core/theme/app_colors.dart';
+import 'package:paisa_track/core/utils/formatters.dart';
+import 'package:paisa_track/core/utils/icon_helper.dart';
+import 'package:paisa_track/domain/models/category.dart';
 import 'package:paisa_track/domain/models/transaction.dart';
-import 'package:paisa_track/features/transactions/providers/transaction_form_provider.dart';
-import 'package:paisa_track/features/transactions/providers/transactions_provider.dart';
-import 'package:paisa_track/features/transactions/presentation/widgets/amount_input.dart';
-import 'package:paisa_track/features/transactions/presentation/widgets/category_picker.dart';
-import 'package:paisa_track/features/transactions/presentation/widgets/date_picker.dart';
 
-/// Screen for adding a new transaction or editing an existing one.
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  const AddTransactionScreen({
-    super.key,
-    this.editTransaction,
-  });
-
-  /// If non-null, the screen is in edit mode.
-  final Transaction? editTransaction;
+  const AddTransactionScreen({super.key, this.initialType});
+  final String? initialType;
 
   @override
   ConsumerState<AddTransactionScreen> createState() =>
       _AddTransactionScreenState();
 }
 
-class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
+  final _amountController = TextEditingController();
   final _noteController = TextEditingController();
-  final _imagePicker = ImagePicker();
-
-  static const _types = [
-    TransactionType.expense,
-    TransactionType.income,
-    TransactionType.transfer,
-  ];
+  late TransactionType _type;
+  String? _selectedCategoryId;
+  String? _selectedAccountId;
+  DateTime _date = DateTime.now();
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-
-    // If editing, pre-fill form.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final notifier = ref.read(transactionFormNotifierProvider.notifier);
-      if (widget.editTransaction != null) {
-        notifier.loadForEditing(widget.editTransaction!);
-        final typeIndex = _types.indexOf(widget.editTransaction!.type);
-        _tabController.animateTo(typeIndex >= 0 ? typeIndex : 0);
-        _noteController.text = widget.editTransaction!.note;
-      } else {
-        notifier.reset();
-        _noteController.clear();
-      }
-    });
-
-    _tabController.addListener(_onTabChanged);
-  }
-
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) return;
-    ref
-        .read(transactionFormNotifierProvider.notifier)
-        .setType(_types[_tabController.index]);
+    _type = widget.initialType == 'income'
+        ? TransactionType.income
+        : TransactionType.expense;
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
+    _amountController.dispose();
     _noteController.dispose();
     super.dispose();
   }
 
-  String _appBarTitle(TransactionType type) {
-    switch (type) {
-      case TransactionType.expense:
-        return 'Add Expense';
-      case TransactionType.income:
-        return 'Add Income';
-      case TransactionType.transfer:
-        return 'Add Transfer';
-    }
-  }
+  Color get _typeColor =>
+      _type == TransactionType.expense ? AppColors.expense : AppColors.income;
 
-  Future<void> _pickReceiptImage() async {
-    final source = await showModalBottomSheet<ImageSource>(
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Camera'),
-              onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Gallery'),
-              onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
+      initialDate: _date,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
     );
-    if (source == null) return;
-
-    final xFile = await _imagePicker.pickImage(
-      source: source,
-      maxWidth: 1200,
-      imageQuality: 80,
-    );
-    if (xFile != null) {
-      ref
-          .read(transactionFormNotifierProvider.notifier)
-          .setReceiptImage(xFile.path);
-    }
+    if (picked != null) setState(() => _date = picked);
   }
 
   Future<void> _save() async {
-    final formNotifier = ref.read(transactionFormNotifierProvider.notifier);
-    final transaction = await formNotifier.submit();
-    if (transaction != null && mounted) {
-      // Refresh list
-      await ref.read(transactionsNotifierProvider.notifier).loadTransactions();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.editTransaction != null
-                  ? 'Transaction updated'
-                  : 'Transaction added',
-            ),
-          ),
-        );
-        context.pop();
-      }
+    if (_amountController.text.isEmpty) {
+      _showError('Please enter an amount');
+      return;
     }
+    final amount = double.tryParse(
+        _amountController.text.replaceAll(',', ''));
+    if (amount == null || amount <= 0) {
+      _showError('Please enter a valid amount');
+      return;
+    }
+    if (_selectedCategoryId == null) {
+      _showError('Please select a category');
+      return;
+    }
+
+    // Use default account if none selected
+    final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+    final accountId = _selectedAccountId ??
+        (accounts.isNotEmpty ? accounts.first.id : 'default-cash-account');
+
+    setState(() => _saving = true);
+    try {
+      final transaction = Transaction(
+        id: const Uuid().v4(),
+        amount: amount,
+        type: _type,
+        categoryId: _selectedCategoryId!,
+        accountId: accountId,
+        note: _noteController.text.trim(),
+        transactionDate: _date,
+        createdAt: DateTime.now(),
+      );
+
+      final success =
+          await ref.read(transactionsProvider.notifier).add(transaction);
+      if (success && mounted) {
+        context.pop();
+      } else if (mounted) {
+        _showError('Failed to save transaction');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final formState = ref.watch(transactionFormNotifierProvider);
-    final formNotifier = ref.read(transactionFormNotifierProvider.notifier);
+    final categoriesAsync = _type == TransactionType.expense
+        ? ref.watch(expenseCategoriesProvider)
+        : ref.watch(incomeCategoriesProvider);
+    final accountsAsync = ref.watch(accountsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          formState.isEditing
-              ? 'Edit Transaction'
-              : _appBarTitle(formState.type),
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Expense'),
-            Tab(text: 'Income'),
-            Tab(text: 'Transfer'),
-          ],
-        ),
+        title: Text(_type == TransactionType.expense
+            ? 'Add Expense'
+            : 'Add Income'),
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Amount Input ──────────────────────────────────────────
-            AmountInput(
-              amount: formState.amount,
-              onAmountChanged: formNotifier.setAmount,
-            ),
-            const SizedBox(height: 24),
-
-            // ── Category Picker ───────────────────────────────────────
-            Text(
-              'Category',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+            // ── Type Toggle ──────────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-            const SizedBox(height: 8),
-            CategoryPicker(
-              transactionType: formState.type,
-              selectedCategoryId: formState.categoryId,
-              onCategorySelected: formNotifier.setCategory,
-            ),
-            const SizedBox(height: 24),
-
-            // ── Account Picker ────────────────────────────────────────
-            Text(
-              formState.type == TransactionType.transfer
-                  ? 'From Account'
-                  : 'Account',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _AccountDropdown(
-              selectedAccountId: formState.accountId,
-              onChanged: (id) {
-                if (id != null) formNotifier.setAccount(id);
-              },
-              label: 'Select account',
-            ),
-
-            if (formState.type == TransactionType.transfer) ...[
-              const SizedBox(height: 16),
-              Text(
-                'To Account',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _AccountDropdown(
-                selectedAccountId: formState.toAccountId,
-                onChanged: (id) {
-                  if (id != null) formNotifier.setToAccount(id);
-                },
-                label: 'Select destination account',
-              ),
-            ],
-            const SizedBox(height: 24),
-
-            // ── Date Picker ───────────────────────────────────────────
-            Text(
-              'Date',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TransactionDatePicker(
-              selectedDate: formState.date ?? DateTime.now(),
-              onDateSelected: formNotifier.setDate,
-            ),
-            const SizedBox(height: 24),
-
-            // ── Note Input ────────────────────────────────────────────
-            TextField(
-              controller: _noteController,
-              decoration: const InputDecoration(
-                labelText: 'Note',
-                hintText: 'Add a note...',
-                prefixIcon: Icon(Icons.notes),
-              ),
-              maxLines: 2,
-              textCapitalization: TextCapitalization.sentences,
-              onChanged: formNotifier.setNote,
-            ),
-            const SizedBox(height: 24),
-
-            // ── Receipt Image ─────────────────────────────────────────
-            OutlinedButton.icon(
-              onPressed: _pickReceiptImage,
-              icon: const Icon(Icons.camera_alt),
-              label: Text(
-                formState.receiptImagePath != null
-                    ? 'Change Receipt Photo'
-                    : 'Attach Receipt Photo',
-              ),
-            ),
-            if (formState.receiptImagePath != null) ...[
-              const SizedBox(height: 8),
-              Stack(
+              padding: const EdgeInsets.all(4),
+              child: Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      formState.receiptImagePath!,
-                      height: 120,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.image, size: 48),
-                        ),
-                      ),
-                    ),
+                  _TypeChip(
+                    label: 'Expense',
+                    selected: _type == TransactionType.expense,
+                    color: AppColors.expense,
+                    onTap: () => setState(() {
+                      _type = TransactionType.expense;
+                      _selectedCategoryId = null;
+                    }),
                   ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: IconButton.filledTonal(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () => formNotifier.setReceiptImage(null),
+                  _TypeChip(
+                    label: 'Income',
+                    selected: _type == TransactionType.income,
+                    color: AppColors.income,
+                    onTap: () => setState(() {
+                      _type = TransactionType.income;
+                      _selectedCategoryId = null;
+                    }),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            // ── Amount ───────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: _typeColor.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _typeColor.withOpacity(0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('₹',
+                      style: TextStyle(
+                          color: _typeColor,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d{0,2}$')),
+                      ],
+                      style: TextStyle(
+                          color: _typeColor,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700),
+                      decoration: InputDecoration(
+                        hintText: '0',
+                        hintStyle: TextStyle(
+                            color: _typeColor.withOpacity(0.3),
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
 
-            // ── Error message ─────────────────────────────────────────
-            if (formState.errorMessage != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
+            const SizedBox(height: 24),
+
+            // ── Category ─────────────────────────────────────────────
+            Text('Category',
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            categoriesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Text('Error: $e'),
+              data: (cats) => _CategoryGrid(
+                categories: cats,
+                selectedId: _selectedCategoryId,
+                onSelect: (id) =>
+                    setState(() => _selectedCategoryId = id),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Account ──────────────────────────────────────────────
+            Text('Account',
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            accountsAsync.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (accounts) => Wrap(
+                spacing: 8,
+                children: accounts
+                    .map((a) => ChoiceChip(
+                          label: Text(a.name),
+                          selected: _selectedAccountId == a.id ||
+                              (_selectedAccountId == null &&
+                                  a == accounts.first),
+                          onSelected: (_) =>
+                              setState(() => _selectedAccountId = a.id),
+                        ))
+                    .toList(),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Note ─────────────────────────────────────────────────
+            Text('Note (optional)',
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _noteController,
+              decoration: InputDecoration(
+                hintText: 'e.g. Lunch with friends',
+                prefixIcon:
+                    const Icon(Icons.edit_note_outlined),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              maxLines: 2,
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Date ─────────────────────────────────────────────────
+            Text('Date',
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            InkWell(
+              onTap: _pickDate,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: theme.colorScheme.outline),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline,
-                        color: theme.colorScheme.error, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        formState.errorMessage!,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onErrorContainer,
-                        ),
-                      ),
-                    ),
+                    const Icon(Icons.calendar_today_outlined,
+                        size: 20),
+                    const SizedBox(width: 12),
+                    Text(formatFullDate(_date),
+                        style: theme.textTheme.bodyMedium),
+                    const Spacer(),
+                    Icon(Icons.chevron_right_outlined,
+                        color: theme.colorScheme.onSurfaceVariant),
                   ],
                 ),
               ),
-            ],
+            ),
+
+            const SizedBox(height: 36),
+
+            // ── Save Button ──────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                style: FilledButton.styleFrom(
+                  backgroundColor: _typeColor,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _saving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        _type == TransactionType.expense
+                            ? 'Save Expense'
+                            : 'Save Income',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: FilledButton(
-            onPressed: formState.isSubmitting ? null : _save,
-            child: formState.isSubmitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(formState.isEditing ? 'Update' : 'Save'),
+    );
+  }
+}
+
+class _TypeChip extends StatelessWidget {
+  const _TypeChip({
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? color : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: selected ? Colors.white : color,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
           ),
         ),
       ),
@@ -349,48 +388,76 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
   }
 }
 
-// ---------------------------------------------------------------------------
-// Account Dropdown (placeholder until accounts feature is wired up)
-// ---------------------------------------------------------------------------
-
-class _AccountDropdown extends StatelessWidget {
-  const _AccountDropdown({
-    required this.selectedAccountId,
-    required this.onChanged,
-    required this.label,
+class _CategoryGrid extends StatelessWidget {
+  const _CategoryGrid({
+    required this.categories,
+    required this.selectedId,
+    required this.onSelect,
   });
 
-  final String? selectedAccountId;
-  final ValueChanged<String?> onChanged;
-  final String label;
-
-  // Placeholder accounts until the accounts feature provides real data.
-  static const _placeholderAccounts = <String, String>{
-    'cash': 'Cash',
-    'savings': 'Savings Account',
-    'current': 'Current Account',
-    'credit_card': 'Credit Card',
-    'paytm': 'Paytm Wallet',
-    'gpay': 'Google Pay',
-  };
+  final List<Category> categories;
+  final String? selectedId;
+  final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: selectedAccountId,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: const Icon(Icons.account_balance_wallet),
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        childAspectRatio: 0.85,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
       ),
-      items: _placeholderAccounts.entries
-          .map(
-            (e) => DropdownMenuItem(
-              value: e.key,
-              child: Text(e.value),
+      itemCount: categories.length,
+      itemBuilder: (context, i) {
+        final cat = categories[i];
+        final color = Color(cat.color);
+        final isSelected = cat.id == selectedId;
+
+        return GestureDetector(
+          onTap: () => onSelect(cat.id),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? color
+                  : color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? color : color.withOpacity(0.2),
+                width: isSelected ? 2 : 1,
+              ),
             ),
-          )
-          .toList(),
-      onChanged: onChanged,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  IconHelper.fromName(cat.icon),
+                  color: isSelected ? Colors.white : color,
+                  size: 24,
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    cat.name.split(' / ').first,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : color,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,141 +1,243 @@
-/// Main settings screen with grouped preference tiles.
-library;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import 'package:paisa_track/core/constants/app_constants.dart';
-import 'package:paisa_track/core/constants/currency_constants.dart';
-import 'package:paisa_track/core/enums/subscription_tier.dart';
-import 'package:paisa_track/core/router/routes.dart';
-import 'package:paisa_track/features/settings/presentation/widgets/settings_tile.dart';
-import 'package:paisa_track/features/settings/providers/settings_provider.dart';
+import 'package:paisa_track/core/providers/app_providers.dart';
+import 'package:paisa_track/core/theme/app_colors.dart';
+import 'package:paisa_track/core/utils/formatters.dart';
 
-/// The root settings screen showing grouped preference categories.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(userSettingsProvider);
-    final isDark = ref.watch(isDarkModeProvider);
-    final currencyCode = ref.watch(currentCurrencyProvider);
-    final currency = CurrencyConstants.findByCode(currencyCode);
-    final isPremium = settings.subscriptionTier == SubscriptionTier.premium;
+    final theme = Theme.of(context);
+    final settings = ref.watch(settingsProvider);
+    final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
-          // ── General ──────────────────────────────────────────────────
-          _SectionHeader(title: 'General'),
-          SettingsTile(
-            icon: Icons.currency_exchange,
-            title: 'Currency',
-            subtitle: currency != null
-                ? '${currency.flag} ${currency.code} (${currency.symbol})'
-                : currencyCode,
-            onTap: () => context.go(AppRoutes.currencySettings),
-          ),
-          SettingsTile(
-            icon: Icons.language,
-            title: 'Language',
-            subtitle: settings.locale == 'hi' ? 'Hindi' : 'English',
-            onTap: () => context.go(AppRoutes.languageSettings),
-          ),
-          SettingsTile(
-            icon: Icons.dark_mode_outlined,
-            title: 'Dark Mode',
-            trailing: Switch.adaptive(
-              value: isDark,
-              onChanged: (_) =>
-                  ref.read(settingsNotifierProvider.notifier).toggleDarkMode(),
+          // ── Accounts Section ─────────────────────────────────────
+          _SectionHeader('Accounts'),
+          ...accounts.map((a) => ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Color(a.color).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.account_balance_wallet,
+                      color: Color(a.color), size: 20),
+                ),
+                title: Text(a.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(formatCurrency(a.currentBalance)),
+                trailing: Text(a.type.name,
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 12)),
+              )),
+
+          // ── Appearance ────────────────────────────────────────────
+          _SectionHeader('Appearance'),
+          ListTile(
+            leading: const Icon(Icons.palette_outlined),
+            title: const Text('Theme'),
+            trailing: DropdownButton<String>(
+              value: settings.themeMode,
+              underline: const SizedBox.shrink(),
+              items: const [
+                DropdownMenuItem(value: 'system', child: Text('System')),
+                DropdownMenuItem(value: 'light', child: Text('Light')),
+                DropdownMenuItem(value: 'dark', child: Text('Dark')),
+              ],
+              onChanged: (v) {
+                if (v != null) {
+                  ref.read(settingsProvider.notifier).setThemeMode(v);
+                }
+              },
             ),
-            onTap: () =>
-                ref.read(settingsNotifierProvider.notifier).toggleDarkMode(),
           ),
-          const Divider(indent: 16, endIndent: 16),
+          ListTile(
+            leading: const Icon(Icons.currency_rupee),
+            title: const Text('Currency'),
+            trailing: Text(settings.currency,
+                style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600)),
+            onTap: () => _pickCurrency(context, ref),
+          ),
 
-          // ── Data ─────────────────────────────────────────────────────
-          _SectionHeader(title: 'Data'),
-          SettingsTile(
-            icon: Icons.file_download_outlined,
-            title: 'Export Data',
-            subtitle: 'CSV or PDF export',
-            onTap: () => context.go(AppRoutes.exportData),
+          // ── Notifications ─────────────────────────────────────────
+          _SectionHeader('Notifications'),
+          SwitchListTile(
+            secondary: const Icon(Icons.notifications_outlined),
+            title: const Text('Transaction Reminders'),
+            subtitle: const Text('Get alerts for upcoming bills'),
+            value: settings.notificationsEnabled,
+            activeColor: AppColors.primary,
+            onChanged: (v) =>
+                ref.read(settingsProvider.notifier).setNotifications(v),
           ),
-          SettingsTile(
-            icon: Icons.notifications_outlined,
-            title: 'Reminders',
-            subtitle: 'Bill & budget reminders',
-            onTap: () => context.go(AppRoutes.reminders),
-          ),
-          const Divider(indent: 16, endIndent: 16),
 
-          // ── Security ─────────────────────────────────────────────────
-          _SectionHeader(title: 'Security'),
-          SettingsTile(
-            icon: Icons.fingerprint,
-            title: 'Biometric Lock',
-            showPremiumBadge: !isPremium,
-            trailing: Switch.adaptive(
-              value: settings.biometricLockEnabled,
-              onChanged: isPremium
-                  ? (_) => ref
-                      .read(settingsNotifierProvider.notifier)
-                      .toggleBiometricLock()
-                  : null,
+          // ── Security ─────────────────────────────────────────────
+          _SectionHeader('Security'),
+          SwitchListTile(
+            secondary: const Icon(Icons.fingerprint),
+            title: const Text('Biometric Lock'),
+            subtitle: const Text('Use fingerprint or face to unlock'),
+            value: settings.biometricEnabled,
+            activeColor: AppColors.primary,
+            onChanged: (v) =>
+                ref.read(settingsProvider.notifier).setBiometric(v),
+          ),
+
+          // ── About ─────────────────────────────────────────────────
+          _SectionHeader('About'),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('About PaisaTrack'),
+            subtitle: const Text('Version 1.0.0'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showAbout(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.star_outline),
+            title: const Text('Rate the App'),
+            onTap: () {},
+          ),
+          ListTile(
+            leading: const Icon(Icons.share_outlined),
+            title: const Text('Share with Friends'),
+            onTap: () {},
+          ),
+
+          const SizedBox(height: 32),
+
+          // ── App branding ──────────────────────────────────────────
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.balanceCardGradient,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(
+                    child: Text('₹',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text('PaisaTrack',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 16)),
+                const Text('Har paisa, har pal.',
+                    style: TextStyle(
+                        color: AppColors.primary,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 13)),
+                const SizedBox(height: 32),
+              ],
             ),
-            onTap: isPremium
-                ? () => ref
-                    .read(settingsNotifierProvider.notifier)
-                    .toggleBiometricLock()
-                : () => context.go(AppRoutes.premium),
           ),
-          const Divider(indent: 16, endIndent: 16),
-
-          // ── Premium ──────────────────────────────────────────────────
-          _SectionHeader(title: 'Premium'),
-          SettingsTile(
-            icon: isPremium ? Icons.workspace_premium : Icons.star_outline,
-            title: isPremium ? 'Manage Subscription' : 'Upgrade to Premium',
-            subtitle: isPremium ? 'Premium active' : 'Unlock all features',
-            onTap: () => isPremium
-                ? context.go(AppRoutes.manageSub)
-                : context.go(AppRoutes.premium),
-          ),
-          const Divider(indent: 16, endIndent: 16),
-
-          // ── About ────────────────────────────────────────────────────
-          _SectionHeader(title: 'About'),
-          SettingsTile(
-            icon: Icons.info_outline,
-            title: 'About ${AppConstants.appName}',
-            subtitle: 'Version ${AppConstants.appVersion}',
-            onTap: () => context.go(AppRoutes.about),
-          ),
-          const SizedBox(height: 24),
         ],
       ),
+    );
+  }
+
+  Future<void> _pickCurrency(BuildContext context, WidgetRef ref) async {
+    final currencies = {
+      'INR': '₹ Indian Rupee',
+      'USD': '$ US Dollar',
+      'EUR': '€ Euro',
+      'GBP': '£ British Pound',
+      'AED': 'د.إ UAE Dirham',
+      'SGD': 'S\$ Singapore Dollar',
+    };
+
+    final current = ref.read(settingsProvider).currency;
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Text('Select Currency',
+                style: Theme.of(ctx).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+          ),
+          ...currencies.entries.map((e) => ListTile(
+                title: Text(e.value),
+                trailing: e.key == current
+                    ? const Icon(Icons.check, color: AppColors.primary)
+                    : null,
+                onTap: () => ctx.pop(e.key),
+              )),
+        ],
+      ),
+    );
+
+    if (picked != null) {
+      ref.read(settingsProvider.notifier).setCurrency(picked);
+    }
+  }
+
+  void _showAbout(BuildContext context) {
+    showAboutDialog(
+      context: context,
+      applicationName: 'PaisaTrack',
+      applicationVersion: '1.0.0',
+      applicationIcon: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          gradient: AppColors.balanceCardGradient,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: Text('₹',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800)),
+        ),
+      ),
+      children: const [
+        Text(
+            'PaisaTrack is an India-first personal finance app. '
+            'Track expenses in Hindi, Hinglish or English. '
+            'Built with Flutter. Local-first. No login required.'),
+      ],
     );
   }
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
+  const _SectionHeader(this.title);
   final String title;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
       child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
+        title.toUpperCase(),
+        style: TextStyle(
+          color: AppColors.primary,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }

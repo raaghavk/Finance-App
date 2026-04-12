@@ -2,276 +2,242 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
-import 'package:paisa_track/core/constants/category_constants.dart';
-import 'package:paisa_track/core/enums/budget_period.dart';
-import 'package:paisa_track/features/budgets/providers/budgets_provider.dart';
+import 'package:paisa_track/core/providers/app_providers.dart';
+import 'package:paisa_track/core/theme/app_colors.dart';
+import 'package:paisa_track/core/utils/icon_helper.dart';
+import 'package:paisa_track/domain/models/budget.dart';
+import 'package:paisa_track/domain/models/category.dart';
 
-/// Indian number formatter for amount display.
-final _currencyFormat = NumberFormat.currency(
-  locale: 'en_IN',
-  symbol: '\u20B9',
-  decimalDigits: 0,
-);
-
-/// Screen for creating a new budget with name, limit, period, date,
-/// and category selection.
 class CreateBudgetScreen extends ConsumerStatefulWidget {
   const CreateBudgetScreen({super.key});
 
   @override
-  ConsumerState<CreateBudgetScreen> createState() => _CreateBudgetScreenState();
+  ConsumerState<CreateBudgetScreen> createState() =>
+      _CreateBudgetScreenState();
 }
 
 class _CreateBudgetScreenState extends ConsumerState<CreateBudgetScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _amountController = TextEditingController();
-
-  BudgetPeriod _period = BudgetPeriod.monthly;
-  DateTime _startDate = DateTime.now();
+  final _limitController = TextEditingController();
   final Set<String> _selectedCategoryIds = {};
-  bool _isSaving = false;
+  bool _saving = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _amountController.dispose();
+    _limitController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickStartDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _startDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
-    if (picked != null) {
-      setState(() => _startDate = picked);
-    }
-  }
-
-  void _toggleCategory(String id) {
-    setState(() {
-      if (_selectedCategoryIds.contains(id)) {
-        _selectedCategoryIds.remove(id);
-      } else {
-        _selectedCategoryIds.add(id);
-      }
-    });
-  }
-
-  void _toggleSelectAll() {
-    setState(() {
-      final allIds = CategoryConstants.defaultExpenseCategories
-          .map((c) => c.id)
-          .toSet();
-      if (_selectedCategoryIds.length == allIds.length) {
-        _selectedCategoryIds.clear();
-      } else {
-        _selectedCategoryIds
-          ..clear()
-          ..addAll(allIds);
-      }
-    });
-  }
-
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedCategoryIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one category')),
-      );
+    if (_nameController.text.trim().isEmpty) {
+      _showError('Please enter a budget name');
+      return;
+    }
+    final limit = double.tryParse(_limitController.text.replaceAll(',', ''));
+    if (limit == null || limit <= 0) {
+      _showError('Please enter a valid limit amount');
       return;
     }
 
-    setState(() => _isSaving = true);
-
-    final amount = double.tryParse(
-          _amountController.text.replaceAll(',', ''),
-        ) ??
-        0;
-
-    await ref.read(budgetsNotifierProvider.notifier).addBudget(
-          name: _nameController.text.trim(),
-          limitAmount: amount,
-          period: _period,
-          startDate: _startDate,
-          categoryIds: _selectedCategoryIds.toList(),
-        );
-
-    if (mounted) {
-      context.pop();
+    setState(() => _saving = true);
+    try {
+      final budget = Budget(
+        id: const Uuid().v4(),
+        name: _nameController.text.trim(),
+        limitAmount: limit,
+        startDate: DateTime(DateTime.now().year, DateTime.now().month, 1),
+        isActive: true,
+        categoryIds: _selectedCategoryIds.toList(),
+        createdAt: DateTime.now(),
+      );
+      await ref.read(budgetsProvider.notifier).add(budget);
+      if (mounted) context.pop();
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final allExpenseCategories = CategoryConstants.defaultExpenseCategories;
-    final allSelected =
-        _selectedCategoryIds.length == allExpenseCategories.length;
+    final categoriesAsync = ref.watch(expenseCategoriesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Budget'),
+        title: const Text('New Budget'),
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Save',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Name ──────────────────────────────────────────────
-            TextFormField(
+            // ── Name ────────────────────────────────────────────────
+            Text('Budget Name',
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Budget Name',
-                hintText: 'e.g. Monthly Groceries',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: 'e.g. Food Budget, Transport',
+                prefixIcon: const Icon(Icons.label_outline),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
-              textCapitalization: TextCapitalization.words,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Name is required';
-                }
-                return null;
-              },
             ),
-            const SizedBox(height: 16),
 
-            // ── Amount ────────────────────────────────────────────
-            TextFormField(
-              controller: _amountController,
-              decoration: const InputDecoration(
-                labelText: 'Limit Amount',
-                prefixText: '\u20B9 ',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
+            const SizedBox(height: 24),
+
+            // ── Limit ────────────────────────────────────────────────
+            Text('Monthly Limit (₹)',
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _limitController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
+                FilteringTextInputFormatter.allow(
+                    RegExp(r'^\d*\.?\d{0,2}$')),
               ],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Amount is required';
-                }
-                final parsed = double.tryParse(value.replaceAll(',', ''));
-                if (parsed == null || parsed <= 0) {
-                  return 'Enter an amount greater than 0';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // ── Period Selector ───────────────────────────────────
-            Text(
-              'Budget Period',
-              style: theme.textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            SegmentedButton<BudgetPeriod>(
-              segments: const [
-                ButtonSegment(
-                  value: BudgetPeriod.weekly,
-                  label: Text('Weekly'),
-                ),
-                ButtonSegment(
-                  value: BudgetPeriod.monthly,
-                  label: Text('Monthly'),
-                ),
-                ButtonSegment(
-                  value: BudgetPeriod.yearly,
-                  label: Text('Yearly'),
-                ),
-                ButtonSegment(
-                  value: BudgetPeriod.custom,
-                  label: Text('Custom'),
-                ),
-              ],
-              selected: {_period},
-              onSelectionChanged: (selected) {
-                setState(() => _period = selected.first);
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // ── Start Date ────────────────────────────────────────
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Start Date'),
-              subtitle: Text(
-                DateFormat('dd MMM yyyy').format(_startDate),
+              decoration: InputDecoration(
+                hintText: '5000',
+                prefixText: '₹ ',
+                prefixStyle: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: _pickStartDate,
+              style: const TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.w700),
             ),
-            const Divider(),
-            const SizedBox(height: 8),
 
-            // ── Category Selection ────────────────────────────────
+            const SizedBox(height: 24),
+
+            // ── Categories ───────────────────────────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Text('Categories',
+                    style: theme.textTheme.labelLarge
+                        ?.copyWith(fontWeight: FontWeight.w600)),
                 Text(
-                  'Categories',
-                  style: theme.textTheme.titleSmall,
-                ),
-                TextButton(
-                  onPressed: _toggleSelectAll,
-                  child: Text(allSelected ? 'Deselect All' : 'Select All'),
+                  _selectedCategoryIds.isEmpty ? 'All' : '${_selectedCategoryIds.length} selected',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 2.4,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+            const SizedBox(height: 4),
+            Text(
+              'Leave empty to track all expenses, or select specific categories.',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 12),
+
+            categoriesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Text('Error: $e'),
+              data: (cats) => _CategorySelector(
+                categories: cats,
+                selected: _selectedCategoryIds,
+                onToggle: (id) => setState(() {
+                  if (_selectedCategoryIds.contains(id)) {
+                    _selectedCategoryIds.remove(id);
+                  } else {
+                    _selectedCategoryIds.add(id);
+                  }
+                }),
               ),
-              itemCount: allExpenseCategories.length,
-              itemBuilder: (context, index) {
-                final category = allExpenseCategories[index];
-                final isSelected = _selectedCategoryIds.contains(category.id);
-                return FilterChip(
-                  selected: isSelected,
-                  label: Text(
-                    category.name,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall,
-                  ),
-                  avatar: isSelected
-                      ? const Icon(Icons.check, size: 16)
-                      : null,
-                  backgroundColor: Color(category.color).withOpacity(0.15),
-                  selectedColor: Color(category.color).withOpacity(0.35),
-                  onSelected: (_) => _toggleCategory(category.id),
-                );
-              },
+            ),
+
+            const SizedBox(height: 36),
+
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _saving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Create Budget',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
             ),
             const SizedBox(height: 24),
-
-            // ── Save Button ───────────────────────────────────────
-            FilledButton(
-              onPressed: _isSaving ? null : _save,
-              child: _isSaving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Save Budget'),
-            ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CategorySelector extends StatelessWidget {
+  const _CategorySelector({
+    required this.categories,
+    required this.selected,
+    required this.onToggle,
+  });
+
+  final List<Category> categories;
+  final Set<String> selected;
+  final ValueChanged<String> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: categories.map((cat) {
+        final isSelected = selected.contains(cat.id);
+        final color = Color(cat.color);
+        return FilterChip(
+          label: Text(cat.name.split(' / ').first),
+          avatar: Icon(IconHelper.fromName(cat.icon), size: 16,
+              color: isSelected ? Colors.white : color),
+          selected: isSelected,
+          onSelected: (_) => onToggle(cat.id),
+          selectedColor: color,
+          checkmarkColor: Colors.white,
+          labelStyle: TextStyle(
+            color: isSelected ? Colors.white : null,
+            fontSize: 13,
+          ),
+          backgroundColor: color.withOpacity(0.08),
+          side: BorderSide(
+              color: isSelected ? color : color.withOpacity(0.2)),
+        );
+      }).toList(),
     );
   }
 }

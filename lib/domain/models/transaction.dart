@@ -1,70 +1,93 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:paisa_track/core/enums/input_source.dart';
-import 'package:paisa_track/core/enums/sync_status.dart';
 import 'package:paisa_track/core/enums/transaction_type.dart';
 
-part 'transaction.freezed.dart';
-part 'transaction.g.dart';
+class Transaction {
+  const Transaction({
+    required this.id,
+    required this.amount,
+    required this.type,
+    required this.categoryId,
+    required this.accountId,
+    this.note = '',
+    this.receiptImagePath,
+    required this.transactionDate,
+    required this.createdAt,
+    this.isDeleted = false,
+  });
 
-/// A single financial transaction recorded by the user.
-@freezed
-class Transaction with _$Transaction {
-  const factory Transaction({
-    /// Unique identifier (UUID v4).
-    required String id,
+  final String id;
+  final double amount;
+  final TransactionType type;
+  final String categoryId;
+  final String accountId;
+  final String note;
+  final String? receiptImagePath;
+  final DateTime transactionDate;
+  final DateTime createdAt;
+  final bool isDeleted;
 
-    /// Transaction amount in the primary (display) currency.
-    required double amount,
-
-    /// ISO 4217 code of the currency the user originally entered.
-    @Default('INR') String originalCurrency,
-
-    /// Amount in the original currency before conversion.
-    double? originalAmount,
-
-    /// Exchange rate used for conversion (original -> primary).
-    double? exchangeRate,
-
-    /// Whether this is income, expense, or a transfer.
-    required TransactionType type,
-
-    /// Foreign key to the category.
-    required String categoryId,
-
-    /// Foreign key to the source account.
-    required String accountId,
-
-    /// Destination account for transfers.
-    String? toAccountId,
-
-    /// User-provided note or description.
-    @Default('') String note,
-
-    /// Local file path of an attached receipt image.
+  Transaction copyWith({
+    String? id,
+    double? amount,
+    TransactionType? type,
+    String? categoryId,
+    String? accountId,
+    String? note,
     String? receiptImagePath,
+    DateTime? transactionDate,
+    DateTime? createdAt,
+    bool? isDeleted,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      categoryId: categoryId ?? this.categoryId,
+      accountId: accountId ?? this.accountId,
+      note: note ?? this.note,
+      receiptImagePath: receiptImagePath ?? this.receiptImagePath,
+      transactionDate: transactionDate ?? this.transactionDate,
+      createdAt: createdAt ?? this.createdAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+    );
+  }
 
-    /// When the transaction actually occurred.
-    required DateTime transactionDate,
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'amount': amount,
+      'type': type.name,
+      'category_id': categoryId,
+      'account_id': accountId,
+      'note': note,
+      'receipt_image_path': receiptImagePath,
+      'transaction_date': transactionDate.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
+    };
+  }
 
-    /// How the transaction was entered.
-    @Default(InputSource.manual) InputSource inputSource,
+  factory Transaction.fromMap(Map<String, dynamic> map) {
+    return Transaction(
+      id: map['id'] as String,
+      amount: (map['amount'] as num).toDouble(),
+      type: TransactionType.values.firstWhere(
+        (e) => e.name == map['type'],
+        orElse: () => TransactionType.expense,
+      ),
+      categoryId: map['category_id'] as String,
+      accountId: map['account_id'] as String,
+      note: (map['note'] as String?) ?? '',
+      receiptImagePath: map['receipt_image_path'] as String?,
+      transactionDate: DateTime.parse(map['transaction_date'] as String),
+      createdAt: DateTime.parse(map['created_at'] as String),
+      isDeleted: (map['is_deleted'] as int) == 1,
+    );
+  }
 
-    /// If generated from a recurring rule, references its id.
-    String? recurringId,
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Transaction && id == other.id;
 
-    /// Cloud sync status.
-    @Default(SyncStatus.pending) SyncStatus syncStatus,
-
-    /// When the record was created locally.
-    required DateTime createdAt,
-
-    /// When the record was last updated.
-    required DateTime updatedAt,
-
-    /// Soft-delete flag.
-    @Default(false) bool isDeleted,
-  }) = _Transaction;
-
-  factory Transaction.fromJson(Map<String, dynamic> json) =>
-      _$TransactionFromJson(json);
+  @override
+  int get hashCode => id.hashCode;
 }

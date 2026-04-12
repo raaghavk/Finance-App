@@ -1,57 +1,105 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:paisa_track/core/enums/account_type.dart';
-import 'package:paisa_track/core/enums/sync_status.dart';
 
-part 'account.freezed.dart';
-part 'account.g.dart';
+class Account {
+  const Account({
+    required this.id,
+    required this.name,
+    required this.type,
+    this.initialBalance = 0.0,
+    this.currency = 'INR',
+    this.icon = 'account_balance_wallet',
+    this.color = 0xFF4CAF50,
+    this.isActive = true,
+    this.sortOrder = 0,
+    this.currentBalance = 0.0,
+    required this.createdAt,
+    this.isDeleted = false,
+  });
 
-/// A financial account such as a bank account, wallet, or credit card.
-@freezed
-class Account with _$Account {
-  const factory Account({
-    /// Unique identifier (UUID v4).
-    required String id,
+  final String id;
+  final String name;
+  final AccountType type;
+  final double initialBalance;
+  final String currency;
+  final String icon;
+  final int color;
+  final bool isActive;
+  final int sortOrder;
+  final double currentBalance;
+  final DateTime createdAt;
+  final bool isDeleted;
 
-    /// User-facing name (e.g. "SBI Savings", "Cash").
-    required String name,
+  Account copyWith({
+    String? id,
+    String? name,
+    AccountType? type,
+    double? initialBalance,
+    String? currency,
+    String? icon,
+    int? color,
+    bool? isActive,
+    int? sortOrder,
+    double? currentBalance,
+    DateTime? createdAt,
+    bool? isDeleted,
+  }) {
+    return Account(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      initialBalance: initialBalance ?? this.initialBalance,
+      currency: currency ?? this.currency,
+      icon: icon ?? this.icon,
+      color: color ?? this.color,
+      isActive: isActive ?? this.isActive,
+      sortOrder: sortOrder ?? this.sortOrder,
+      currentBalance: currentBalance ?? this.currentBalance,
+      createdAt: createdAt ?? this.createdAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+    );
+  }
 
-    /// The kind of account.
-    required AccountType type,
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'type': type.name,
+      'initial_balance': initialBalance,
+      'currency': currency,
+      'icon': icon,
+      'color': color,
+      'is_active': isActive ? 1 : 0,
+      'sort_order': sortOrder,
+      'current_balance': currentBalance,
+      'created_at': createdAt.toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
+    };
+  }
 
-    /// Starting balance when the account was added.
-    @Default(0.0) double initialBalance,
+  factory Account.fromMap(Map<String, dynamic> map) {
+    return Account(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      type: AccountType.values.firstWhere(
+        (e) => e.name == map['type'],
+        orElse: () => AccountType.savings,
+      ),
+      initialBalance: (map['initial_balance'] as num).toDouble(),
+      currency: (map['currency'] as String?) ?? 'INR',
+      icon: (map['icon'] as String?) ?? 'account_balance_wallet',
+      color: (map['color'] as int?) ?? 0xFF4CAF50,
+      isActive: (map['is_active'] as int) == 1,
+      sortOrder: (map['sort_order'] as int?) ?? 0,
+      currentBalance: (map['current_balance'] as num?)?.toDouble() ?? 0.0,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      isDeleted: (map['is_deleted'] as int) == 1,
+    );
+  }
 
-    /// ISO 4217 currency code.
-    @Default('INR') String currency,
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Account && id == other.id;
 
-    /// Material icon name or codepoint identifier.
-    @Default('account_balance_wallet') String icon,
-
-    /// ARGB colour value used in the UI.
-    @Default(0xFF4CAF50) int color,
-
-    /// Whether the account is visible and usable.
-    @Default(true) bool isActive,
-
-    /// User-defined ordering weight.
-    @Default(0) int sortOrder,
-
-    /// Computed current balance (initialBalance + income - expenses).
-    @Default(0.0) double currentBalance,
-
-    /// Cloud sync status.
-    @Default(SyncStatus.pending) SyncStatus syncStatus,
-
-    /// When the record was created locally.
-    required DateTime createdAt,
-
-    /// When the record was last updated.
-    required DateTime updatedAt,
-
-    /// Soft-delete flag.
-    @Default(false) bool isDeleted,
-  }) = _Account;
-
-  factory Account.fromJson(Map<String, dynamic> json) =>
-      _$AccountFromJson(json);
+  @override
+  int get hashCode => id.hashCode;
 }

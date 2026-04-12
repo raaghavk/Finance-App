@@ -1,55 +1,88 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:paisa_track/core/enums/budget_mode.dart';
-import 'package:paisa_track/core/enums/budget_period.dart';
-import 'package:paisa_track/core/enums/sync_status.dart';
+class Budget {
+  const Budget({
+    required this.id,
+    required this.name,
+    required this.limitAmount,
+    required this.startDate,
+    this.isActive = true,
+    this.categoryIds = const [],
+    required this.createdAt,
+    this.isDeleted = false,
+    this.spentAmount = 0.0,
+  });
 
-part 'budget.freezed.dart';
-part 'budget.g.dart';
+  final String id;
+  final String name;
+  final double limitAmount;
+  final DateTime startDate;
+  final bool isActive;
+  final List<String> categoryIds;
+  final DateTime createdAt;
+  final bool isDeleted;
 
-/// A spending budget that tracks limits over a time period.
-@freezed
-class Budget with _$Budget {
-  const factory Budget({
-    /// Unique identifier (UUID v4).
-    required String id,
+  /// Computed — filled in by the provider, not stored in DB.
+  final double spentAmount;
 
-    /// User-facing name for the budget.
-    required String name,
+  double get remainingAmount => limitAmount - spentAmount;
+  double get progressPercent =>
+      limitAmount == 0 ? 0 : (spentAmount / limitAmount).clamp(0.0, 1.0);
+  bool get isOverBudget => spentAmount > limitAmount;
 
-    /// Maximum spending allowed during the period.
-    required double limitAmount,
+  Budget copyWith({
+    String? id,
+    String? name,
+    double? limitAmount,
+    DateTime? startDate,
+    bool? isActive,
+    List<String>? categoryIds,
+    DateTime? createdAt,
+    bool? isDeleted,
+    double? spentAmount,
+  }) {
+    return Budget(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      limitAmount: limitAmount ?? this.limitAmount,
+      startDate: startDate ?? this.startDate,
+      isActive: isActive ?? this.isActive,
+      categoryIds: categoryIds ?? this.categoryIds,
+      createdAt: createdAt ?? this.createdAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      spentAmount: spentAmount ?? this.spentAmount,
+    );
+  }
 
-    /// How often the budget resets.
-    required BudgetPeriod period,
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'limit_amount': limitAmount,
+      'start_date': startDate.toIso8601String(),
+      'is_active': isActive ? 1 : 0,
+      'category_ids': categoryIds.join(','),
+      'created_at': createdAt.toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
+    };
+  }
 
-    /// Start date of the current budget cycle.
-    required DateTime startDate,
+  factory Budget.fromMap(Map<String, dynamic> map) {
+    final catStr = (map['category_ids'] as String?) ?? '';
+    return Budget(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      limitAmount: (map['limit_amount'] as num).toDouble(),
+      startDate: DateTime.parse(map['start_date'] as String),
+      isActive: (map['is_active'] as int) == 1,
+      categoryIds: catStr.isEmpty ? [] : catStr.split(','),
+      createdAt: DateTime.parse(map['created_at'] as String),
+      isDeleted: (map['is_deleted'] as int) == 1,
+    );
+  }
 
-    /// End date of the current budget cycle.
-    DateTime? endDate,
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Budget && id == other.id;
 
-    /// Whether the budget tracks specific categories or overall spending.
-    @Default(BudgetMode.category) BudgetMode mode,
-
-    /// Whether the budget is currently active.
-    @Default(true) bool isActive,
-
-    /// List of category IDs this budget tracks (when mode is category).
-    @Default([]) List<String> categoryIds,
-
-    /// Cloud sync status.
-    @Default(SyncStatus.pending) SyncStatus syncStatus,
-
-    /// When the record was created locally.
-    required DateTime createdAt,
-
-    /// When the record was last updated.
-    required DateTime updatedAt,
-
-    /// Soft-delete flag.
-    @Default(false) bool isDeleted,
-  }) = _Budget;
-
-  factory Budget.fromJson(Map<String, dynamic> json) =>
-      _$BudgetFromJson(json);
+  @override
+  int get hashCode => id.hashCode;
 }

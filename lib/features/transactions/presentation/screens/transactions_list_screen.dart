@@ -1,248 +1,161 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import 'package:paisa_track/core/enums/transaction_type.dart';
-import 'package:paisa_track/core/router/routes.dart';
+import 'package:paisa_track/core/providers/app_providers.dart';
+import 'package:paisa_track/core/theme/app_colors.dart';
+import 'package:paisa_track/core/utils/formatters.dart';
+import 'package:paisa_track/core/utils/icon_helper.dart';
 import 'package:paisa_track/domain/models/transaction.dart';
-import 'package:paisa_track/features/transactions/providers/transactions_provider.dart';
-import 'package:paisa_track/features/transactions/presentation/widgets/transaction_tile.dart';
-import 'package:paisa_track/features/transactions/presentation/widgets/filter_sheet.dart';
 
-/// Main screen showing all transactions grouped by date.
-class TransactionsListScreen extends ConsumerStatefulWidget {
-  const TransactionsListScreen({super.key});
+class TransactionsScreen extends ConsumerStatefulWidget {
+  const TransactionsScreen({super.key});
 
   @override
-  ConsumerState<TransactionsListScreen> createState() =>
-      _TransactionsListScreenState();
+  ConsumerState<TransactionsScreen> createState() =>
+      _TransactionsScreenState();
 }
 
-class _TransactionsListScreenState
-    extends ConsumerState<TransactionsListScreen> {
-  bool _isSearchOpen = false;
-  final _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _toggleSearch() {
-    setState(() {
-      _isSearchOpen = !_isSearchOpen;
-      if (!_isSearchOpen) {
-        _searchController.clear();
-        ref.read(transactionFilterNotifierProvider.notifier).setQuery('');
-      }
-    });
-  }
-
-  void _onSearchChanged(String query) {
-    ref.read(transactionFilterNotifierProvider.notifier).setQuery(query);
-  }
-
-  void _onFilterChipSelected(TransactionType? type) {
-    final current = ref.read(transactionFilterNotifierProvider).type;
-    ref
-        .read(transactionFilterNotifierProvider.notifier)
-        .setType(current == type ? null : type);
-  }
-
-  Future<void> _onRefresh() async {
-    await ref.read(transactionsNotifierProvider.notifier).loadTransactions();
-  }
-
-  void _showFilterSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => const FilterSheet(),
-    );
-  }
-
-  Future<void> _confirmDelete(Transaction transaction) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Transaction'),
-        content: const Text(
-          'Are you sure you want to delete this transaction? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && mounted) {
-      await ref
-          .read(transactionsNotifierProvider.notifier)
-          .deleteTransaction(transaction.id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaction deleted')),
-        );
-      }
-    }
-  }
+class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
+  TransactionType? _filterType;
+  String _search = '';
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final filter = ref.watch(transactionFilterNotifierProvider);
-    final asyncGrouped = ref.watch(transactionsByDateProvider);
+    final txnsAsync = ref.watch(transactionsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: _isSearchOpen
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search transactions...',
-                  border: InputBorder.none,
-                  filled: false,
-                ),
-                onChanged: _onSearchChanged,
-              )
-            : const Text('Transactions'),
+        title: const Text('Transactions'),
         actions: [
-          IconButton(
-            icon: Icon(_isSearchOpen ? Icons.close : Icons.search),
-            onPressed: _toggleSearch,
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterSheet,
+          PopupMenuButton<TransactionType?>(
+            icon: Icon(
+              Icons.filter_list,
+              color: _filterType != null ? AppColors.primary : null,
+            ),
+            onSelected: (v) => setState(() => _filterType = v),
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                  value: null, child: Text('All')),
+              const PopupMenuItem(
+                  value: TransactionType.expense,
+                  child: Text('Expenses only')),
+              const PopupMenuItem(
+                  value: TransactionType.income,
+                  child: Text('Income only')),
+            ],
           ),
         ],
       ),
       body: Column(
         children: [
-          // ── Filter chips ──────────────────────────────────────────────
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: [
-                _FilterChipWidget(
-                  label: 'All',
-                  selected: filter.type == null,
-                  onSelected: (_) => _onFilterChipSelected(null),
-                ),
-                const SizedBox(width: 8),
-                _FilterChipWidget(
-                  label: 'Income',
-                  selected: filter.type == TransactionType.income,
-                  onSelected: (_) =>
-                      _onFilterChipSelected(TransactionType.income),
-                ),
-                const SizedBox(width: 8),
-                _FilterChipWidget(
-                  label: 'Expense',
-                  selected: filter.type == TransactionType.expense,
-                  onSelected: (_) =>
-                      _onFilterChipSelected(TransactionType.expense),
-                ),
-                const SizedBox(width: 8),
-                _FilterChipWidget(
-                  label: 'Transfer',
-                  selected: filter.type == TransactionType.transfer,
-                  onSelected: (_) =>
-                      _onFilterChipSelected(TransactionType.transfer),
-                ),
-                const SizedBox(width: 8),
-                ActionChip(
-                  avatar: const Icon(Icons.date_range, size: 18),
-                  label: Text(
-                    filter.startDate != null
-                        ? '${DateFormat('d MMM').format(filter.startDate!)} - ${DateFormat('d MMM').format(filter.endDate ?? DateTime.now())}'
-                        : 'Date Range',
-                  ),
-                  onPressed: () async {
-                    final range = await showDateRangePicker(
-                      context: context,
-                      firstDate:
-                          DateTime.now().subtract(const Duration(days: 365)),
-                      lastDate: DateTime.now(),
-                    );
-                    if (range != null) {
-                      ref
-                          .read(transactionFilterNotifierProvider.notifier)
-                          .setDateRange(range.start, range.end);
-                    }
-                  },
-                ),
-              ],
+          // ── Search ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: SearchBar(
+              hintText: 'Search transactions…',
+              leading: const Icon(Icons.search_outlined, size: 20),
+              padding: const WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 12)),
+              onChanged: (v) => setState(() => _search = v.toLowerCase()),
             ),
           ),
-          const SizedBox(height: 4),
 
-          // ── Transaction list ──────────────────────────────────────────
+          // ── List ─────────────────────────────────────────────────────
           Expanded(
-            child: asyncGrouped.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.error_outline,
-                        size: 48, color: theme.colorScheme.error),
-                    const SizedBox(height: 12),
-                    Text('Failed to load transactions',
-                        style: theme.textTheme.bodyLarge),
-                    const SizedBox(height: 8),
-                    FilledButton.tonal(
-                      onPressed: _onRefresh,
-                      child: const Text('Retry'),
+            child: txnsAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              data: (all) {
+                final txns = all.where((t) {
+                  if (_filterType != null && t.type != _filterType) {
+                    return false;
+                  }
+                  if (_search.isNotEmpty &&
+                      !t.note.toLowerCase().contains(_search)) {
+                    return false;
+                  }
+                  return true;
+                }).toList();
+
+                if (txns.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.receipt_long_outlined,
+                            size: 56,
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withOpacity(0.3)),
+                        const SizedBox(height: 12),
+                        Text('No transactions',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant)),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              data: (grouped) {
-                if (grouped.isEmpty) {
-                  return _EmptyState(onAdd: () {
-                    context.push(AppRoutes.addTransaction);
-                  });
+                  );
                 }
 
-                final sortedDates = grouped.keys.toList()
-                  ..sort((a, b) => b.compareTo(a));
+                // Group by date
+                final grouped = _groupByDate(txns);
+                final keys = grouped.keys.toList();
 
                 return RefreshIndicator(
-                  onRefresh: _onRefresh,
+                  onRefresh: () =>
+                      ref.read(transactionsProvider.notifier).load(),
                   child: ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 80),
-                    itemCount: sortedDates.length,
-                    itemBuilder: (context, index) {
-                      final date = sortedDates[index];
-                      final transactions = grouped[date]!;
-                      return _DateGroup(
-                        date: date,
-                        transactions: transactions,
-                        onTap: (t) {
-                          context.push(
-                            AppRoutes.transactionDetail
-                                .replaceFirst(':id', t.id),
-                          );
-                        },
-                        onLongPress: _confirmDelete,
+                    itemCount: keys.length,
+                    itemBuilder: (context, i) {
+                      final date = keys[i];
+                      final dayTxns = grouped[date]!;
+                      final dayTotal = dayTxns.fold(0.0, (sum, t) {
+                        return t.type == TransactionType.expense
+                            ? sum - t.amount
+                            : sum + t.amount;
+                      });
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Date header
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                                16, 16, 16, 4),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  formatRelativeDate(date),
+                                  style: theme.textTheme.labelMedium
+                                      ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                Text(
+                                  (dayTotal >= 0 ? '+' : '') +
+                                      formatCurrency(dayTotal),
+                                  style: theme.textTheme.labelMedium
+                                      ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: dayTotal >= 0
+                                        ? AppColors.income
+                                        : AppColors.expense,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ...dayTxns.map((t) => _TxnTile(
+                                transaction: t,
+                                onTap: () =>
+                                    context.push('/transactions/${t.id}'),
+                              )),
+                        ],
                       );
                     },
                   ),
@@ -253,127 +166,83 @@ class _TransactionsListScreenState
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(AppRoutes.addTransaction),
+        onPressed: () => context.push('/transactions/add'),
         child: const Icon(Icons.add),
       ),
     );
   }
-}
 
-// ---------------------------------------------------------------------------
-// Private helper widgets
-// ---------------------------------------------------------------------------
-
-class _FilterChipWidget extends StatelessWidget {
-  const _FilterChipWidget({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final String label;
-  final bool selected;
-  final ValueChanged<bool> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: onSelected,
-      showCheckmark: false,
-    );
+  Map<DateTime, List<Transaction>> _groupByDate(
+      List<Transaction> txns) {
+    final Map<DateTime, List<Transaction>> result = {};
+    for (final t in txns) {
+      final key = DateTime(t.transactionDate.year,
+          t.transactionDate.month, t.transactionDate.day);
+      result.putIfAbsent(key, () => []).add(t);
+    }
+    return result;
   }
 }
 
-class _DateGroup extends StatelessWidget {
-  const _DateGroup({
-    required this.date,
-    required this.transactions,
-    required this.onTap,
-    required this.onLongPress,
-  });
+class _TxnTile extends ConsumerWidget {
+  const _TxnTile({required this.transaction, required this.onTap});
 
-  final DateTime date;
-  final List<Transaction> transactions;
-  final ValueChanged<Transaction> onTap;
-  final ValueChanged<Transaction> onLongPress;
-
-  String _formatDateHeader(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-
-    if (date == today) return 'Today';
-    if (date == yesterday) return 'Yesterday';
-    return DateFormat('EEEE, d MMMM yyyy').format(date);
-  }
+  final Transaction transaction;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-          child: Text(
-            _formatDateHeader(date),
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        ...transactions.map(
-          (t) => TransactionTile(
-            transaction: t,
-            onTap: () => onTap(t),
-            onLongPress: () => onLongPress(t),
-          ),
-        ),
-      ],
-    );
-  }
-}
+    final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
+    final category = categories
+        .where((c) => c.id == transaction.categoryId)
+        .firstOrNull;
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onAdd});
+    final color = category != null ? Color(category.color) : AppColors.primary;
+    final icon = category != null
+        ? IconHelper.fromName(category.icon)
+        : Icons.category_outlined;
+    final name = category?.name ?? 'Unknown';
+    final isExpense = transaction.type == TransactionType.expense;
 
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
+    return InkWell(
+      onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
           children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 80,
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No transactions yet',
-              style: theme.textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Start tracking your expenses by adding your first transaction.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  if (transaction.note.isNotEmpty)
+                    Text(transaction.note,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Transaction'),
+            Text(
+              '${isExpense ? '-' : '+'}${formatCurrency(transaction.amount)}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: isExpense ? AppColors.expense : AppColors.income,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
