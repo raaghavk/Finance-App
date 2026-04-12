@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
 
 Future<ProviderContainer> bootstrap() async {
   if (!kIsWeb) {
@@ -13,10 +11,6 @@ Future<ProviderContainer> bootstrap() async {
       DeviceOrientation.portraitDown,
     ]);
   }
-
-  // Initialize timezone data
-  tz.initializeTimeZones();
-  tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
 
   // Global error handling
   FlutterError.onError = (FlutterErrorDetails details) {

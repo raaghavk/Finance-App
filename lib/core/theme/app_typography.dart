@@ -10,8 +10,9 @@ import 'package:flutter/material.dart';
 abstract final class AppTypography {
   // ── Font Families ─────────────────────────────────────────────────────
 
-  static const String fontFamily = 'NotoSans';
-  static const List<String> fontFamilyFallback = ['NotoSansDevanagari'];
+  // Uses system default fonts (Roboto on Android, SF Pro on iOS).
+  static const String? fontFamily = null;
+  static const List<String> fontFamilyFallback = [];
 
   // ══════════════════════════════════════════════════════════════════════════
   // DISPLAY — Balance amounts, hero numbers
