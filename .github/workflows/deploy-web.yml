@@ -33,7 +33,9 @@ jobs:
         run: flutter --version
 
       - name: Create web platform
-        run: flutter create --project-name paisa_track --org com.paisatrack --platforms web .
+        run: |
+          rm -rf web/
+          flutter create --project-name paisa_track --org com.paisatrack --platforms web .
 
       - name: Restore source files
         run: git checkout -- lib/ analysis_options.yaml
