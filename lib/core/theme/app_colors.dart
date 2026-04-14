@@ -96,19 +96,19 @@ abstract final class AppColors {
   static const Color lightDivider = Color(0xFFF0F0F0);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // DARK THEME SURFACES — Deep charcoal, not pure black
+  // DARK THEME SURFACES — Near-black, CRED-inspired premium dark
   // ══════════════════════════════════════════════════════════════════════════
 
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkSurface = Color(0xFF1E1E1E);
-  static const Color darkSurfaceVariant = Color(0xFF2C2C2C);
-  static const Color darkSurfaceContainer = Color(0xFF262626);
-  static const Color darkOnBackground = Color(0xFFE8E8E8);
-  static const Color darkOnSurface = Color(0xFFE8E8E8);
-  static const Color darkOnSurfaceVariant = Color(0xFFA0A0A0);
-  static const Color darkOutline = Color(0xFF5C5C5C);
-  static const Color darkOutlineVariant = Color(0xFF383838);
-  static const Color darkDivider = Color(0xFF2C2C2C);
+  static const Color darkBackground = Color(0xFF0B0B0F);
+  static const Color darkSurface = Color(0xFF141418);
+  static const Color darkSurfaceVariant = Color(0xFF1C1C22);
+  static const Color darkSurfaceContainer = Color(0xFF18181E);
+  static const Color darkOnBackground = Color(0xFFF5F5F5);
+  static const Color darkOnSurface = Color(0xFFF5F5F5);
+  static const Color darkOnSurfaceVariant = Color(0xFF8E8E93);
+  static const Color darkOutline = Color(0xFF3A3A42);
+  static const Color darkOutlineVariant = Color(0xFF2A2A32);
+  static const Color darkDivider = Color(0xFF1C1C22);
 
   // ══════════════════════════════════════════════════════════════════════════
   // ERROR / STATUS
@@ -146,13 +146,13 @@ abstract final class AppColors {
     ],
   );
 
-  /// Dark mode balance card gradient.
+  /// Dark mode balance card gradient — deeper, more premium.
   static const LinearGradient balanceCardGradientDark = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF004D40),
-      Color(0xFF00352E),
+      Color(0xFF0D2924),
+      Color(0xFF0B0B0F),
     ],
   );
 

@@ -65,5 +65,17 @@ class IconHelper {
     'attach_money': Icons.attach_money,
     'trending_down': Icons.trending_down,
     'swap_horiz': Icons.swap_horiz,
+    'local_parking': Icons.local_parking,
+    'menu_book': Icons.menu_book,
+    'groups': Icons.groups,
+    'local_laundry_service': Icons.local_laundry_service,
+    'tv': Icons.tv,
+    'receipt_long': Icons.receipt_long,
+    'stars': Icons.stars,
+    'replay': Icons.replay,
+    'handshake': Icons.handshake,
+    'mic': Icons.mic,
+    'camera_alt': Icons.camera_alt,
+    'add': Icons.add,
   };
 }
