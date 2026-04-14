@@ -271,6 +271,6 @@ class WebDatabaseService extends DatabaseService with DatabaseSeeder {
   @override
   Future<double> getTotalBalance() async {
     final accounts = await getAccounts();
-    return accounts.fold(0.0, (s, a) => s + a.currentBalance);
+    return accounts.fold<double>(0.0, (s, a) => s + a.currentBalance);
   }
 }

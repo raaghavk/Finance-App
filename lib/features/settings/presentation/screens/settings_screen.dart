@@ -156,7 +156,7 @@ class SettingsScreen extends ConsumerWidget {
   Future<void> _pickCurrency(BuildContext context, WidgetRef ref) async {
     final currencies = {
       'INR': '₹ Indian Rupee',
-      'USD': '$ US Dollar',
+      'USD': '\$ US Dollar',
       'EUR': '€ Euro',
       'GBP': '£ British Pound',
       'AED': 'د.إ UAE Dirham',
@@ -181,7 +181,7 @@ class SettingsScreen extends ConsumerWidget {
                 trailing: e.key == current
                     ? const Icon(Icons.check, color: AppColors.primary)
                     : null,
-                onTap: () => ctx.pop(e.key),
+                onTap: () => Navigator.of(ctx).pop(e.key),
               )),
         ],
       ),
