@@ -6,16 +6,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -37,39 +31,10 @@ jobs:
           rm -rf web/
           flutter create --project-name paisa_track --org com.paisatrack --platforms web .
 
-      - name: Restore source files
-        run: git checkout -- lib/ analysis_options.yaml
-
-      - name: Create web-compatible pubspec
+      - name: Restore source files and use web pubspec
         run: |
-          cat > pubspec.yaml << 'PUBEOF'
-          name: paisa_track
-          description: India-first personal finance tracking app.
-          publish_to: 'none'
-          version: 1.0.0+1
-
-          environment:
-            sdk: ^3.5.0
-
-          dependencies:
-            flutter:
-              sdk: flutter
-            flutter_localizations:
-              sdk: flutter
-            flutter_riverpod: ^2.6.1
-            go_router: ^14.8.1
-            fl_chart: ^0.70.2
-            uuid: ^4.5.1
-            intl: ^0.20.2
-
-          dev_dependencies:
-            flutter_test:
-              sdk: flutter
-            flutter_lints: ^5.0.0
-
-          flutter:
-            uses-material-design: true
-          PUBEOF
+          git checkout -- lib/ analysis_options.yaml
+          cp pubspec_web.yaml pubspec.yaml
 
       - name: Install dependencies
         run: flutter pub get
@@ -77,18 +42,21 @@ jobs:
       - name: Build Flutter web
         run: flutter build web --release --base-href "/Finance-App/"
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
+      - name: Verify build output
+        run: |
+          echo "=== Build output ==="
+          ls -la build/web/
+          echo "=== Checking for Flutter files ==="
+          test -f build/web/main.dart.js && echo "main.dart.js found" || true
+          test -f build/web/flutter.js && echo "flutter.js found" || true
+          test -d build/web/assets && echo "assets/ found" || true
+          test -f build/web/flutter_bootstrap.js && echo "flutter_bootstrap.js found" || true
+          test -f build/web/index.html && echo "index.html found" || true
+          echo "=== index.html content ==="
+          cat build/web/index.html
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
