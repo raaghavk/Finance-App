@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:paisa_track/core/providers/app_providers.dart';
 import 'package:paisa_track/core/theme/app_colors.dart';
@@ -18,6 +19,12 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+          // ── Premium Section ──────────────────────────────────────
+          _PremiumBanner(
+            isPremium: ref.watch(isPremiumProvider),
+            onTap: () => context.push('/settings/premium'),
+          ),
+
           // ── Accounts Section ─────────────────────────────────────
           _SectionHeader('Accounts'),
           ...accounts.map((a) => ListTile(
@@ -237,6 +244,85 @@ class _SectionHeader extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumBanner extends StatelessWidget {
+  const _PremiumBanner({required this.isPremium, required this.onTap});
+  final bool isPremium;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: isPremium
+                ? const LinearGradient(
+                    colors: [Color(0xFF1A3A35), Color(0xFF0D1F1C)],
+                  )
+                : const LinearGradient(
+                    colors: [Color(0xFF1C1C22), Color(0xFF141418)],
+                  ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isPremium
+                  ? AppColors.primary.withValues(alpha: 0.4)
+                  : const Color(0xFF2A2A32),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isPremium
+                      ? AppColors.primary.withValues(alpha: 0.2)
+                      : AppColors.tertiary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isPremium ? Icons.workspace_premium : Icons.rocket_launch,
+                  color: isPremium ? AppColors.primary : AppColors.tertiary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isPremium ? 'Pro Plan Active' : 'Upgrade to Pro',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 15),
+                    ),
+                    Text(
+                      isPremium
+                          ? 'All features unlocked'
+                          : 'Unlock AI, unlimited budgets & more',
+                      style: const TextStyle(
+                          color: Color(0xFF8E8E93), fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: isPremium ? AppColors.primary : const Color(0xFF8E8E93),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -63,6 +63,74 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
     state = state.copyWith(monthlyBudgetLimit: limit);
     await _db.saveSetting('monthly_budget_limit', limit.toString());
   }
+
+  // ── Premium ─────────────────────────────────────────────────────────────
+
+  Future<void> setPremiumStatus(bool isPremium) async {
+    state = state.copyWith(isPremium: isPremium);
+    await _db.saveSetting('is_premium', isPremium ? '1' : '0');
+  }
+
+  Future<void> setSubscriptionTier(String tier) async {
+    state = state.copyWith(subscriptionTier: tier);
+    await _db.saveSetting('subscription_tier', tier);
+  }
+
+  Future<void> setSubscriptionExpiryDate(String? date) async {
+    state = state.copyWith(subscriptionExpiryDate: date);
+    await _db.saveSetting('subscription_expiry_date', date ?? '');
+  }
+
+  Future<void> setAiUsageCount(int count) async {
+    state = state.copyWith(aiUsageCount: count);
+    await _db.saveSetting('ai_usage_count', count.toString());
+  }
+
+  Future<void> setAiUsageResetDate(String date) async {
+    state = state.copyWith(aiUsageResetDate: date);
+    await _db.saveSetting('ai_usage_reset_date', date);
+  }
+
+  /// Activate premium (mock purchase). Sets tier to 'pro' with 30-day expiry.
+  Future<void> activatePremium() async {
+    final expiry =
+        DateTime.now().add(const Duration(days: 30)).toIso8601String();
+    state = state.copyWith(
+      isPremium: true,
+      subscriptionTier: 'pro',
+      subscriptionExpiryDate: expiry,
+    );
+    await _db.saveSetting('is_premium', '1');
+    await _db.saveSetting('subscription_tier', 'pro');
+    await _db.saveSetting('subscription_expiry_date', expiry);
+  }
+
+  /// Deactivate premium (cancel / expire).
+  Future<void> deactivatePremium() async {
+    state = state.copyWith(
+      isPremium: false,
+      subscriptionTier: 'free',
+      subscriptionExpiryDate: null,
+    );
+    await _db.saveSetting('is_premium', '0');
+    await _db.saveSetting('subscription_tier', 'free');
+    await _db.saveSetting('subscription_expiry_date', '');
+  }
+
+  /// Increment AI usage count. Auto-resets if it's a new month.
+  Future<void> incrementAiUsage() async {
+    final now = DateTime.now();
+    final currentMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+
+    int count = state.aiUsageCount;
+    if (state.aiUsageResetDate != currentMonth) {
+      count = 0;
+      await setAiUsageResetDate(currentMonth);
+    }
+
+    count++;
+    await setAiUsageCount(count);
+  }
 }
 
 final settingsProvider =
@@ -73,6 +141,36 @@ final settingsProvider =
 
 final isOnboardingCompleteProvider = Provider<bool>((ref) {
   return ref.watch(settingsProvider).isOnboardingComplete;
+});
+
+// ── Premium Providers ────────────────────────────────────────────────────
+
+final isPremiumProvider = Provider<bool>((ref) {
+  final settings = ref.watch(settingsProvider);
+  if (!settings.isPremium) return false;
+  // Check expiry
+  if (settings.subscriptionExpiryDate != null &&
+      settings.subscriptionExpiryDate!.isNotEmpty) {
+    final expiry = DateTime.tryParse(settings.subscriptionExpiryDate!);
+    if (expiry != null && expiry.isBefore(DateTime.now())) return false;
+  }
+  return true;
+});
+
+final remainingFreeAiUsesProvider = Provider<int>((ref) {
+  final settings = ref.watch(settingsProvider);
+  if (ref.watch(isPremiumProvider)) return -1; // unlimited
+  final now = DateTime.now();
+  final currentMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+  if (settings.aiUsageResetDate != currentMonth) {
+    return UserSettings.freeAiUsageLimit; // new month, full allowance
+  }
+  return (UserSettings.freeAiUsageLimit - settings.aiUsageCount).clamp(0, UserSettings.freeAiUsageLimit);
+});
+
+final canUseAiFeatureProvider = Provider<bool>((ref) {
+  if (ref.watch(isPremiumProvider)) return true;
+  return ref.watch(remainingFreeAiUsesProvider) > 0;
 });
 
 // ── Accounts ──────────────────────────────────────────────────────────────

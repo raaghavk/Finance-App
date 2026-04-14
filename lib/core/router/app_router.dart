@@ -11,6 +11,7 @@ import 'package:paisa_track/features/settings/presentation/screens/settings_scre
 import 'package:paisa_track/features/transactions/presentation/screens/add_transaction_screen.dart';
 import 'package:paisa_track/features/transactions/presentation/screens/transaction_detail_screen.dart';
 import 'package:paisa_track/features/transactions/presentation/screens/transactions_list_screen.dart';
+import 'package:paisa_track/features/premium/presentation/screens/premium_screen.dart';
 import 'package:paisa_track/shared/widgets/app_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -92,6 +93,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/budgets/create',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CreateBudgetScreen(),
+      ),
+      GoRoute(
+        path: '/settings/premium',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PremiumScreen(),
       ),
     ],
   );
