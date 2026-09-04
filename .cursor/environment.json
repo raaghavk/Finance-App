@@ -1,0 +1,19 @@
+{
+  "name": "Zenith Finance App",
+  "install": "bash scripts/cloud-agent-install.sh",
+  "start": "bash scripts/cloud-agent-start.sh",
+  "terminals": [
+    {
+      "name": "Zenith static server",
+      "description": "Serves the Zenith finance app (static HTML + in-browser JSX) on port 5173. Open http://127.0.0.1:5173/Zenith.html",
+      "command": "python3 -m http.server 5173 --bind 0.0.0.0"
+    }
+  ],
+  "ports": [
+    {
+      "name": "Zenith web",
+      "port": 5173
+    }
+  ],
+  "chromeExecutablePath": "/usr/local/bin/google-chrome"
+}

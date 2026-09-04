@@ -1,82 +1,18 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
+# OS / editor
 .DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
 .idea/
-
-# VS Code related
 .vscode/
+*.swp
+*.log
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
+# Python
+__pycache__/
+*.pyc
 
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio
-**/android/gradlew
-**/android/gradlew.bat
-**/android/gradle/wrapper/gradle-wrapper.jar
-**/android/.gradle
-**/android/captures/
-**/android/local.properties
-**/android/GeneratedPluginRegistrant.java
-
-# iOS/XCode related
-**/ios/**/*.mode1v3
-**/ios/**/*.mode2v3
-**/ios/**/*.moved-aside
-**/ios/**/*.pbxuser
-**/ios/**/*.perspectivev3
-**/ios/**/*sync/
-**/ios/**/.sconsign.dblite
-**/ios/**/.strings
-**/ios/**/connected
-**/ios/**/DerivedData/
-**/ios/**/*.hmap
-**/ios/**/*.ipa
-**/ios/**/*.xcworkspace
-# Flutter Xcode build files
-**/ios/Flutter/App.framework
-**/ios/Flutter/Flutter.framework
-**/ios/Flutter/Flutter.podspec
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/app.flx
-**/ios/Flutter/app.zip
-**/ios/Flutter/flutter_assets/
-**/ios/Flutter/flutter_export_environment.sh
-**/ios/ServiceDefinitions.json
-**/ios/Runner/GeneratedPluginRegistrant.*
-# Podfile related
-**/ios/Podfile.lock
-**/ios/Pods/
-
-# Coverage
-coverage/
-lcov.info
-
-# Environment
+# Secrets
 .env
 .env.*
+
+# Local server artifacts
+.venv/
+node_modules/
