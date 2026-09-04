@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
 # Idempotent Cloud Agent install for PaisaTrack web development.
-# Flutter 3.47.x is expected at /opt/flutter (environment snapshot).
+# Flutter 3.47.x is expected at /opt/flutter (environment snapshot) or $HOME/flutter.
 set -euo pipefail
 
-export PATH="/opt/flutter/bin:${PATH}"
 export CHROME_EXECUTABLE="${CHROME_EXECUTABLE:-/usr/local/bin/google-chrome}"
 export PUB_CACHE="${PUB_CACHE:-${HOME}/.pub-cache}"
+export PATH="/opt/flutter/bin:${HOME}/flutter/bin:${PATH}"
 
-if ! command -v flutter >/dev/null 2>&1; then
-  echo "Flutter not found. Expected /opt/flutter from the environment snapshot." >&2
-  exit 1
+if ! command -v flutter >/dev/null 2>&1 || ! flutter --version 2>/dev/null | grep -q "3.47"; then
+  echo "Installing Flutter 3.47.2 to ${HOME}/flutter"
+  archive="${TMPDIR:-/tmp}/flutter_linux_3.47.2-stable.tar.xz"
+  url="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.47.2-stable.tar.xz"
+  if [[ ! -f "${archive}" ]]; then
+    curl -fsSL -o "${archive}" "${url}"
+  fi
+  rm -rf "${HOME}/flutter"
+  tar -xJf "${archive}" -C "${HOME}"
+  export PATH="${HOME}/flutter/bin:${PATH}"
 fi
 
 flutter config --no-analytics --enable-web
