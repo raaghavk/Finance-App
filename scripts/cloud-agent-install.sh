@@ -39,6 +39,23 @@ if ! flutter pub get; then
   flutter pub add 'intl:^0.20.3'
 fi
 
+# Flutter 3.47 moved CupertinoPageTransitionsBuilder into cupertino.dart.
+theme="lib/core/theme/app_theme.dart"
+if [[ -f "${theme}" ]] && grep -q "CupertinoPageTransitionsBuilder" "${theme}"; then
+  if ! grep -q "package:flutter/cupertino.dart" "${theme}"; then
+    python3 - <<'PY'
+from pathlib import Path
+path = Path("lib/core/theme/app_theme.dart")
+text = path.read_text()
+needle = "import 'package:flutter/material.dart';"
+inject = "import 'package:flutter/cupertino.dart';\n" + needle
+if needle in text and "package:flutter/cupertino.dart" not in text:
+    path.write_text(text.replace(needle, inject, 1))
+    print("Added cupertino.dart import for CupertinoPageTransitionsBuilder")
+PY
+  fi
+fi
+
 # flutter create / pub get may rewrite analysis_options.yaml
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git checkout -- analysis_options.yaml 2>/dev/null || true
