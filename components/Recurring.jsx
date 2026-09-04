@@ -22,7 +22,7 @@ function RecurringScreen() {
   const monthlyEquiv = Math.round(monthly + yearly / 12);
 
   const daysUntil = (dateStr) => {
-    const today = new Date('2026-05-01');
+    const today = new Date();
     const d = new Date(dateStr);
     return Math.ceil((d - today) / 86400000);
   };
