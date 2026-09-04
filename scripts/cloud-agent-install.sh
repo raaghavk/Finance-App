@@ -29,10 +29,6 @@ if [[ -n "${index_backup}" ]]; then
   rm -f "${index_backup}"
 fi
 
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  git checkout -- analysis_options.yaml 2>/dev/null || true
-fi
-
 # Match CI: web builds use pubspec_web.yaml (no sqflite / path_provider).
 if [[ -f pubspec_web.yaml ]]; then
   cp pubspec_web.yaml pubspec.yaml
@@ -41,5 +37,10 @@ fi
 if ! flutter pub get; then
   # Newer Flutter SDKs pin flutter_localizations to a newer intl than ^0.20.2.
   flutter pub add 'intl:^0.20.3'
+fi
+
+# flutter create / pub get may rewrite analysis_options.yaml
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git checkout -- analysis_options.yaml 2>/dev/null || true
 fi
 echo "Cloud Agent install complete: $(flutter --version | head -n 1)"
