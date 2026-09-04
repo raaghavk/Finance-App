@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Idempotent Cloud Agent install for PaisaTrack web development.
-# Flutter 3.24.5 is expected at /opt/flutter (environment snapshot).
+# Flutter 3.47.x is expected at /opt/flutter (environment snapshot).
 set -euo pipefail
 
 export PATH="/opt/flutter/bin:${PATH}"
@@ -38,18 +38,8 @@ if [[ -f pubspec_web.yaml ]]; then
   cp pubspec_web.yaml pubspec.yaml
 fi
 
-# Flutter 3.24.5 flutter_localizations requires intl ^0.19.0.
-python3 - <<'PY'
-from pathlib import Path
-import re
-
-path = Path("pubspec.yaml")
-text = path.read_text()
-updated, count = re.subn(r"intl:\s*\^?0\.20(?:\.\d+)?", "intl: ^0.19.0", text)
-if count:
-    path.write_text(updated)
-    print("Pinned intl to ^0.19.0 for Flutter 3.24.5")
-PY
-
-flutter pub get
+if ! flutter pub get; then
+  # Newer Flutter SDKs pin flutter_localizations to a newer intl than ^0.20.2.
+  flutter pub add 'intl:^0.20.3'
+fi
 echo "Cloud Agent install complete: $(flutter --version | head -n 1)"
