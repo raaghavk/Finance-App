@@ -1,0 +1,47 @@
+name: Deploy Zenith to GitHub Pages
+
+on:
+  push:
+    branches: [claude/india-fintech-tracker-op2TY, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Package static site
+        run: |
+          mkdir -p _site/components
+          cp index.html Zenith.html app.jsx state.js ios-frame.jsx _site/
+          cp components/*.jsx _site/components/
+          touch _site/.nojekyll
+          echo "=== _site ==="
+          find _site -type f | sort
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
