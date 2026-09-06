@@ -350,7 +350,7 @@ function AddExpenseScreen({ store, onClose, onSave, onAddCategory, initial, star
                   }}
                 >
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 700, color: active ? '#007AFF' : '#6E6E73' }}>
-                    {acctLabel(a, locale)} · {railForAccount(a)}
+                    {acctLabel(a, locale)}{a.type === 'bank' ? ' · UPI' : a.type === 'card' ? ' · Card' : ''}
                   </p>
                   <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800, color: a.type === 'card' ? '#FF3B30' : '#1C1C1E', marginTop: 2 }}>
                     {fmt(bal)}

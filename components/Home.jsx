@@ -175,7 +175,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
                 }}
               >
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 700, color: a.type === 'card' ? 'rgba(255,255,255,0.65)' : '#6E6E73' }}>
-                  {acctLabel(a, locale)} · {railForAccount(a)}
+                  {acctLabel(a, locale)}{a.type === 'bank' ? ' · UPI' : a.type === 'card' ? ' · Card' : ''}{a.last4 ? ' ····' + a.last4 : ''}
                 </p>
                 <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 18, fontWeight: 800, color: a.type === 'card' ? '#FF8A80' : '#121212', marginTop: 6 }}>
                   {fmt(bal)}
