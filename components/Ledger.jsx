@@ -90,7 +90,7 @@ function AccountsScreen({ store, onBack, onSaveAccount, onDeleteAccount }) {
   const worth = netWorth(store);
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingBottom: 110 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingBottom: 110, position: 'relative' }}>
       <ScreenHeader locale={locale} title={t(locale, 'accounts')} onBack={onBack} actionLabel={'+ ' + t(locale, 'addAccount')} onAction={openNew} />
       <div style={{ padding: '0 20px 16px' }}>
         <div style={{ background: '#1C1C1E', borderRadius: 22, padding: '18px 20px', marginBottom: 14 }}>
@@ -130,8 +130,20 @@ function AccountsScreen({ store, onBack, onSaveAccount, onDeleteAccount }) {
       {editing && (
         <>
           <div onClick={() => setEditing(null)} style={{ position: 'absolute', inset: 0, zIndex: 8, background: 'rgba(0,0,0,0.3)' }} />
-          <div style={{ position: 'absolute', left: 16, right: 16, bottom: 20, zIndex: 9, background: '#fff', borderRadius: 22, padding: '16px 18px 14px', maxHeight: '70%', display: 'flex', flexDirection: 'column' }}>
-            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 800, marginBottom: 12, flexShrink: 0 }}>{editing.id ? t(locale, 'editAccount') : t(locale, 'addAccount')}</p>
+          <div style={{
+            position: 'absolute', left: 16, right: 16, top: 120, bottom: 24, zIndex: 9,
+            background: '#fff', borderRadius: 22, padding: '16px 18px 14px',
+            display: 'flex', flexDirection: 'column',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
+          }}>
+            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 800, marginBottom: 10, flexShrink: 0 }}>{editing.id ? t(locale, 'editAccount') : t(locale, 'addAccount')}</p>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexShrink: 0 }}>
+              {editing.custom && editing.id && (
+                <button type="button" onClick={() => { onDeleteAccount && onDeleteAccount(editing.id); setEditing(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#FFF0F0', color: '#FF3B30', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'delete')}</button>
+              )}
+              <button type="button" onClick={() => setEditing(null)} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#F2F2F7', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'cancel')}</button>
+              <button type="button" onClick={save} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#007AFF', color: '#fff', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'save')}</button>
+            </div>
             <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, paddingRight: 2 }}>
             <Field label={t(locale, 'account')}>{textInput(name, setName, locale === 'hi' ? 'HDFC, नकद…' : 'HDFC, Wallet…')}</Field>
             <Field label={t(locale, 'accountType')}>
@@ -148,13 +160,6 @@ function AccountsScreen({ store, onBack, onSaveAccount, onDeleteAccount }) {
             <Field label={t(locale, 'openingBalance')}>{textInput(opening, setOpening, '0')}</Field>
             {kind !== 'cash' && <Field label={t(locale, 'last4')}>{textInput(last4, setLast4, '1234')}</Field>}
             {kind === 'bank' && <Field label={t(locale, 'upiId')}>{textInput(upiId, setUpiId, 'you@oksbi')}</Field>}
-            </div>
-            <div style={{ display: 'flex', gap: 10, paddingTop: 8, flexShrink: 0 }}>
-              {editing.custom && editing.id && (
-                <button type="button" onClick={() => { onDeleteAccount && onDeleteAccount(editing.id); setEditing(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#FFF0F0', color: '#FF3B30', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'delete')}</button>
-              )}
-              <button type="button" onClick={() => setEditing(null)} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#F2F2F7', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'cancel')}</button>
-              <button type="button" onClick={save} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#007AFF', color: '#fff', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'save')}</button>
             </div>
           </div>
         </>
@@ -203,7 +208,7 @@ function MerchantsScreen({ store, onBack, onSaveMerchant, onDeleteMerchant, onSe
   };
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingBottom: 110 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingBottom: 110, position: 'relative' }}>
       <ScreenHeader locale={locale} title={t(locale, 'merchants')} onBack={onBack} actionLabel={'+ ' + t(locale, 'addMerchant')} onAction={openNew} />
       <div style={{ padding: '0 20px' }}>
         {merchants.length === 0 ? (
@@ -255,8 +260,17 @@ function MerchantsScreen({ store, onBack, onSaveMerchant, onDeleteMerchant, onSe
       {editing && (
         <>
           <div onClick={() => setEditing(null)} style={{ position: 'absolute', inset: 0, zIndex: 8, background: 'rgba(0,0,0,0.3)' }} />
-          <div style={{ position: 'absolute', left: 16, right: 16, bottom: 20, zIndex: 9, background: '#fff', borderRadius: 22, padding: '16px 18px 14px', maxHeight: '70%', display: 'flex', flexDirection: 'column' }}>
-            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 800, marginBottom: 12, flexShrink: 0 }}>{editing.id ? t(locale, 'editMerchant') : t(locale, 'addMerchant')}</p>
+          <div style={{
+            position: 'absolute', left: 16, right: 16, top: 120, bottom: 24, zIndex: 9,
+            background: '#fff', borderRadius: 22, padding: '16px 18px 14px',
+            display: 'flex', flexDirection: 'column',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
+          }}>
+            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 800, marginBottom: 10, flexShrink: 0 }}>{editing.id ? t(locale, 'editMerchant') : t(locale, 'addMerchant')}</p>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexShrink: 0 }}>
+              <button type="button" onClick={() => setEditing(null)} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#F2F2F7', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'cancel')}</button>
+              <button type="button" onClick={save} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#007AFF', color: '#fff', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'save')}</button>
+            </div>
             <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
             <Field label={t(locale, 'merchant')}>{textInput(name, setName, t(locale, 'merchantPh'))}</Field>
             <Field label={t(locale, 'merchantUpi')}>{textInput(upi, setUpi, t(locale, 'merchantUpiPh'))}</Field>
@@ -282,10 +296,6 @@ function MerchantsScreen({ store, onBack, onSaveMerchant, onDeleteMerchant, onSe
                 ))}
               </div>
             </Field>
-            </div>
-            <div style={{ display: 'flex', gap: 10, paddingTop: 8, flexShrink: 0 }}>
-              <button type="button" onClick={() => setEditing(null)} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#F2F2F7', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'cancel')}</button>
-              <button type="button" onClick={save} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: 14, background: '#007AFF', color: '#fff', fontFamily: 'Manrope, sans-serif', fontWeight: 700, cursor: 'pointer' }}>{t(locale, 'save')}</button>
             </div>
           </div>
         </>
