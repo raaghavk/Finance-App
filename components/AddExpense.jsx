@@ -377,6 +377,18 @@ function AddExpenseScreen({ store, onClose, onSave, onAddCategory, initial, star
 
         <div style={{ padding: '4px 16px 8px' }}>
           <div style={{ overflowX: 'auto', display: 'flex', gap: 8 }}>
+            {type !== 'transfer' && (
+              <button
+                type="button"
+                aria-label={t(locale, 'addCategory')}
+                onClick={() => setCatSheet(true)}
+                style={{
+                  flexShrink: 0, padding: '8px 14px', borderRadius: 20, border: '1.5px dashed #C7C7CC',
+                  background: '#fff', cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700, color: '#007AFF',
+                }}
+              >{t(locale, 'addCustom')}</button>
+            )}
             {visibleCats.map((c) => (
               <button
                 key={c.id}
@@ -395,18 +407,6 @@ function AddExpenseScreen({ store, onClose, onSave, onAddCategory, initial, star
                 <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600, color: selectedCat === c.id ? '#fff' : '#121212', whiteSpace: 'nowrap' }}>{catLabel(c, locale)}</span>
               </button>
             ))}
-            {type !== 'transfer' && (
-              <button
-                type="button"
-                aria-label={t(locale, 'addCategory')}
-                onClick={() => setCatSheet(true)}
-                style={{
-                  flexShrink: 0, padding: '8px 14px', borderRadius: 20, border: '1.5px dashed #C7C7CC',
-                  background: '#fff', cursor: 'pointer',
-                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700, color: '#007AFF',
-                }}
-              >{t(locale, 'addCustom')}</button>
-            )}
           </div>
         </div>
 
