@@ -152,6 +152,40 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
         </div>
       </div>
 
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ padding: '0 24px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 700, color: '#121212' }}>{t(locale, 'walletStrip')}</h3>
+          <button type="button" onClick={() => onNavigate && onNavigate('accounts')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#007AFF', fontWeight: 600 }}>
+            {t(locale, 'seeAll')}
+          </button>
+        </div>
+        <div style={{ overflowX: 'auto', paddingLeft: 20, paddingRight: 20, display: 'flex', gap: 10 }}>
+          {(store.accounts || []).map((a) => {
+            const bal = accountBalance(store, a.id);
+            return (
+              <div
+                key={a.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onNavigate && onNavigate('accounts')}
+                onKeyDown={(e) => { if (e.key === 'Enter') onNavigate && onNavigate('accounts'); }}
+                style={{
+                  minWidth: 132, flexShrink: 0, background: a.type === 'card' ? '#1C1C1E' : '#F5F5F7',
+                  borderRadius: 18, padding: '14px 14px 12px', cursor: 'pointer',
+                }}
+              >
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 700, color: a.type === 'card' ? 'rgba(255,255,255,0.65)' : '#6E6E73' }}>
+                  {acctLabel(a, locale)} · {railForAccount(a)}
+                </p>
+                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 18, fontWeight: 800, color: a.type === 'card' ? '#FF8A80' : '#121212', marginTop: 6 }}>
+                  {fmt(bal)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div style={{ marginBottom: 28 }}>
         <div style={{ padding: '0 24px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 700, color: '#121212' }}>{t(locale, 'categories')}</h3>
@@ -250,7 +284,11 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
                     <MerchantIcon merchant={tx.merchant} color={cat ? cat.color : '#007AFF'} />
                     <div style={{ flex: 1 }}>
                       <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: '#121212', marginBottom: 3 }}>{tx.merchant}</p>
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6E6E73' }}>{cat ? catLabel(cat, locale) : tx.categoryId}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6E6E73' }}>
+                        {cat ? catLabel(cat, locale) : tx.categoryId}
+                        {tx.method ? ' · ' + tx.method : ''}
+                        {tx.merchantUpi ? ' · ' + tx.merchantUpi : ''}
+                      </p>
                     </div>
                     <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 700, color: amountColor(tx) }}>
                       {sign}{fmt(tx.amount)}

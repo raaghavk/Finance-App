@@ -1,6 +1,7 @@
-// state.js — Zenith v1 local-first store, categories, formatters, copy
+// state.js — Zenith v2 local-first ledger: accounts, merchants, receipts
 
 const ZENITH_STORE_KEY = 'zenith_v1_store';
+const STORE_VERSION = 2;
 
 const DEFAULT_CATEGORIES = [
   { id: 'kirana', name: 'Kirana', nameHi: 'किराना', emoji: '🛒', color: '#34D399', type: 'expense', group: 'food' },
@@ -28,10 +29,13 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const DEFAULT_ACCOUNTS = [
-  { id: 'cash', name: 'Cash', nameHi: 'नकद' },
-  { id: 'bank', name: 'Bank', nameHi: 'बैंक' },
-  { id: 'card', name: 'Credit card', nameHi: 'क्रेडिट कार्ड' },
+  { id: 'cash', name: 'Cash', nameHi: 'नकद', type: 'cash', last4: '', opening: 0, upiId: '' },
+  { id: 'bank', name: 'Bank', nameHi: 'बैंक', type: 'bank', last4: '', opening: 0, upiId: '' },
+  { id: 'card', name: 'Credit card', nameHi: 'क्रेडिट कार्ड', type: 'card', last4: '', opening: 0, upiId: '' },
 ];
+
+const CAT_EMOJIS = ['🛒', '☕', '🍱', '🍽️', '🛺', '🚕', '🚇', '⛽', '🏠', '💊', '🛍️', '🎬', '🪔', '📈', '💼', '✈️', '🏋️', '🎮', '📚', '🎁', '🐕', '🔧', '🍼', '🎵', '✦'];
+const CAT_COLORS = ['#34D399', '#FF6B6B', '#60A5FA', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#0EA5E9', '#64748B'];
 
 const COPY = {
   en: {
@@ -108,13 +112,66 @@ const COPY = {
     later: 'Later',
     travelLater: 'Travel Mode is coming later.',
     language: 'Language',
-    localOnly: 'Zenith v1 · Local-only · No data leaves this device',
+    localOnly: 'Zenith · Local-only · No data leaves this device',
     alerts: 'Alerts',
     allCaughtUp: 'All caught up',
     allCaughtUpSub: 'Budget warnings will show here when a category hits 90%.',
     notifications: 'Notifications',
     profile: 'Profile',
     firstExpense: 'Add expense',
+    merchant: 'Merchant',
+    merchantPh: 'Zomato, Sharma Kirana…',
+    merchantUpi: 'Merchant UPI',
+    merchantUpiPh: 'shop@oksbi',
+    paidFrom: 'Paid from',
+    yourAccount: 'Your account',
+    customerAccount: 'Your account (customer)',
+    accounts: 'Accounts',
+    merchants: 'Merchants',
+    receipt: 'Receipt',
+    addPhoto: 'Add photo',
+    removePhoto: 'Remove photo',
+    listening: 'Listening…',
+    speakNow: 'Speak now',
+    voiceHint: 'Try “Zomato pe 349” or “spent 200 on chai”.',
+    voiceNeedMic: 'Allow the microphone to fill amount and merchant.',
+    voiceGot: 'Got it',
+    openingBalance: 'Opening balance',
+    last4: 'Last 4 digits',
+    upiId: 'Your UPI ID',
+    addAccount: 'Add account',
+    addMerchant: 'Add merchant',
+    addCategory: 'Add category',
+    newCategory: 'New category',
+    used: 'Used',
+    available: 'Available',
+    netWorth: 'Net worth',
+    fromAccount: 'From',
+    toAccount: 'To',
+    createMerchant: 'Create merchant',
+    noMerchants: 'No merchants yet — they appear when you add a payment.',
+    noAccounts: 'No accounts yet',
+    customCategory: 'Custom category',
+    pickAccount: 'Pick an account',
+    transferTo: 'Transfer to',
+    photo: 'Photo',
+    voice: 'Voice',
+    accountType: 'Type',
+    cashType: 'Cash',
+    bankType: 'Bank',
+    cardType: 'Card',
+    editAccount: 'Edit account',
+    editMerchant: 'Edit merchant',
+    spentWith: 'Spent here',
+    paidVia: 'Paid via',
+    manageCats: 'Manage categories',
+    catName: 'Category name',
+    defaultAccount: 'Pays from',
+    walletStrip: 'Wallets',
+    cardOutstanding: 'Outstanding',
+    addCustom: '+ Custom',
+    keypad: 'Keypad',
+    tapAmount: 'Tap amount for keypad',
   },
   hi: {
     hi: 'नमस्ते, मैं Zenith हूँ।',
@@ -190,13 +247,66 @@ const COPY = {
     later: 'बाद में',
     travelLater: 'ट्रैवल मोड बाद में आएगा।',
     language: 'भाषा',
-    localOnly: 'Zenith v1 · सिर्फ़ इस डिवाइस पर',
+    localOnly: 'Zenith · सिर्फ़ इस डिवाइस पर',
     alerts: 'अलर्ट',
     allCaughtUp: 'सब ठीक है',
     allCaughtUpSub: 'कोई श्रेणी 90% पर पहुँचे तो चेतावनी यहाँ दिखेगी।',
     notifications: 'सूचनाएँ',
     profile: 'प्रोफ़ाइल',
     firstExpense: 'खर्च जोड़ें',
+    merchant: 'व्यापारी',
+    merchantPh: 'ज़ोमैटो, शर्मा किराना…',
+    merchantUpi: 'व्यापारी UPI',
+    merchantUpiPh: 'shop@oksbi',
+    paidFrom: 'भुगतान खाता',
+    yourAccount: 'आपका खाता',
+    customerAccount: 'आपका खाता (ग्राहक)',
+    accounts: 'खाते',
+    merchants: 'व्यापारी',
+    receipt: 'रसीद',
+    addPhoto: 'फ़ोटो जोड़ें',
+    removePhoto: 'फ़ोटो हटाएँ',
+    listening: 'सुन रहा हूँ…',
+    speakNow: 'बोलें',
+    voiceHint: '“ज़ोमैटो पे 349” या “चाय पर 200” कहें।',
+    voiceNeedMic: 'राशि और व्यापारी भरने के लिए माइक दें।',
+    voiceGot: 'समझ गया',
+    openingBalance: 'शुरुआती बैलेंस',
+    last4: 'आखिरी 4 अंक',
+    upiId: 'आपकी UPI ID',
+    addAccount: 'खाता जोड़ें',
+    addMerchant: 'व्यापारी जोड़ें',
+    addCategory: 'श्रेणी जोड़ें',
+    newCategory: 'नई श्रेणी',
+    used: 'बकाया',
+    available: 'उपलब्ध',
+    netWorth: 'कुल संपत्ति',
+    fromAccount: 'से',
+    toAccount: 'को',
+    createMerchant: 'नया व्यापारी',
+    noMerchants: 'अभी कोई व्यापारी नहीं — पेमेंट जोड़ने पर दिखेंगे।',
+    noAccounts: 'अभी कोई खाता नहीं',
+    customCategory: 'अपनी श्रेणी',
+    pickAccount: 'खाता चुनें',
+    transferTo: 'ट्रांसफर को',
+    photo: 'फ़ोटो',
+    voice: 'आवाज़',
+    accountType: 'प्रकार',
+    cashType: 'नकद',
+    bankType: 'बैंक',
+    cardType: 'कार्ड',
+    editAccount: 'खाता बदलें',
+    editMerchant: 'व्यापारी बदलें',
+    spentWith: 'यहाँ खर्च',
+    paidVia: 'माध्यम',
+    manageCats: 'श्रेणियाँ प्रबंधित करें',
+    catName: 'श्रेणी का नाम',
+    defaultAccount: 'भुगतान खाता',
+    walletStrip: 'वॉलेट',
+    cardOutstanding: 'बकाया',
+    addCustom: '+ अपनी',
+    keypad: 'कीपैड',
+    tapAmount: 'कीपैड के लिए राशि दबाएँ',
   },
 };
 
@@ -213,12 +323,12 @@ function t(locale, key, vars) {
 
 function catLabel(cat, locale) {
   if (!cat) return '';
-  return locale === 'hi' ? cat.nameHi : cat.name;
+  return locale === 'hi' ? (cat.nameHi || cat.name) : cat.name;
 }
 
 function acctLabel(acct, locale) {
   if (!acct) return '';
-  return locale === 'hi' ? acct.nameHi : acct.name;
+  return locale === 'hi' ? (acct.nameHi || acct.name) : acct.name;
 }
 
 function fmt(n) {
@@ -270,9 +380,67 @@ function relDate(iso, locale) {
   });
 }
 
+function inferAccountType(acct) {
+  if (acct && acct.type) return acct.type;
+  const n = String((acct && acct.name) || '').toLowerCase();
+  if (n.includes('card') || n.includes('कार्ड')) return 'card';
+  if (n.includes('cash') || n.includes('नकद')) return 'cash';
+  return 'bank';
+}
+
+function railForAccount(acct) {
+  const type = inferAccountType(acct);
+  if (type === 'cash') return 'Cash';
+  if (type === 'card') return 'Card';
+  return 'UPI';
+}
+
+function newTxnId() {
+  return 'tx-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+}
+
+function newMerchantId() {
+  return 'mer-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+}
+
+function newAccountId() {
+  return 'acc-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+}
+
+function newCatId() {
+  return 'cat-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+}
+
+function normalizeAccount(a, openingCash) {
+  const type = inferAccountType(a);
+  const opening = a.opening != null
+    ? Number(a.opening) || 0
+    : ((a.id === 'cash' || type === 'cash') ? Number(openingCash) || 0 : 0);
+  return {
+    id: a.id,
+    name: a.name,
+    nameHi: a.nameHi || a.name,
+    type,
+    last4: a.last4 || '',
+    opening,
+    upiId: a.upiId || '',
+    custom: !!a.custom,
+  };
+}
+
+function normalizeMerchant(m) {
+  return {
+    id: m.id,
+    name: m.name,
+    upiVpa: m.upiVpa || m.upiId || '',
+    defaultCategoryId: m.defaultCategoryId || '',
+    lastAccountId: m.lastAccountId || '',
+  };
+}
+
 function createInitialStore() {
   return {
-    version: 1,
+    version: STORE_VERSION,
     onboardingComplete: false,
     user: { name: '', locale: 'en', currency: 'INR' },
     openingCash: 0,
@@ -280,9 +448,82 @@ function createInitialStore() {
     startedAt: todayISO(),
     accounts: DEFAULT_ACCOUNTS.map((a) => ({ ...a })),
     categories: DEFAULT_CATEGORIES.map((c) => ({ ...c })),
+    merchants: [],
     transactions: [],
     budgets: [],
     alertsRead: {},
+  };
+}
+
+function seedMerchantsFromTxns(transactions, existing) {
+  const merchants = (existing || []).map(normalizeMerchant);
+  const seen = new Set(merchants.map((m) => String(m.name || '').trim().toLowerCase()).filter(Boolean));
+  (transactions || []).forEach((tx) => {
+    const name = String(tx.merchant || '').trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    merchants.push(normalizeMerchant({
+      id: tx.merchantId || newMerchantId(),
+      name,
+      upiVpa: tx.merchantUpi || '',
+      defaultCategoryId: tx.categoryId || '',
+      lastAccountId: tx.accountId || '',
+    }));
+  });
+  return merchants;
+}
+
+function migrateStore(parsed) {
+  const base = createInitialStore();
+  const openingCash = Number(parsed.openingCash) || 0;
+  const rawAccounts = (parsed.accounts && parsed.accounts.length) ? parsed.accounts : DEFAULT_ACCOUNTS;
+  const accounts = rawAccounts.map((a) => normalizeAccount(a, openingCash));
+  const cash = accounts.find((a) => a.id === 'cash' || a.type === 'cash');
+  if (cash && (parsed.version || 1) < 2 && cash.opening === 0 && openingCash) {
+    cash.opening = openingCash;
+  }
+
+  const categories = (parsed.categories && parsed.categories.length)
+    ? parsed.categories.map((c) => ({ ...c, custom: !!c.custom }))
+    : base.categories;
+
+  let merchants = seedMerchantsFromTxns(parsed.transactions, parsed.merchants);
+  if (parsed.merchants && parsed.merchants.length && (parsed.version || 1) >= 2) {
+    merchants = parsed.merchants.map(normalizeMerchant);
+    const extras = seedMerchantsFromTxns(parsed.transactions, merchants);
+    merchants = extras;
+  }
+
+  const transactions = (parsed.transactions || []).map((tx) => {
+    const name = String(tx.merchant || '').trim();
+    const m = name ? merchants.find((x) => x.name.toLowerCase() === name.toLowerCase()) : null;
+    const acct = accounts.find((a) => a.id === tx.accountId);
+    return {
+      ...tx,
+      merchantId: tx.merchantId || (m ? m.id : ''),
+      merchantUpi: tx.merchantUpi || (m ? m.upiVpa : '') || '',
+      method: tx.method || railForAccount(acct),
+      receiptThumb: tx.receiptThumb || '',
+      voiceText: tx.voiceText || '',
+      toAccountId: tx.toAccountId || '',
+    };
+  });
+
+  return {
+    ...base,
+    ...parsed,
+    version: STORE_VERSION,
+    user: { ...base.user, ...(parsed.user || {}) },
+    openingCash,
+    monthlyIncome: Number(parsed.monthlyIncome) || 0,
+    accounts,
+    categories,
+    merchants,
+    transactions,
+    budgets: parsed.budgets || [],
+    alertsRead: parsed.alertsRead || {},
   };
 }
 
@@ -291,17 +532,8 @@ function loadStore() {
     const raw = localStorage.getItem(ZENITH_STORE_KEY);
     if (!raw) return createInitialStore();
     const parsed = JSON.parse(raw);
-    if (!parsed || parsed.version !== 1) return createInitialStore();
-    return {
-      ...createInitialStore(),
-      ...parsed,
-      user: { ...createInitialStore().user, ...(parsed.user || {}) },
-      categories: (parsed.categories && parsed.categories.length) ? parsed.categories : DEFAULT_CATEGORIES.map((c) => ({ ...c })),
-      accounts: (parsed.accounts && parsed.accounts.length) ? parsed.accounts : DEFAULT_ACCOUNTS.map((a) => ({ ...a })),
-      transactions: parsed.transactions || [],
-      budgets: parsed.budgets || [],
-      alertsRead: parsed.alertsRead || {},
-    };
+    if (!parsed) return createInitialStore();
+    return migrateStore(parsed);
   } catch (e) {
     return createInitialStore();
   }
@@ -315,6 +547,90 @@ function saveStore(store) {
 
 function findCat(store, idOrName) {
   return (store.categories || []).find((c) => c.id === idOrName || c.name === idOrName);
+}
+
+function findAccount(store, id) {
+  return (store.accounts || []).find((a) => a.id === id);
+}
+
+function findMerchant(store, idOrName) {
+  const key = String(idOrName || '').trim().toLowerCase();
+  if (!key) return null;
+  return (store.merchants || []).find((m) => m.id === idOrName || String(m.name || '').toLowerCase() === key);
+}
+
+function accountBalance(store, accountId) {
+  const acct = findAccount(store, accountId);
+  if (!acct) return 0;
+  let bal = Number(acct.opening) || 0;
+  (store.transactions || []).forEach((tx) => {
+    const amt = Number(tx.amount) || 0;
+    if (acct.type === 'card') {
+      if (tx.type === 'expense' && tx.accountId === accountId) bal += amt;
+      if (tx.type === 'income' && tx.accountId === accountId) bal -= amt;
+      if (tx.type === 'transfer' && tx.toAccountId === accountId) bal -= amt;
+      if (tx.type === 'transfer' && tx.accountId === accountId) bal += amt;
+    } else {
+      if (tx.type === 'expense' && tx.accountId === accountId) bal -= amt;
+      if (tx.type === 'income' && tx.accountId === accountId) bal += amt;
+      if (tx.type === 'transfer' && tx.accountId === accountId) bal -= amt;
+      if (tx.type === 'transfer' && tx.toAccountId === accountId) bal += amt;
+    }
+  });
+  return bal;
+}
+
+function liquidOpening(store) {
+  const rows = (store.accounts || []).filter((a) => a.type !== 'card');
+  if (!rows.length) return Number(store.openingCash) || 0;
+  return rows.reduce((s, a) => s + (Number(a.opening) || 0), 0);
+}
+
+function netWorth(store) {
+  let assets = 0;
+  let liabilities = 0;
+  (store.accounts || []).forEach((a) => {
+    const bal = accountBalance(store, a.id);
+    if (a.type === 'card') liabilities += bal;
+    else assets += bal;
+  });
+  return assets - liabilities;
+}
+
+function merchantSpend(store, merchantId, mk) {
+  return (store.transactions || [])
+    .filter((tx) => {
+      if (tx.type !== 'expense') return false;
+      if (tx.merchantId !== merchantId && String(tx.merchant || '').toLowerCase() !== String((findMerchant(store, merchantId) || {}).name || '').toLowerCase()) return false;
+      if (mk && monthKey(tx.date) !== mk) return false;
+      return true;
+    })
+    .reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+}
+
+function upsertMerchantInStore(store, fields) {
+  const name = String(fields.name || '').trim();
+  if (!name) return { store, merchant: null };
+  const merchants = [...(store.merchants || [])];
+  let existing = merchants.find((m) => m.id === fields.id || m.name.toLowerCase() === name.toLowerCase());
+  if (existing) {
+    const next = normalizeMerchant({
+      ...existing,
+      name,
+      upiVpa: fields.upiVpa != null ? fields.upiVpa : existing.upiVpa,
+      defaultCategoryId: fields.defaultCategoryId || existing.defaultCategoryId,
+      lastAccountId: fields.lastAccountId || existing.lastAccountId,
+    });
+    return { store: { ...store, merchants: merchants.map((m) => (m.id === existing.id ? next : m)) }, merchant: next };
+  }
+  const created = normalizeMerchant({
+    id: fields.id || newMerchantId(),
+    name,
+    upiVpa: fields.upiVpa || '',
+    defaultCategoryId: fields.defaultCategoryId || '',
+    lastAccountId: fields.lastAccountId || '',
+  });
+  return { store: { ...store, merchants: [created, ...merchants] }, merchant: created };
 }
 
 function monthTxns(store, mk) {
@@ -369,7 +685,7 @@ function leftToSpend(store, mk) {
   const budget = totalBudgetLimit(store, mk);
   if (budget > 0) return budget - spent;
   const income = (Number(store.monthlyIncome) || 0) + monthIncomeTotal(store, mk);
-  return (Number(store.openingCash) || 0) + income - spent;
+  return liquidOpening(store) + income - spent;
 }
 
 function buildAlerts(store) {
@@ -386,14 +702,110 @@ function buildAlerts(store) {
     }));
 }
 
-function newTxnId() {
-  return 'tx-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+function parseVoiceUtterance(text) {
+  const raw = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!raw) return { amount: 0, merchant: '', voiceText: '' };
+  const lower = raw.toLowerCase();
+  let amount = 0;
+  const amtRe = /(?:₹|rs\.?|inr|rupees?|रुप[एये]|रु\.?)?\s*(\d+(?:[.,]\d{1,2})?)\s*(?:₹|rs\.?|inr|rupees?|रुप[एये])?/gi;
+  let m;
+  const amounts = [];
+  while ((m = amtRe.exec(lower))) amounts.push(parseFloat(String(m[1]).replace(',', '.')));
+  if (!amounts.length) {
+    const n = lower.match(/(\d+(?:\.\d{1,2})?)/);
+    if (n) amounts.push(parseFloat(n[1]));
+  }
+  amount = amounts[0] || 0;
+
+  let merchant = '';
+  const prep = /^(.*?)(?:\s+)(?:on|at|to|for|pe|ko|se|से|को|पे|पर)(?:\s+)(.+)$/i;
+  const mm = raw.match(prep);
+  if (mm) {
+    const left = mm[1].replace(/(?:₹|rs\.?|inr)?\s*\d+(?:[.,]\d{1,2})?\s*(?:₹|rs\.?|inr|rupees?|रुप[एये])?/ig, ' ')
+      .replace(/\b(spent|paid|pay|spend|aaj|आज|kal|add|expense|kharcha|खर्च)\b/ig, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const right = mm[2]
+      .replace(/[।.!?]+$/g, '')
+      .replace(/(?:rupees?|rs\.?|₹|inr|रुप[एये])/ig, '')
+      .replace(/\d+(?:[.,]\d{1,2})?/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    merchant = right || left;
+  } else {
+    merchant = raw
+      .replace(/(?:₹|rs\.?|inr)?\s*\d+(?:[.,]\d{1,2})?\s*(?:₹|rs\.?|inr|rupees?|रुप[एये])?/ig, ' ')
+      .replace(/\b(spent|paid|pay|spend|aaj|आज|kal|add|expense|kharcha|खर्च)\b/ig, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  if (/^\d+(\.\d+)?$/.test(merchant)) merchant = '';
+  return { amount, merchant, voiceText: raw };
+}
+
+function hintCategoryFromText(text, categories) {
+  const s = String(text || '').toLowerCase();
+  const rules = [
+    ['chai', /chai|coffee|चाय|कॉफ/],
+    ['tiffin', /zomato|swiggy|tiffin|lunch|dinner|खाना|लंच/],
+    ['dining', /dining|restaurant|रेस्टोर/],
+    ['kirana', /kirana|grocery|big ?bazaar|dmart|किराना/],
+    ['auto', /auto|rapido|rickshaw|ऑटो/],
+    ['cab', /uber|ola|cab|कैब/],
+    ['metro', /metro|bus|मेट्रो/],
+    ['fuel', /fuel|petrol|diesel|fastag|पेट्रोल/],
+    ['rent', /rent|किराया/],
+    ['shopping', /amazon|flipkart|myntra|shopping/],
+    ['entertainment', /movie|pvr|netflix|hotstar/],
+  ];
+  for (let i = 0; i < rules.length; i++) {
+    if (rules[i][1].test(s) && (categories || []).some((c) => c.id === rules[i][0])) return rules[i][0];
+  }
+  return '';
+}
+
+function compressImageFile(file, cb) {
+  if (!file || !file.type || file.type.indexOf('image') !== 0) {
+    cb('');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onerror = () => cb('');
+  reader.onload = () => {
+    const img = new Image();
+    img.onerror = () => cb('');
+    img.onload = () => {
+      const max = 720;
+      let w = img.width;
+      let h = img.height;
+      if (w > max || h > max) {
+        const scale = Math.min(max / w, max / h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      try {
+        cb(canvas.toDataURL('image/jpeg', 0.72));
+      } catch (e) {
+        cb('');
+      }
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 Object.assign(window, {
   ZENITH_STORE_KEY,
+  STORE_VERSION,
   DEFAULT_CATEGORIES,
   DEFAULT_ACCOUNTS,
+  CAT_EMOJIS,
+  CAT_COLORS,
   COPY,
   t,
   catLabel,
@@ -405,10 +817,20 @@ Object.assign(window, {
   monthLabel,
   daysLeftInMonth,
   relDate,
+  inferAccountType,
+  railForAccount,
   createInitialStore,
+  migrateStore,
   loadStore,
   saveStore,
   findCat,
+  findAccount,
+  findMerchant,
+  accountBalance,
+  liquidOpening,
+  netWorth,
+  merchantSpend,
+  upsertMerchantInStore,
   monthTxns,
   monthExpenseTotal,
   monthIncomeTotal,
@@ -419,4 +841,12 @@ Object.assign(window, {
   leftToSpend,
   buildAlerts,
   newTxnId,
+  newMerchantId,
+  newAccountId,
+  newCatId,
+  parseVoiceUtterance,
+  hintCategoryFromText,
+  compressImageFile,
+  normalizeAccount,
+  normalizeMerchant,
 });

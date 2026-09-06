@@ -13,7 +13,8 @@ function ActivityScreen({ store, onSelectTx }) {
   let results = list.filter((tx) => {
     const cat = findCat(store, tx.categoryId);
     const label = cat ? catLabel(cat, locale) : '';
-    const hay = ((tx.merchant || '') + ' ' + (tx.note || '') + ' ' + label).toLowerCase();
+    const acct = findAccount(store, tx.accountId);
+    const hay = ((tx.merchant || '') + ' ' + (tx.note || '') + ' ' + (tx.merchantUpi || '') + ' ' + label + ' ' + (acct ? acct.name : '')).toLowerCase();
     const matchQ = !query || hay.includes(query.toLowerCase());
     const matchC = activeCat === 'All' || tx.categoryId === activeCat;
     return matchQ && matchC;
@@ -123,7 +124,10 @@ function ActivityScreen({ store, onSelectTx }) {
                     </div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1C1E' }}>{tx.merchant}</p>
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93' }}>{relDate(tx.date, locale)} · {cat ? catLabel(cat, locale) : ''} · {tx.method}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93' }}>
+                        {relDate(tx.date, locale)} · {cat ? catLabel(cat, locale) : ''} · {tx.method || ''}
+                        {tx.merchantUpi ? ' · ' + tx.merchantUpi : ''}
+                      </p>
                     </div>
                     <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color }}>{sign}{fmt(tx.amount)}</p>
                   </div>

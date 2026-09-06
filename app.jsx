@@ -55,6 +55,7 @@ function ZenithApp() {
   const [drawerVisible, setDrawerVisible] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [editTx, setEditTx] = React.useState(null);
+  const [addMode, setAddMode] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState('home');
   const [prevTab, setPrevTab] = React.useState('home');
   const [categoryArg, setCategoryArg] = React.useState(null);
@@ -76,10 +77,19 @@ function ZenithApp() {
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
 
-  const TABS = ['home', 'activity', 'plan', 'you', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail'];
+  const TABS = ['home', 'activity', 'plan', 'you', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'accounts', 'merchants', 'categoriesManage'];
 
   const patch = (fn) => setStore((prev) => {
-    const next = fn({ ...prev, user: { ...prev.user }, transactions: [...(prev.transactions || [])], budgets: [...(prev.budgets || [])], alertsRead: { ...(prev.alertsRead || {}) } });
+    const next = fn({
+      ...prev,
+      user: { ...prev.user },
+      transactions: [...(prev.transactions || [])],
+      budgets: [...(prev.budgets || [])],
+      alertsRead: { ...(prev.alertsRead || {}) },
+      accounts: [...(prev.accounts || [])],
+      categories: [...(prev.categories || [])],
+      merchants: [...(prev.merchants || [])],
+    });
     return next;
   });
 
@@ -97,16 +107,60 @@ function ZenithApp() {
 
   const saveTxn = (entry) => {
     patch((s) => {
-      const idx = s.transactions.findIndex((t) => t.id === entry.id);
-      if (idx >= 0) {
-        const next = [...s.transactions];
-        next[idx] = { ...s.transactions[idx], ...entry };
-        return { ...s, transactions: next };
+      let nextStore = s;
+      let merchantId = entry.merchantId;
+      const name = String(entry.merchant || '').trim();
+      if (name && entry.type !== 'transfer') {
+        const up = upsertMerchantInStore(nextStore, {
+          id: merchantId,
+          name,
+          upiVpa: entry.merchantUpi,
+          defaultCategoryId: entry.categoryId,
+          lastAccountId: entry.accountId,
+        });
+        nextStore = up.store;
+        merchantId = up.merchant ? up.merchant.id : merchantId;
       }
-      return { ...s, transactions: [entry, ...s.transactions] };
+      const acct = findAccount(nextStore, entry.accountId);
+      const tx = {
+        ...entry,
+        merchantId: merchantId || '',
+        method: entry.method || railForAccount(acct),
+      };
+      const idx = nextStore.transactions.findIndex((row) => row.id === tx.id);
+      const transactions = idx >= 0
+        ? nextStore.transactions.map((row, i) => (i === idx ? { ...row, ...tx } : row))
+        : [tx, ...nextStore.transactions];
+      return { ...nextStore, transactions };
     });
     setEditTx(null);
+    setAddMode(null);
     setScreen(activeTab);
+  };
+
+  const saveAccount = (row) => {
+    patch((s) => {
+      const idx = s.accounts.findIndex((a) => a.id === row.id);
+      const accounts = idx >= 0
+        ? s.accounts.map((a) => (a.id === row.id ? { ...a, ...row } : a))
+        : [...s.accounts, row];
+      const openingCash = (row.id === 'cash' || row.type === 'cash') ? Number(row.opening) || 0 : s.openingCash;
+      return { ...s, accounts, openingCash };
+    });
+  };
+
+  const saveMerchant = (row) => {
+    patch((s) => upsertMerchantInStore(s, row).store);
+  };
+
+  const saveCategory = (row) => {
+    patch((s) => {
+      const idx = s.categories.findIndex((c) => c.id === row.id);
+      const categories = idx >= 0
+        ? s.categories.map((c) => (c.id === row.id ? { ...c, ...row } : c))
+        : [...s.categories, row];
+      return { ...s, categories };
+    });
   };
 
   const deleteTxn = (id) => {
@@ -123,10 +177,10 @@ function ZenithApp() {
   };
 
   const exportCsv = () => {
-    const header = 'id,date,type,amount,category,merchant,method,account\n';
+    const header = 'id,date,type,amount,category,merchant,merchantUpi,method,account,toAccount,note\n';
     const rows = (store.transactions || []).map((tx) => {
       const cat = findCat(store, tx.categoryId);
-      return [tx.id, tx.date, tx.type, tx.amount, cat ? cat.name : '', JSON.stringify(tx.merchant || ''), tx.method, tx.accountId].join(',');
+      return [tx.id, tx.date, tx.type, tx.amount, cat ? cat.name : '', JSON.stringify(tx.merchant || ''), tx.merchantUpi || '', tx.method, tx.accountId, tx.toAccountId || '', JSON.stringify(tx.note || '')].join(',');
     }).join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -147,13 +201,22 @@ function ZenithApp() {
     setActiveTab('home');
   };
 
+  const openAdd = (mode) => {
+    setFabOpen(false);
+    setEditTx(null);
+    setAddMode(mode || null);
+    setTimeout(() => setScreen('addExpense'), 80);
+  };
+
   const burstItems = [
-    { label: 'Voice', angle: -55, action: () => { setFabOpen(false); setTimeout(() => setScreen('voiceEntry'), 80); } },
-    { label: 'Scan', angle: 0, action: () => { setFabOpen(false); setTimeout(() => setScreen('cameraScan'), 80); } },
-    { label: 'Manual', angle: 55, action: () => { setFabOpen(false); setEditTx(null); setTimeout(() => setScreen('addExpense'), 80); } },
+    { label: t(locale, 'voice'), angle: -55, action: () => openAdd('voice') },
+    { label: t(locale, 'photo'), angle: 0, action: () => openAdd('photo') },
+    { label: t(locale, 'addTxn'), angle: 55, action: () => openAdd(null) },
   ];
 
   const drawerCat = drawerTx ? findCat(store, drawerTx.categoryId) : null;
+  const drawerAcct = drawerTx ? findAccount(store, drawerTx.accountId) : null;
+  const drawerTo = drawerTx && drawerTx.toAccountId ? findAccount(store, drawerTx.toAccountId) : null;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0A0A0A' }} id="device-scaler">
@@ -168,7 +231,11 @@ function ZenithApp() {
                   locale={locale}
                   onSetLocale={(id) => patch((s) => ({ ...s, user: { ...s.user, locale: id } }))}
                   onSetName={(name) => patch((s) => ({ ...s, user: { ...s.user, name } }))}
-                  onSetCash={(n) => patch((s) => ({ ...s, openingCash: n }))}
+                  onSetCash={(n) => patch((s) => ({
+                    ...s,
+                    openingCash: n,
+                    accounts: (s.accounts || []).map((a) => (a.id === 'cash' || a.type === 'cash') ? { ...a, opening: n } : a),
+                  }))}
                   onNext={() => {
                     if (onboardStep < 3) setOnboardStep((x) => x + 1);
                     else {
@@ -192,7 +259,7 @@ function ZenithApp() {
                   transition: 'transform 0.38s cubic-bezier(0.4,0,0.2,1)',
                   zIndex: activeTab === tab ? 2 : 1,
                 }}>
-                  {tab === 'home' && <HomeScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} onAdd={() => { setEditTx(null); setScreen('addExpense'); }} />}
+                  {tab === 'home' && <HomeScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} onAdd={() => openAdd(null)} />}
                   {tab === 'activity' && <ActivityScreen store={store} onSelectTx={openDrawer} />}
                   {tab === 'plan' && <PlanScreen store={store} onNavigate={goTab} />}
                   {tab === 'you' && (
@@ -209,6 +276,31 @@ function ZenithApp() {
                   {tab === 'recurring' && <RecurringScreen />}
                   {tab === 'notifications' && <NotificationsScreen store={store} onBack={goBack} onMarkRead={(id) => patch((s) => ({ ...s, alertsRead: { ...s.alertsRead, [id]: true } }))} />}
                   {tab === 'categoryDetail' && <CategoryDetailScreen store={store} category={categoryArg} onBack={goBack} onSelectTx={openDrawer} />}
+                  {tab === 'accounts' && (
+                    <AccountsScreen
+                      store={store}
+                      onBack={goBack}
+                      onSaveAccount={saveAccount}
+                      onDeleteAccount={(id) => patch((s) => ({ ...s, accounts: s.accounts.filter((a) => a.id !== id) }))}
+                    />
+                  )}
+                  {tab === 'merchants' && (
+                    <MerchantsScreen
+                      store={store}
+                      onBack={goBack}
+                      onSaveMerchant={saveMerchant}
+                      onDeleteMerchant={(id) => patch((s) => ({ ...s, merchants: s.merchants.filter((m) => m.id !== id) }))}
+                      onSelectTx={openDrawer}
+                    />
+                  )}
+                  {tab === 'categoriesManage' && (
+                    <CategoriesManageScreen
+                      store={store}
+                      onBack={goBack}
+                      onSaveCategory={saveCategory}
+                      onDeleteCategory={(id) => patch((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id) }))}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -224,8 +316,10 @@ function ZenithApp() {
                   <AddExpenseScreen
                     store={store}
                     initial={editTx}
-                    onClose={() => { setEditTx(null); setScreen(activeTab); }}
+                    startMode={addMode}
+                    onClose={() => { setEditTx(null); setAddMode(null); setScreen(activeTab); }}
                     onSave={saveTxn}
+                    onAddCategory={saveCategory}
                   />
                 )}
               </div>
@@ -363,12 +457,23 @@ function ZenithApp() {
                       {drawerTx.type === 'income' ? '+' : drawerTx.type === 'transfer' ? '' : '−'}{fmt(drawerTx.amount)}
                     </p>
                   </div>
-                  {[[t(locale, 'date'), relDate(drawerTx.date, locale)], [t(locale, 'category'), drawerCat ? catLabel(drawerCat, locale) : ''], [t(locale, 'method'), drawerTx.method || '—'], [t(locale, 'account'), acctLabel((store.accounts || []).find((a) => a.id === drawerTx.accountId), locale)]].map(([l, v], i, arr) => (
-                    <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < arr.length - 1 ? '1px solid #F0F0F3' : 'none' }}>
-                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#8E8E93' }}>{l}</span>
-                      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E' }}>{v}</span>
+                  {[
+                    [t(locale, 'date'), relDate(drawerTx.date, locale)],
+                    [t(locale, 'category'), drawerCat ? catLabel(drawerCat, locale) : ''],
+                    [t(locale, 'merchantUpi'), drawerTx.merchantUpi || '—'],
+                    [t(locale, 'paidFrom'), drawerAcct ? (acctLabel(drawerAcct, locale) + ' · ' + (drawerTx.method || railForAccount(drawerAcct))) : '—'],
+                    drawerTx.type === 'transfer' ? [t(locale, 'toAccount'), drawerTo ? acctLabel(drawerTo, locale) : '—'] : null,
+                    drawerTx.note ? [t(locale, 'note'), drawerTx.note] : null,
+                    drawerTx.voiceText ? [t(locale, 'voice'), drawerTx.voiceText] : null,
+                  ].filter(Boolean).map(([l, v], i, arr) => (
+                    <div key={l} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: i < arr.length - 1 ? '1px solid #F0F0F3' : 'none' }}>
+                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#8E8E93', flexShrink: 0 }}>{l}</span>
+                      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E', textAlign: 'right' }}>{v}</span>
                     </div>
                   ))}
+                  {drawerTx.receiptThumb && (
+                    <img src={drawerTx.receiptThumb} alt={t(locale, 'receipt')} style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 16, marginTop: 8 }} />
+                  )}
                   <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                     <button
                       type="button"
