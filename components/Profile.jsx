@@ -89,6 +89,9 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
         {locale === 'hi' ? 'पैसा' : 'Money'}
       </p>
       <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
+        <Row label={t(locale, 'accounts')} sub={fmt(netWorth(store))} onClick={() => onNavigate && onNavigate('accounts')} />
+        <Row label={t(locale, 'merchants')} sub={String((store.merchants || []).length)} onClick={() => onNavigate && onNavigate('merchants')} />
+        <Row label={t(locale, 'manageCats')} sub={String((store.categories || []).length)} onClick={() => onNavigate && onNavigate('categoriesManage')} />
         <Row label={locale === 'hi' ? 'मुद्रा' : 'Currency'} sub="INR" />
         <Row label={t(locale, 'budgets')} sub={budget > 0 ? fmt(budget) : t(locale, 'noBudgetYet')} onClick={() => onNavigate && onNavigate('budget')} last />
       </div>
@@ -121,7 +124,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>{t(locale, 'categories')}</p>
       <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
         {store.categories.filter((c) => c.type === 'expense').slice(0, 8).map((c, i, arr) => (
-          <Row key={c.id} label={catLabel(c, locale)} sub={c.emoji} last={i === arr.length - 1} />
+          <Row key={c.id} label={catLabel(c, locale)} sub={c.emoji} last={i === arr.length - 1} onClick={() => onNavigate && onNavigate('categoriesManage')} />
         ))}
       </div>
 
