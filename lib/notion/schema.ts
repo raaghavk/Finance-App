@@ -1,13 +1,24 @@
 /**
- * Notion Expenses schema — mirror of collection://b35c3e74-0bc7-432d-8309-80a7583d3601
- * Database: https://app.notion.com/p/76941781c8ef4d258923b9c2a6750292
- *
+ * Notion schema mirrors — Expenses, Accounts, Budgets.
  * Currency is INR (Notion number format: rupee).
  * Writes are owned by Expense Tracker. This app is read-only.
+ *
+ * Expenses: https://app.notion.com/p/76941781c8ef4d258923b9c2a6750292
+ *   collection://b35c3e74-0bc7-432d-8309-80a7583d3601
+ * Accounts: https://app.notion.com/p/a9effaa05c66492a9780b5a36cda1d63
+ *   collection://2c0de472-1d21-4243-bcd8-1fb19ab89bba
+ * Budgets: https://app.notion.com/p/301bb78c3c094fb1aee38bcb57f7beb0
+ *   collection://3f8d31df-d13d-49a2-a9ac-f5b8489f737f
  */
 
 export const NOTION_EXPENSES_DATABASE_ID = '76941781c8ef4d258923b9c2a6750292';
 export const NOTION_EXPENSES_DATA_SOURCE_ID = 'b35c3e74-0bc7-432d-8309-80a7583d3601';
+
+export const NOTION_ACCOUNTS_DATABASE_ID = 'a9effaa05c66492a9780b5a36cda1d63';
+export const NOTION_ACCOUNTS_DATA_SOURCE_ID = '2c0de472-1d21-4243-bcd8-1fb19ab89bba';
+
+export const NOTION_BUDGETS_DATABASE_ID = '301bb78c3c094fb1aee38bcb57f7beb0';
+export const NOTION_BUDGETS_DATA_SOURCE_ID = '3f8d31df-d13d-49a2-a9ac-f5b8489f737f';
 
 export const EXPENSE_CATEGORIES = [
   'Food',
@@ -30,8 +41,17 @@ export const EXPENSE_STATUSES = ['Logged', 'Needs receipt', 'Submitted', 'Reimbu
 
 export const EXPENSE_TRIPS = ['Vietnam Sep 2026', 'Varanasi Sep 2026', 'Other trip'] as const;
 
-/** Wallet tagged on the spend. Distinct from Payment (instrument). */
-export const EXPENSE_ACCOUNTS = ['Cash', 'UPI', 'Primary debit', 'Primary credit', 'Corporate'] as const;
+/**
+ * Active wallets tagged on the spend. Distinct from Payment (instrument).
+ * Ignore `(inactive)*` Accounts rows and legacy names: UPI, Primary debit, Primary credit, Corporate.
+ */
+export const EXPENSE_ACCOUNTS = ['Cash', 'IDFC (UPI/debit)', 'Kamlesh UPI'] as const;
+
+/** Retired Expense Account / Accounts DB names — never shown as wallets. */
+export const LEGACY_ACCOUNT_NAMES = ['UPI', 'Primary debit', 'Primary credit', 'Corporate'] as const;
+
+/** Staff UPI: spend totals only, not a wallet balance. */
+export const SPEND_ONLY_ACCOUNTS = ['Kamlesh UPI'] as const;
 
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 export type ExpenseKind = (typeof EXPENSE_KINDS)[number];
@@ -60,7 +80,7 @@ export interface NotionExpense {
   status: ExpenseStatus | null;
   /** Trip (select) */
   trip: ExpenseTrip | null;
-  /** Account (select): Cash, UPI, Primary debit, Primary credit, Corporate */
+  /** Account (select): Cash, IDFC (UPI/debit), Kamlesh UPI */
   account: ExpenseAccount | null;
   /** Notes (text) */
   notes: string;
@@ -112,4 +132,82 @@ export interface NotionExpenseWriteInput {
   notes?: string;
   receipt?: string | null;
   reimbursable?: boolean;
+}
+
+/** Accounts row. Name matches Expenses Account select. */
+export interface NotionAccount {
+  id: string;
+  url: string;
+  name: string;
+  notes: string;
+  /** Opening balance (number, rupee). Null when Notion has no value. */
+  openingBalance: number | null;
+}
+
+/**
+ * Per-account wallet: opening − tagged Expenses (priced Amounts only).
+ * Opening null (and IDFC pending 0) is treated as 0 for math and labelled “Opening not set”.
+ * Kamlesh UPI is spend-only: spent is shown, balance is null.
+ */
+export interface AccountBalance {
+  id: string;
+  url: string;
+  name: string;
+  notes: string;
+  openingBalance: number | null;
+  openingMissing: boolean;
+  /** True for Kamlesh UPI — no wallet balance in the UI. */
+  spendOnly: boolean;
+  spent: number;
+  expenseCount: number;
+  /** Null when spendOnly. */
+  balance: number | null;
+}
+
+/** Budgets row. Category enums match Expenses. */
+export interface NotionBudget {
+  id: string;
+  url: string;
+  name: string;
+  category: ExpenseCategory | null;
+  monthlyCap: number | null;
+  notes: string;
+}
+
+/** Monthly cap − this-month spend in that Category. */
+export interface BudgetProgress {
+  id: string;
+  url: string;
+  name: string;
+  category: ExpenseCategory | null;
+  notes: string;
+  monthlyCap: number | null;
+  capMissing: boolean;
+  spent: number;
+  expenseCount: number;
+  /** Null when the cap is missing. */
+  left: number | null;
+  over: boolean;
+  /** spent / cap, or null when cap is missing or 0. */
+  pct: number | null;
+  monthKey: string;
+}
+
+export type NotionMoneySource = 'notion' | 'mock' | 'error';
+
+export interface NotionAccountsSnapshot {
+  source: NotionMoneySource;
+  accounts: NotionAccount[];
+  balances: AccountBalance[];
+  warning?: string;
+  error?: string;
+}
+
+export interface NotionBudgetsSnapshot {
+  source: NotionMoneySource;
+  budgets: NotionBudget[];
+  progress: BudgetProgress[];
+  monthKey: string;
+  warning?: string;
+  error?: string;
 }

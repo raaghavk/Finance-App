@@ -95,6 +95,16 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
           sub={locale === 'hi' ? 'Notion से पढ़ें · INR' : 'Read-only from Notion · INR'}
           onClick={() => onNavigate && onNavigate('notionExpenses')}
         />
+        <Row
+          label={t(locale, 'notionAccounts')}
+          sub={locale === 'hi' ? 'शुरुआती शेष ± खर्च' : 'Opening ± tagged spend'}
+          onClick={() => onNavigate && onNavigate('notionAccounts')}
+        />
+        <Row
+          label={t(locale, 'notionBudgets')}
+          sub={locale === 'hi' ? 'इस महीने बचा' : 'Left this month by category'}
+          onClick={() => onNavigate && onNavigate('notionBudgets')}
+        />
         <Row label={t(locale, 'budgets')} sub={budget > 0 ? fmt(budget) : t(locale, 'noBudgetYet')} onClick={() => onNavigate && onNavigate('budget')} last />
       </div>
 
