@@ -29,7 +29,7 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F2F2F7' }}>
       <div style={{ padding: 'var(--zenith-pad-top) 20px 12px' }}>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 30, fontWeight: 800, color: '#1C1C1E', letterSpacing: -0.5, marginBottom: 14 }}>{t(locale, 'activity')}</h1>
-        {typeof SourceSwitch === 'function' && (
+        {typeof SourceSwitch === 'function' && typeof zenithNotionEnabled === 'function' && zenithNotionEnabled() && (
           <SourceSwitch
             locale={locale}
             active="local"

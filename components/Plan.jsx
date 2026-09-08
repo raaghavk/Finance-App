@@ -7,11 +7,13 @@ function PlanScreen({ store, onNavigate }) {
   const spent = monthExpenseTotal(store, mk);
 
   const cards = [
-    { id: 'notionBudgets', title: t(locale, 'notionBudgets'), sub: t(locale, 'notionLeftMonth'), emoji: '📒' },
     { id: 'budget', title: t(locale, 'budgets'), sub: budget > 0 ? fmt(spent) + ' / ' + fmt(budget) : t(locale, 'noBudgetYet'), emoji: '🎯' },
     { id: 'recurring', title: t(locale, 'recurring'), sub: locale === 'hi' ? 'बिल और सब्सक्रिप्शन' : 'Bills & subscriptions', emoji: '🔄' },
     { id: 'goals', title: t(locale, 'goals'), sub: locale === 'hi' ? 'बचत लक्ष्य' : 'Savings targets', emoji: '🏆' },
   ];
+  if (typeof zenithNotionEnabled === 'function' && zenithNotionEnabled()) {
+    cards.unshift({ id: 'notionBudgets', title: t(locale, 'notionBudgets'), sub: t(locale, 'notionLeftMonth'), emoji: '📒' });
+  }
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F2F2F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>

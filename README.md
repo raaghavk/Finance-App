@@ -1,8 +1,8 @@
 # Zenith
 
-Personal finance app (local ledger + Notion Expenses, Accounts, and Budgets read views). INR.
+Personal finance app. INR. **Local-first:** expenses, account balances, and budgets persist in the browser (`zenith_v1_store` in localStorage) so the Home Screen PWA works without Notion.
 
-Zenith is a local-first Money Manager–style ledger (`zenith_v1_store`). **Notion** is a separate read-only source (Expenses, Accounts, Budgets). Expense Tracker owns writes to Notion — this app never changes the Notion schema and does not create or update Notion pages.
+Notion Expenses / Accounts / Budgets are an optional read-only overlay. They stay **off** unless you set `?notion=1` or `localStorage.zenith_notion = '1'`. Expense Tracker still owns any Notion writes — this app never changes the Notion schema.
 
 ## Local ledger
 
@@ -37,6 +37,16 @@ Safari will not reliably install from `http://localhost`. Use HTTPS (Vercel, e.g
 4. Confirm **Add**
 
 This is a standalone web app, not Capacitor / App Store.
+
+## Notion (optional, off by default)
+
+Core Home / Activity / Plan / You use the **local** ledger only. To turn on the old Notion read views (example data or live token):
+
+```text
+https://zenith-raaghavks-projects.vercel.app/?notion=1
+```
+
+Or in the browser console: `localStorage.setItem('zenith_notion', '1')`.
 
 ## Notion Expenses (read path)
 
@@ -125,7 +135,7 @@ This repo ships on Vercel as static files plus `api/expenses.js`, `api/accounts.
 
 1. Import the GitHub repo in Vercel (already linked as the Zenith project).
 2. Set `NOTION_TOKEN` and `NOTION_EXPENSES_DATA_SOURCE_ID` in the project env. Account/Budget source ids have defaults. Optionally set `SARVAM_API_KEY` and `GOOGLE_CLOUD_VISION_API_KEY`.
-3. Deploy. Open the app: **Home** shows account cards and left-this-month; **Activity → Notion** is still the Expenses list; **Plan** and **You** open Notion budgets/accounts.
+3. Deploy. Open the app: **Home** shows local wallets and budgets. Notion panels stay hidden unless `?notion=1`.
 
 GitHub Pages cannot keep a secret; without Vercel (or `node scripts/dev-server.js` + env) you only get mock Notion mode and local photo attach.
 
@@ -137,8 +147,8 @@ npm test
 
 ## Navigation
 
-- **Home** — local spent-this-month, Notion Expenses card, account balances, left-this-month
-- **Activity** — Local ledger vs Notion Expenses
-- **Plan** — Notion budgets (left this month) plus local budgets/goals
+- **Home** — local spent-this-month, local wallets, local budgets
+- **Activity** — local ledger (Notion switch only if `?notion=1`)
+- **Plan** — local budgets/goals
 - **+** — Voice (Sarvam), Scan (Vision / local photo), Manual
-- **You** — Notion Expenses, Accounts, and Budgets rows
+- **You** — local accounts and budgets

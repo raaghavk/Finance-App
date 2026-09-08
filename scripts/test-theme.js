@@ -4,6 +4,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { zenithShouldUseDeviceFrame } = require('../lib/zenith-chrome');
+const { zenithNotionEnabled, localAccountBalances } = require('../lib/local-ledger');
 const map = require('../lib/notion/map');
 
 const root = path.join(__dirname, '..');
@@ -51,4 +52,25 @@ assert.strictEqual(manifest.background_color, '#F2F5FA');
   assert.ok(fs.existsSync(path.join(root, rel)), rel);
 });
 
-console.log('theme + PWA + device-frame gate ok');
+assert.strictEqual(zenithNotionEnabled({ search: '' }, { getItem: () => null }), false);
+assert.strictEqual(zenithNotionEnabled({ search: '?notion=1' }, { getItem: () => null }), true);
+assert.strictEqual(zenithNotionEnabled({ search: '' }, { getItem: (k) => (k === 'zenith_notion' ? '1' : null) }), true);
+
+const home = fs.readFileSync(path.join(root, 'components/Home.jsx'), 'utf8');
+assert.match(home, /zenithNotionEnabled/);
+assert.match(home, /LocalWalletsStrip/);
+assert.match(fs.readFileSync(path.join(root, 'lib/notion/browser.js'), 'utf8'), /notionSyncOn/);
+assert.match(html, /local-ledger\.js/);
+
+const bals = localAccountBalances({
+  openingCash: 15000,
+  accounts: [{ id: 'cash', name: 'Cash' }, { id: 'bank', name: 'Bank' }],
+  transactions: [
+    { accountId: 'cash', type: 'expense', amount: 200 },
+    { accountId: 'bank', type: 'income', amount: 500 },
+  ],
+});
+assert.strictEqual(bals.find((r) => r.id === 'cash').balance, 14800);
+assert.strictEqual(bals.find((r) => r.id === 'bank').balance, 500);
+
+console.log('theme + PWA + device-frame gate + local-first ok');

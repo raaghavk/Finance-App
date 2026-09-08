@@ -13,6 +13,79 @@ function MerchantIcon({ merchant, color }) {
   );
 }
 
+function LocalWalletsStrip({ store, locale }) {
+  const rows = typeof localAccountBalances === 'function' ? localAccountBalances(store) : [];
+  const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A';
+  const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#64748B';
+  const card = typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF';
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ padding: '0 24px', marginBottom: 12 }}>
+        <h3 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 700, color: ink }}>{t(locale, 'notionAccounts')}</h3>
+      </div>
+      <div style={{ overflowX: 'auto', paddingLeft: 20, paddingRight: 20, display: 'flex', gap: 12 }}>
+        {rows.map((row) => (
+          <div key={row.id} style={{
+            minWidth: 168, background: card, borderRadius: 22, padding: '16px 16px 14px',
+            boxShadow: '0 2px 14px rgba(15,23,42,0.06)', flexShrink: 0,
+          }}>
+            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 800, color: row.color, marginBottom: 8 }}>
+              {acctLabel(row, locale) || row.name}
+            </p>
+            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 22, fontWeight: 800, color: ink, letterSpacing: -0.5 }}>{fmt(row.balance)}</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 4 }}>{t(locale, 'notionBalance')}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LocalBudgetsPreview({ store, locale, onOpen }) {
+  const rows = categorySpendRows(store).filter((c) => c.budget > 0).slice(0, 4);
+  const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A';
+  const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#64748B';
+  const card = typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF';
+  const cream = typeof ZENITH !== 'undefined' ? ZENITH.cream : '#E8EEF7';
+  return (
+    <div style={{ padding: '0 20px', marginBottom: 24 }}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={t(locale, 'budgets')}
+        onClick={() => onOpen && onOpen()}
+        onKeyDown={(e) => { if (e.key === 'Enter') onOpen && onOpen(); }}
+        style={{
+          background: card, borderRadius: 24, padding: '16px 18px 12px',
+          boxShadow: '0 2px 14px rgba(15,23,42,0.06)', cursor: 'pointer',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color: ink }}>{t(locale, 'budgets')}</p>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB', fontWeight: 600 }}>{t(locale, 'seeAll')}</span>
+        </div>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginBottom: 8 }}>{t(locale, 'localLedger')}</p>
+        {rows.length === 0 ? (
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, padding: '8px 0 4px' }}>{t(locale, 'noBudgetYet')}</p>
+        ) : rows.map((row) => {
+          const pct = row.budget > 0 ? Math.min(row.spent / row.budget, 1) : 0;
+          return (
+            <div key={row.id} style={{ padding: '10px 0', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{catLabel(row, locale)}</p>
+                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800, color: ink }}>{fmt(Math.max(row.budget - row.spent, 0))}</p>
+              </div>
+              <div style={{ height: 6, background: cream, borderRadius: 3 }}>
+                <div style={{ height: '100%', width: `${pct * 100}%`, background: row.color, borderRadius: 3 }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
   const locale = store.user.locale || 'en';
   const mk = monthKey();
@@ -140,9 +213,18 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
         </div>
       </div>
 
-      <NotionHomeCard locale={locale} onOpen={() => onNavigate && onNavigate('notionExpenses')} />
-      <NotionAccountsStrip locale={locale} onOpen={() => onNavigate && onNavigate('notionAccounts')} />
-      <NotionBudgetsPreview locale={locale} onOpen={() => onNavigate && onNavigate('notionBudgets')} />
+      {typeof zenithNotionEnabled === 'function' && zenithNotionEnabled() ? (
+        <>
+          <NotionHomeCard locale={locale} onOpen={() => onNavigate && onNavigate('notionExpenses')} />
+          <NotionAccountsStrip locale={locale} onOpen={() => onNavigate && onNavigate('notionAccounts')} />
+          <NotionBudgetsPreview locale={locale} onOpen={() => onNavigate && onNavigate('notionBudgets')} />
+        </>
+      ) : (
+        <>
+          <LocalWalletsStrip store={store} locale={locale} />
+          <LocalBudgetsPreview store={store} locale={locale} onOpen={() => onNavigate && onNavigate('budget')} />
+        </>
+      )}
 
       <div style={{ padding: '0 24px', marginBottom: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -270,4 +352,4 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
   );
 }
 
-Object.assign(window, { HomeScreen, MerchantIcon });
+Object.assign(window, { HomeScreen, MerchantIcon, LocalWalletsStrip, LocalBudgetsPreview });

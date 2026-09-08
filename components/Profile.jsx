@@ -90,21 +90,33 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
       </p>
       <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
         <Row label={locale === 'hi' ? 'मुद्रा' : 'Currency'} sub="INR" />
-        <Row
-          label={t(locale, 'notionExpenses')}
-          sub={locale === 'hi' ? 'Notion से पढ़ें · INR' : 'Read-only from Notion · INR'}
-          onClick={() => onNavigate && onNavigate('notionExpenses')}
-        />
-        <Row
-          label={t(locale, 'notionAccounts')}
-          sub={locale === 'hi' ? 'शुरुआती शेष ± खर्च' : 'Opening ± tagged spend'}
-          onClick={() => onNavigate && onNavigate('notionAccounts')}
-        />
-        <Row
-          label={t(locale, 'notionBudgets')}
-          sub={locale === 'hi' ? 'इस महीने बचा' : 'Left this month by category'}
-          onClick={() => onNavigate && onNavigate('notionBudgets')}
-        />
+        {(typeof zenithNotionEnabled === 'function' && zenithNotionEnabled()) ? (
+          <>
+            <Row
+              label={t(locale, 'notionExpenses')}
+              sub={locale === 'hi' ? 'Notion से पढ़ें · INR' : 'Read-only from Notion · INR'}
+              onClick={() => onNavigate && onNavigate('notionExpenses')}
+            />
+            <Row
+              label={t(locale, 'notionAccounts')}
+              sub={locale === 'hi' ? 'शुरुआती शेष ± खर्च' : 'Opening ± tagged spend'}
+              onClick={() => onNavigate && onNavigate('notionAccounts')}
+            />
+            <Row
+              label={t(locale, 'notionBudgets')}
+              sub={locale === 'hi' ? 'इस महीने बचा' : 'Left this month by category'}
+              onClick={() => onNavigate && onNavigate('notionBudgets')}
+            />
+          </>
+        ) : (
+          (typeof localAccountBalances === 'function' ? localAccountBalances(store) : []).map((row) => (
+            <Row
+              key={row.id}
+              label={acctLabel(row, locale) || row.name}
+              sub={fmt(row.balance)}
+            />
+          ))
+        )}
         <Row label={t(locale, 'budgets')} sub={budget > 0 ? fmt(budget) : t(locale, 'noBudgetYet')} onClick={() => onNavigate && onNavigate('budget')} last />
       </div>
 

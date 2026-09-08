@@ -31,7 +31,7 @@ jobs:
           cp index.html Zenith.html app.jsx state.js ios-frame.jsx manifest.webmanifest _site/
           cp components/*.jsx _site/components/
           cp lib/notion/*.js _site/lib/notion/
-          cp lib/parse-expense.js lib/capture.js lib/zenith-chrome.js _site/lib/
+          cp lib/parse-expense.js lib/capture.js lib/zenith-chrome.js lib/local-ledger.js _site/lib/
           cp icons/*.png _site/icons/
           touch _site/.nojekyll
           echo "=== _site ==="
