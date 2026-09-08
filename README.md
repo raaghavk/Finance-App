@@ -53,7 +53,7 @@ Copy `.env.example` and fill in a Notion internal integration token that can **r
 | `NOTION_EXPENSES_DATABASE_ID` | fallback | Database id `76941781c8ef4d258923b9c2a6750292` |
 | `NOTION_EXPENSES_USE_MOCK` | no | Set to `1` to force example data even when a token is present |
 | `SARVAM_API_KEY` | no | Sarvam Saaras STT (`api-subscription-key`). Alias: `SARVAM_API_SUBSCRIPTION_KEY`. REST `https://api.sarvam.ai/speech-to-text`, model `saaras:v3`, clips under 30s. If unset, the mic is disabled with a tip; you can still log manually. |
-| `GOOGLE_CLOUD_VISION_API_KEY` | no | Cloud Vision `DOCUMENT_TEXT_DETECTION` (free tier, ~1,000 units/month). Alias: `GOOGLE_VISION_API_KEY`. Do **not** use paid Document AI. If unset, you can still attach a compressed photo locally without OCR. |
+| `GOOGLE_CLOUD_VISION_API_KEY` | no | Cloud Vision `DOCUMENT_TEXT_DETECTION` via `images:annotate` (free tier, first ~1,000 units/month). Alias: `GOOGLE_VISION_API_KEY`. **Do not use Document AI** (paid parser). This app uses an **API key**, not a service-account JWT. `GOOGLE_APPLICATION_CREDENTIALS` is ignored — create a Cloud Vision API key in Google Cloud and restrict it to the Vision API. If unset, you can still attach a compressed photo locally without OCR. |
 
 The token and API keys must stay on the server. The browser calls `GET /api/expenses`, `GET /api/status`, `POST /api/voice`, and `POST /api/ocr` only.
 

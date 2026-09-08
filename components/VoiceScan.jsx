@@ -148,7 +148,13 @@ function VoiceEntryScreen({ onClose, onManual, onDraft, locale }) {
             fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 800,
             boxShadow: configured ? '0 10px 24px rgba(196,92,38,0.3)' : 'none',
           }}
-        >{phase === 'recording' ? t(loc, 'voiceStop') : (phase === 'sending' ? '…' : 'mic')}</button>
+        >{phase === 'recording' ? t(loc, 'voiceStop') : (phase === 'sending' ? '…' : (
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="9" y="3" width="6" height="11" rx="3" fill="white"/>
+            <path d="M6 11a6 6 0 0012 0" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M12 17v3" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        ))}</button>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginTop: 12 }}>
           {phase === 'recording' ? t(loc, 'voiceListening') : phase === 'sending' ? t(loc, 'voiceSending') : t(loc, 'voiceHold')}
         </p>

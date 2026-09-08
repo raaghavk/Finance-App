@@ -32,7 +32,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
   );
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#F5F5F7', paddingTop: 70, paddingBottom: 100 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F5F5F7', paddingTop: 70, paddingBottom: 100 }}>
       <div style={{ padding: '0 24px 24px', textAlign: 'center' }}>
         <div style={{
           width: 84, height: 84, borderRadius: 28, margin: '0 auto 14px',
@@ -56,7 +56,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
             { label: locale === 'hi' ? 'बचा' : 'Left', value: fmtCompact(saved) },
           ].map((s) => (
             <div key={s.label} style={{ flex: 1, background: '#FFFFFF', borderRadius: 18, padding: '14px 8px' }}>
-              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, color: '#007AFF' }}>{s.value}</p>
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26' }}>{s.value}</p>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8E8E93' }}>{s.label}</p>
             </div>
           ))}
@@ -75,7 +75,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
                 onClick={() => onSetLocale && onSetLocale(id)}
                 style={{
                   padding: '6px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                  background: locale === id ? '#007AFF' : '#F0F0F3',
+                  background: locale === id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#F0F0F3',
                   color: locale === id ? '#fff' : '#3C3C43',
                   fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700,
                 }}

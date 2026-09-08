@@ -18,6 +18,24 @@ const handleOcr = require('../api/ocr');
 const ROOT = path.resolve(__dirname, '..');
 const PORT = Number(process.env.ZENITH_PORT || process.env.PORT || 5173);
 
+function loadDotenv() {
+  const envPath = path.join(ROOT, '.env');
+  if (!fs.existsSync(envPath)) return;
+  fs.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed[0] === '#') return;
+    const eq = trimmed.indexOf('=');
+    if (eq < 1) return;
+    const key = trimmed.slice(0, eq).trim();
+    let val = trimmed.slice(eq + 1).trim();
+    if ((val[0] === '"' && val.endsWith('"')) || (val[0] === "'" && val.endsWith("'"))) {
+      val = val.slice(1, -1);
+    }
+    if (key && process.env[key] == null) process.env[key] = val;
+  });
+}
+loadDotenv();
+
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
