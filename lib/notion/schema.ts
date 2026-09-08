@@ -30,11 +30,15 @@ export const EXPENSE_STATUSES = ['Logged', 'Needs receipt', 'Submitted', 'Reimbu
 
 export const EXPENSE_TRIPS = ['Vietnam Sep 2026', 'Varanasi Sep 2026', 'Other trip'] as const;
 
+/** Wallet tagged on the spend. Distinct from Payment (instrument). */
+export const EXPENSE_ACCOUNTS = ['Cash', 'UPI', 'Primary debit', 'Primary credit', 'Corporate'] as const;
+
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 export type ExpenseKind = (typeof EXPENSE_KINDS)[number];
 export type ExpensePayment = (typeof EXPENSE_PAYMENTS)[number];
 export type ExpenseStatus = (typeof EXPENSE_STATUSES)[number];
 export type ExpenseTrip = (typeof EXPENSE_TRIPS)[number];
+export type ExpenseAccount = (typeof EXPENSE_ACCOUNTS)[number];
 
 /** Mapped expense row. Property names match the Notion schema 1:1. */
 export interface NotionExpense {
@@ -56,6 +60,8 @@ export interface NotionExpense {
   status: ExpenseStatus | null;
   /** Trip (select) */
   trip: ExpenseTrip | null;
+  /** Account (select): Cash, UPI, Primary debit, Primary credit, Corporate */
+  account: ExpenseAccount | null;
   /** Notes (text) */
   notes: string;
   /** Receipt (url) */
@@ -100,6 +106,7 @@ export interface NotionExpenseWriteInput {
   payment?: ExpensePayment;
   status?: ExpenseStatus;
   trip?: ExpenseTrip;
+  account?: ExpenseAccount;
   notes?: string;
   receipt?: string | null;
   reimbursable?: boolean;

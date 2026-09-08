@@ -86,6 +86,8 @@ function NotionExpenseRow({ expense, locale, last }) {
     relDate(expense.date, locale),
     expense.category,
     expense.kind,
+    expense.payment,
+    expense.account,
     expense.trip,
   ].filter(Boolean);
   return (
