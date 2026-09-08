@@ -1,7 +1,6 @@
 
-// iOS.jsx — Simplified iOS 26 (Liquid Glass) device frame
-// Used only for localhost / ?demo=1 desktop mockups. Production and real
-// phones pass native={true} so Dynamic Island, 9:41 bar, and bezel are gone.
+// iOS.jsx — phone-shaped wrappers for lists/pills. The app always passes
+// native={true} so there is no fake Dynamic Island, 9:41 bar, or device bezel.
 // Based on the iOS 26 UI Kit + Figma status bar spec. No assets, no deps.
 // Exports: IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard
 

@@ -75,30 +75,6 @@ function ZenithApp() {
   const locale = store.user.locale || 'en';
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
-  const [showDeviceFrame, setShowDeviceFrame] = React.useState(() => {
-    if (typeof window === 'undefined') return false;
-    if (typeof zenithShouldUseDeviceFrame === 'function') return zenithShouldUseDeviceFrame();
-    return document.documentElement.dataset.zenithChrome === 'frame';
-  });
-  React.useEffect(() => {
-    const apply = () => {
-      const useFrame = typeof zenithShouldUseDeviceFrame === 'function'
-        ? zenithShouldUseDeviceFrame()
-        : false;
-      document.documentElement.dataset.zenithChrome = useFrame ? 'frame' : 'native';
-      setShowDeviceFrame(useFrame);
-      if (typeof window.scaleDevice === 'function') window.scaleDevice();
-    };
-    apply();
-    const mq = window.matchMedia('(max-width: 540px)');
-    const dm = window.matchMedia('(display-mode: standalone)');
-    mq.addEventListener('change', apply);
-    dm.addEventListener('change', apply);
-    return () => {
-      mq.removeEventListener('change', apply);
-      dm.removeEventListener('change', apply);
-    };
-  }, []);
 
   const TABS = ['home', 'activity', 'plan', 'you', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
 
@@ -182,13 +158,13 @@ function ZenithApp() {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      minHeight: showDeviceFrame ? '100vh' : '100%',
-      width: showDeviceFrame ? undefined : '100%',
-      height: showDeviceFrame ? undefined : '100%',
-      background: showDeviceFrame ? '#0B1220' : zenithTone('page'),
+      minHeight: '100%',
+      width: '100%',
+      height: '100%',
+      background: zenithTone('page'),
     }} id="device-scaler">
-      <div style={{ position: 'relative', width: showDeviceFrame ? undefined : '100%', height: showDeviceFrame ? undefined : '100%' }}>
-        <IOSDevice width={402} height={874} native={!showDeviceFrame}>
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <IOSDevice width={402} height={874} native={true}>
           <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: zenithTone('page') }}>
 
             {screen === 'onboarding' && (
@@ -315,7 +291,7 @@ function ZenithApp() {
               const ty = Math.sin(rad) * dist;
               return (
                 <div key={item.label} style={{
-                  position: 'absolute', bottom: !showDeviceFrame ? 'calc(44px + env(safe-area-inset-bottom, 0px))' : 44, left: '50%', marginLeft: -28,
+                  position: 'absolute', bottom: 'calc(44px + env(safe-area-inset-bottom, 0px))', left: '50%', marginLeft: -28,
                   width: 56, height: 56, zIndex: 50,
                   transform: fabOpen ? `translate(${tx}px,${ty}px) scale(1)` : 'translate(0,0) scale(0.4)',
                   opacity: fabOpen ? 1 : 0,
@@ -336,7 +312,7 @@ function ZenithApp() {
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30,
                 minHeight: 86, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-around', paddingTop: 10,
-                paddingBottom: !showDeviceFrame ? 'calc(10px + env(safe-area-inset-bottom, 0px))' : 12,
+                paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
                 background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(24px)',
                 borderTop: '0.5px solid rgba(15,23,42,0.08)',
               }}>
@@ -358,7 +334,7 @@ function ZenithApp() {
 
             {showChrome && (
               <button type="button" aria-label={t(locale, 'addTxn')} onClick={() => { setFabOpen((o) => !o); }} style={{
-                position: 'absolute', bottom: !showDeviceFrame ? 'calc(26px + env(safe-area-inset-bottom, 0px))' : 26, left: '50%', marginLeft: -29,
+                position: 'absolute', bottom: 'calc(26px + env(safe-area-inset-bottom, 0px))', left: '50%', marginLeft: -29,
                 width: 58, height: 58, borderRadius: 29,
                 background: fabOpen ? '#1C1C2E' : accent, border: 'none', cursor: 'pointer', zIndex: 51,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
