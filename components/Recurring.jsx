@@ -36,7 +36,7 @@ function RecurringScreen() {
   };
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingTop: 70, paddingBottom: 100 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
 
       {/* Header */}
       <div style={{ padding: '4px 24px 20px' }}>

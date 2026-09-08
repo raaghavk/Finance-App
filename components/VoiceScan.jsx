@@ -27,7 +27,7 @@ function DraftPreview({ result, locale, onUse, extra }) {
   const card = typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF';
   if (!result && !extra) return null;
   return (
-    <div style={{ background: card, borderRadius: 20, padding: '16px 18px', marginTop: 16, boxShadow: '0 2px 12px rgba(90,50,20,0.06)' }}>
+    <div style={{ background: card, borderRadius: 20, padding: '16px 18px', marginTop: 16, boxShadow: '0 2px 12px rgba(15,23,42,0.06)' }}>
       {result && result.transcript ? (
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: muted, lineHeight: 1.45, marginBottom: 10 }}>{result.transcript}</p>
       ) : null}
@@ -42,7 +42,7 @@ function DraftPreview({ result, locale, onUse, extra }) {
           onClick={onUse}
           style={{
             marginTop: 14, width: '100%', minHeight: 48, border: 'none', borderRadius: 14, cursor: 'pointer',
-            background: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26', color: '#fff',
+            background: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB', color: '#fff',
             fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800,
           }}
         >{t(locale, 'addFromVoice')}</button>
@@ -62,7 +62,7 @@ function VoiceEntryScreen({ onClose, onManual, onDraft, locale }) {
   const timerRef = React.useRef(null);
   const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#1C1C1E';
   const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#6E6E73';
-  const accent = typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26';
+  const accent = typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB';
 
   React.useEffect(() => {
     if (typeof loadCaptureStatus === 'function') loadCaptureStatus().then(setStatus);
@@ -131,7 +131,7 @@ function VoiceEntryScreen({ onClose, onManual, onDraft, locale }) {
       <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 22, fontWeight: 800, color: ink, marginBottom: 8 }}>{t(loc, 'voiceTitle')}</p>
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, color: muted, lineHeight: 1.5, marginBottom: 18 }}>{t(loc, 'voiceHint')}</p>
       {!configured && status && (
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: typeof ZENITH !== 'undefined' ? ZENITH.warn : '#A15C12', lineHeight: 1.45, marginBottom: 16 }}>{t(loc, 'voiceNeedKey')}</p>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: typeof ZENITH !== 'undefined' ? ZENITH.warn : '#D97706', lineHeight: 1.45, marginBottom: 16 }}>{t(loc, 'voiceNeedKey')}</p>
       )}
       {error ? <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#B42318', marginBottom: 12 }}>{error}</p> : null}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 8 }}>
@@ -143,10 +143,10 @@ function VoiceEntryScreen({ onClose, onManual, onDraft, locale }) {
           style={{
             width: 88, height: 88, borderRadius: 44, border: 'none',
             cursor: configured ? 'pointer' : 'not-allowed',
-            background: !configured ? '#D9C8B6' : (phase === 'recording' ? '#B42318' : accent),
+            background: !configured ? '#CBD5E1' : (phase === 'recording' ? '#B42318' : accent),
             color: '#fff',
             fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 800,
-            boxShadow: configured ? '0 10px 24px rgba(196,92,38,0.3)' : 'none',
+            boxShadow: configured ? '0 10px 24px rgba(37,99,235,0.3)' : 'none',
           }}
         >{phase === 'recording' ? t(loc, 'voiceStop') : (phase === 'sending' ? '…' : (
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -184,7 +184,7 @@ function CameraScanScreen({ onClose, onManual, onDraft, locale }) {
   const [result, setResult] = React.useState(null);
   const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#1C1C1E';
   const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#6E6E73';
-  const accent = typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26';
+  const accent = typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB';
 
   React.useEffect(() => {
     if (typeof loadCaptureStatus === 'function') loadCaptureStatus().then(setStatus);
@@ -231,7 +231,7 @@ function CameraScanScreen({ onClose, onManual, onDraft, locale }) {
       <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 22, fontWeight: 800, color: ink, marginBottom: 8 }}>{t(loc, 'scanTitle')}</p>
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, color: muted, lineHeight: 1.5, marginBottom: 12 }}>{t(loc, 'scanHint')}</p>
       {!visionOn && status && (
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: typeof ZENITH !== 'undefined' ? ZENITH.warn : '#A15C12', lineHeight: 1.45, marginBottom: 12 }}>{t(loc, 'scanNoOcr')}</p>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: typeof ZENITH !== 'undefined' ? ZENITH.warn : '#D97706', lineHeight: 1.45, marginBottom: 12 }}>{t(loc, 'scanNoOcr')}</p>
       )}
       {error ? <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#B42318', marginBottom: 12 }}>{error}</p> : null}
       <input

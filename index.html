@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-zenith-chrome="native">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2563EB">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zenith">
   <title>Zenith — Finance</title>
   <script>
     (function () {
@@ -10,8 +15,29 @@
       var el = document.createElement('base');
       el.href = onPages ? '/Finance-App/' : '/';
       document.head.appendChild(el);
+      // Fake iPhone chrome is OFF by default (Vercel + real phones). Opt-in: localhost desktop or ?demo=1.
+      function zenithShouldUseDeviceFrame(loc) {
+        loc = loc || location;
+        var host = String(loc.hostname || '');
+        if (/\.vercel\.app$/i.test(host)) return false;
+        var standalone = false;
+        try {
+          standalone = window.matchMedia('(display-mode: standalone)').matches
+            || window.navigator.standalone === true;
+        } catch (e) {}
+        if (standalone) return false;
+        if (window.matchMedia('(max-width: 540px)').matches) return false;
+        var local = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+        var demo = /(?:^|[?&])demo=1(?:&|$)/.test(String(loc.search || ''));
+        return local || demo;
+      }
+      document.documentElement.dataset.zenithChrome = zenithShouldUseDeviceFrame() ? 'frame' : 'native';
+      window.zenithShouldUseDeviceFrame = zenithShouldUseDeviceFrame;
     })();
   </script>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -21,38 +47,69 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --zenith-page: #F2F5FA;
+      --zenith-ink: #0F172A;
+      --zenith-accent: #2563EB;
+      --zenith-pad-top: calc(env(safe-area-inset-top, 0px) + 12px);
+      --zenith-pad-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    }
+    html[data-zenith-chrome="frame"] {
+      --zenith-pad-top: 70px;
+      --zenith-pad-bottom: 110px;
+    }
+
+    /* Default: full-bleed app (production, iPhone Safari, PWA). */
     body {
-      background: radial-gradient(ellipse at 40% 60%, #2a1a10 0%, #120c08 70%);
+      background: var(--zenith-page);
+      display: block;
+      min-height: 100dvh;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #root {
+      width: 100%;
+      height: 100dvh;
+      height: 100vh;
+      height: 100svh;
+      display: block;
+    }
+    #device-scaler {
+      transform: none !important;
+      transform-origin: center center;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Opt-in desktop mockup only (localhost / ?demo=1, never Vercel). */
+    html[data-zenith-chrome="frame"] body {
+      background: radial-gradient(ellipse at 40% 60%, #0B1220 0%, #020617 70%);
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      overflow: hidden;
     }
-
-    /* Subtle grid background */
-    body::before {
+    html[data-zenith-chrome="frame"] body::before {
       content: '';
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(196,92,38,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(196,92,38,0.04) 1px, transparent 1px);
+        linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
       background-size: 40px 40px;
       pointer-events: none;
     }
-
-    #root {
+    html[data-zenith-chrome="frame"] #root {
       width: 100%;
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-
-    /* Scale device to fit viewport */
-    #device-scaler {
-      transform-origin: center center;
+    html[data-zenith-chrome="frame"] #device-scaler {
+      transform: none;
+      width: auto;
+      height: auto;
     }
 
     /* Hide scrollbars everywhere */
@@ -77,6 +134,8 @@
 <body>
   <div id="root"></div>
 
+  <script src="lib/zenith-chrome.js"></script>
+  <script src="lib/local-ledger.js"></script>
   <script type="text/babel" src="state.js"></script>
   <script src="lib/notion/map.js"></script>
   <script src="lib/notion/browser.js"></script>
@@ -109,14 +168,20 @@
   <script>
     // Scale device to fit viewport with padding
     function scaleDevice() {
+      const el = document.getElementById('device-scaler');
+      if (!el) return;
+      if (document.documentElement.dataset.zenithChrome !== 'frame') {
+        el.style.transform = 'none';
+        return;
+      }
       const W = window.innerWidth;
       const H = window.innerHeight;
       const deviceW = 402;
       const deviceH = 874;
       const scale = Math.min((W - 48) / deviceW, (H - 48) / deviceH, 1.1);
-      const el = document.getElementById('device-scaler');
-      if (el) el.style.transform = `scale(${scale})`;
+      el.style.transform = `scale(${scale})`;
     }
+    window.scaleDevice = scaleDevice;
     window.addEventListener('resize', scaleDevice);
     // Run after React renders
     setTimeout(scaleDevice, 200);
@@ -126,10 +191,10 @@
     <svg viewBox="0 0 120 84" xmlns="http://www.w3.org/2000/svg">
       <rect width="120" height="84" fill="#0a1628"/>
       <rect x="35" y="8" width="50" height="68" rx="8" fill="#1a1a2e"/>
-      <rect x="40" y="20" width="40" height="22" rx="5" fill="#007AFF" opacity="0.9"/>
+      <rect x="40" y="20" width="40" height="22" rx="5" fill="#2563EB" opacity="0.9"/>
       <rect x="40" y="48" width="18" height="6" rx="3" fill="#2a2a3e"/>
       <rect x="40" y="58" width="28" height="6" rx="3" fill="#2a2a3e"/>
-      <circle cx="60" cy="72" r="4" fill="#007AFF"/>
+      <circle cx="60" cy="72" r="4" fill="#2563EB"/>
     </svg>
   </template>
 </body>

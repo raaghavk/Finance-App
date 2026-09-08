@@ -6,5 +6,11 @@
     { "source": "/api/status", "destination": "/api/status" },
     { "source": "/api/voice", "destination": "/api/voice" },
     { "source": "/api/ocr", "destination": "/api/ocr" }
+  ],
+  "headers": [
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [{ "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" }]
+    }
   ]
 }

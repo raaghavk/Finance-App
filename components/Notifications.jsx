@@ -5,7 +5,7 @@ function NotificationsScreen({ store, onBack, onMarkRead }) {
   const alerts = buildAlerts(store);
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingTop: 70, paddingBottom: 100 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
       <div style={{ padding: '4px 24px 16px' }}>
         <button type="button" aria-label={locale === 'hi' ? 'वापस' : 'Back'} onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#007AFF', fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 600, marginBottom: 10 }}>
           {locale === 'hi' ? '← वापस' : '← Back'}

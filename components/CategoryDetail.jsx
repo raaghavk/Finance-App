@@ -19,7 +19,7 @@ function CategoryDetailScreen({ store, category, onBack, onSelectTx }) {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F2F2F7' }}>
-      <div style={{ padding: '70px 20px 0' }}>
+      <div style={{ padding: 'var(--zenith-pad-top) 20px 0' }}>
         <button type="button" aria-label={t(locale, 'close')} onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 14 }}>
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M7 1L1 7l6 6" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round"/></svg>
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#007AFF', fontWeight: 500 }}>{locale === 'hi' ? 'वापस' : 'Back'}</span>

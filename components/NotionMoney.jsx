@@ -2,9 +2,9 @@
 
 function notionInk() { return typeof ZENITH !== 'undefined' ? ZENITH.ink : '#1C1C1E'; }
 function notionMuted() { return typeof ZENITH !== 'undefined' ? ZENITH.muted : '#8E8E93'; }
-function notionCard() { return typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFDF8'; }
-function notionPage() { return typeof ZENITH !== 'undefined' ? ZENITH.page : '#F7F0E6'; }
-function notionAccent() { return typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26'; }
+function notionCard() { return typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF'; }
+function notionPage() { return typeof ZENITH !== 'undefined' ? ZENITH.page : '#F2F5FA'; }
+function notionAccent() { return typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB'; }
 
 function accountTint(name) {
   return (typeof ACCOUNT_COLORS !== 'undefined' && ACCOUNT_COLORS[name]) || notionAccent();
@@ -60,7 +60,7 @@ function AccountCard({ row, locale, compact, onOpen }) {
         background: notionCard(),
         borderRadius: 22,
         padding: compact ? '16px 16px 14px' : '18px 18px 16px',
-        boxShadow: '0 2px 14px rgba(90,50,20,0.06)',
+        boxShadow: '0 2px 14px rgba(15,23,42,0.06)',
         cursor: onOpen ? 'pointer' : 'default',
         flexShrink: 0,
       }}
@@ -96,14 +96,14 @@ function BudgetProgressRow({ row, locale }) {
   const ink = notionInk();
   const muted = notionMuted();
   const pct = row.pct == null ? 0 : Math.min(Math.max(row.pct, 0), 1);
-  const barColor = row.over ? '#B42318' : (row.pct != null && row.pct >= 0.9 ? (typeof ZENITH !== 'undefined' ? ZENITH.warn : '#A15C12') : color);
+  const barColor = row.over ? '#B42318' : (row.pct != null && row.pct >= 0.9 ? (typeof ZENITH !== 'undefined' ? ZENITH.warn : '#D97706') : color);
   const leftLabel = row.capMissing
     ? t(locale, 'notionCapMissing')
     : row.over
       ? t(locale, 'notionOverBy', { n: fmtInr(Math.abs(row.left)) })
       : t(locale, 'notionLeftMonth');
   return (
-    <div style={{ padding: '14px 0', borderBottom: '1px solid rgba(90,50,20,0.08)' }}>
+    <div style={{ padding: '14px 0', borderBottom: '1px solid rgba(15,23,42,0.08)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
         <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color: ink }}>{row.name || row.category || '—'}</p>
         <p style={{
@@ -112,7 +112,7 @@ function BudgetProgressRow({ row, locale }) {
         }}>{row.capMissing ? fmtInr(row.spent) : fmtInr(row.left)}</p>
       </div>
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginBottom: 8 }}>{leftLabel}</p>
-      <div style={{ height: 7, background: typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F1E4D2', borderRadius: 4, overflow: 'hidden' }}>
+      <div style={{ height: 7, background: typeof ZENITH !== 'undefined' ? ZENITH.cream : '#E8EEF7', borderRadius: 4, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${row.capMissing ? 0 : pct * 100}%`, background: barColor, borderRadius: 4 }} />
       </div>
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 6 }}>
@@ -171,7 +171,7 @@ function NotionBudgetsPreview({ locale, onOpen }) {
         onKeyDown={(e) => { if (e.key === 'Enter') onOpen && onOpen(); }}
         style={{
           background: card, borderRadius: 24, padding: '16px 18px 8px',
-          boxShadow: '0 2px 14px rgba(90,50,20,0.06)', cursor: 'pointer',
+          boxShadow: '0 2px 14px rgba(15,23,42,0.06)', cursor: 'pointer',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -209,7 +209,7 @@ function NotionAccountsScreen({ store, onNavigate }) {
   const muted = notionMuted();
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: notionPage(), paddingTop: 70, paddingBottom: 110 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: notionPage(), paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
       <div style={{ padding: '0 20px 24px' }}>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 28, fontWeight: 800, color: ink, letterSpacing: -0.5, marginBottom: 6 }}>{t(locale, 'notionAccounts')}</h1>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginBottom: 14, lineHeight: 1.45 }}>{t(locale, 'notionAccountsHint')}</p>
@@ -253,16 +253,16 @@ function NotionBudgetsScreen({ store, onNavigate }) {
   }, 0);
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: notionPage(), paddingTop: 70, paddingBottom: 110 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: notionPage(), paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
       <div style={{ padding: '0 20px 24px' }}>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 28, fontWeight: 800, color: ink, letterSpacing: -0.5, marginBottom: 6 }}>{t(locale, 'notionBudgets')}</h1>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginBottom: 14, lineHeight: 1.45 }}>{t(locale, 'notionBudgetsHint')}</p>
         <NotionMoneyBanner snap={snap} locale={locale} onRetry={() => refresh(true)} />
 
         <div style={{
-          background: 'linear-gradient(145deg, #C45C26 0%, #9A3D18 100%)',
+          background: 'linear-gradient(145deg, #2563EB 0%, #1D4ED8 100%)',
           borderRadius: 26, padding: '24px 22px', marginBottom: 14,
-          boxShadow: '0 12px 28px rgba(154,61,24,0.28)',
+          boxShadow: '0 12px 28px rgba(29,78,216,0.28)',
         }}>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.82)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>{t(locale, 'notionLeftMonth')}</p>
           <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 40, fontWeight: 800, color: '#FFFFFF', letterSpacing: -1.2, lineHeight: 1.05 }}>
@@ -280,7 +280,7 @@ function NotionBudgetsScreen({ store, onNavigate }) {
             <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: ink }}>{t(locale, 'notionBudgetsEmpty')}</p>
           </div>
         ) : (
-          <div style={{ background: notionCard(), borderRadius: 22, padding: '4px 18px 8px', boxShadow: '0 2px 12px rgba(90,50,20,0.05)' }}>
+          <div style={{ background: notionCard(), borderRadius: 22, padding: '4px 18px 8px', boxShadow: '0 2px 12px rgba(15,23,42,0.05)' }}>
             {rows.map((row, i) => (
               <div key={row.id || row.category} style={{ borderBottom: i === rows.length - 1 ? 'none' : undefined }}>
                 <BudgetProgressRow row={row} locale={locale} />

@@ -32,11 +32,11 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
   );
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F5F5F7', paddingTop: 70, paddingBottom: 100 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F5F5F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
       <div style={{ padding: '0 24px 24px', textAlign: 'center' }}>
         <div style={{
           width: 84, height: 84, borderRadius: 28, margin: '0 auto 14px',
-          background: 'linear-gradient(145deg, #C45C26, #9A3D18)',
+          background: 'linear-gradient(145deg, #2563EB, #1D4ED8)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 34, fontWeight: 800, color: '#FFFFFF' }}>
@@ -56,7 +56,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
             { label: locale === 'hi' ? 'बचा' : 'Left', value: fmtCompact(saved) },
           ].map((s) => (
             <div key={s.label} style={{ flex: 1, background: '#FFFFFF', borderRadius: 18, padding: '14px 8px' }}>
-              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26' }}>{s.value}</p>
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB' }}>{s.value}</p>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8E8E93' }}>{s.label}</p>
             </div>
           ))}
@@ -75,7 +75,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
                 onClick={() => onSetLocale && onSetLocale(id)}
                 style={{
                   padding: '6px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                  background: locale === id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#F0F0F3',
+                  background: locale === id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB') : '#F0F0F3',
                   color: locale === id ? '#fff' : '#3C3C43',
                   fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700,
                 }}
@@ -90,21 +90,33 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
       </p>
       <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
         <Row label={locale === 'hi' ? 'मुद्रा' : 'Currency'} sub="INR" />
-        <Row
-          label={t(locale, 'notionExpenses')}
-          sub={locale === 'hi' ? 'Notion से पढ़ें · INR' : 'Read-only from Notion · INR'}
-          onClick={() => onNavigate && onNavigate('notionExpenses')}
-        />
-        <Row
-          label={t(locale, 'notionAccounts')}
-          sub={locale === 'hi' ? 'शुरुआती शेष ± खर्च' : 'Opening ± tagged spend'}
-          onClick={() => onNavigate && onNavigate('notionAccounts')}
-        />
-        <Row
-          label={t(locale, 'notionBudgets')}
-          sub={locale === 'hi' ? 'इस महीने बचा' : 'Left this month by category'}
-          onClick={() => onNavigate && onNavigate('notionBudgets')}
-        />
+        {(typeof zenithNotionEnabled === 'function' && zenithNotionEnabled()) ? (
+          <>
+            <Row
+              label={t(locale, 'notionExpenses')}
+              sub={locale === 'hi' ? 'Notion से पढ़ें · INR' : 'Read-only from Notion · INR'}
+              onClick={() => onNavigate && onNavigate('notionExpenses')}
+            />
+            <Row
+              label={t(locale, 'notionAccounts')}
+              sub={locale === 'hi' ? 'शुरुआती शेष ± खर्च' : 'Opening ± tagged spend'}
+              onClick={() => onNavigate && onNavigate('notionAccounts')}
+            />
+            <Row
+              label={t(locale, 'notionBudgets')}
+              sub={locale === 'hi' ? 'इस महीने बचा' : 'Left this month by category'}
+              onClick={() => onNavigate && onNavigate('notionBudgets')}
+            />
+          </>
+        ) : (
+          (typeof localAccountBalances === 'function' ? localAccountBalances(store) : []).map((row) => (
+            <Row
+              key={row.id}
+              label={acctLabel(row, locale) || row.name}
+              sub={fmt(row.balance)}
+            />
+          ))
+        )}
         <Row label={t(locale, 'budgets')} sub={budget > 0 ? fmt(budget) : t(locale, 'noBudgetYet')} onClick={() => onNavigate && onNavigate('budget')} last />
       </div>
 

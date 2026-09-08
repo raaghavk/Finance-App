@@ -7,7 +7,7 @@ function CountryPickerScreen({ countries, selectedCountry, onSelect, onBack, onC
     c.code.toLowerCase().includes(search.toLowerCase())
   );
   return (
-    <div style={{ height: '100%', background: '#F2F2F7', display: 'flex', flexDirection: 'column', paddingTop: 70 }}>
+    <div style={{ height: '100%', background: '#F2F2F7', display: 'flex', flexDirection: 'column', paddingTop: 'var(--zenith-pad-top)' }}>
       <div style={{ padding: '4px 20px 14px', flexShrink: 0 }}>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 14 }}>
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -191,7 +191,7 @@ function TravelScreen() {
   if (!travelActive) {
     return (
       <div style={{ height: '100%', position: 'relative' }}>
-      <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingTop: 70, paddingBottom: 100 }}>
+      <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
         <div style={{ padding: '4px 24px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93', marginBottom: 3 }}>May 2026</p>
@@ -312,7 +312,7 @@ function TravelScreen() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F2F2F7', position: 'relative' }}>
       {/* Header */}
-      <div style={{ paddingTop: 70, padding: '70px 20px 12px' }}>
+      <div style={{ paddingTop: 'var(--zenith-pad-top)', padding: 'var(--zenith-pad-top) 20px 12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -354,7 +354,7 @@ function TravelScreen() {
 
       <TabBar />
 
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 100 }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'var(--zenith-pad-bottom)' }}>
 
         {/* ── DASHBOARD TAB ── */}
         {activeTab === 'dashboard' && (

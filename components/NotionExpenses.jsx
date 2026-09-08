@@ -13,7 +13,7 @@ function SourceSwitch({ locale, active, onLocal, onNotion }) {
         background: selected ? (typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF') : 'transparent',
         color: selected ? (typeof ZENITH !== 'undefined' ? ZENITH.ink : '#1C1C1E') : (typeof ZENITH !== 'undefined' ? ZENITH.muted : '#6E6E73'),
         fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 800,
-        boxShadow: selected ? '0 1px 4px rgba(90,50,20,0.08)' : 'none',
+        boxShadow: selected ? '0 1px 4px rgba(15,23,42,0.08)' : 'none',
       }}
     >{label}</button>
   );
@@ -36,7 +36,7 @@ function BreakdownBlock({ title, rows, colors }) {
   const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#8E8E93';
   const card = typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF';
   return (
-    <div style={{ background: card, borderRadius: 20, padding: '16px 18px', marginBottom: 12, boxShadow: '0 2px 12px rgba(90,50,20,0.05)' }}>
+    <div style={{ background: card, borderRadius: 20, padding: '16px 18px', marginBottom: 12, boxShadow: '0 2px 12px rgba(15,23,42,0.05)' }}>
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700, color: muted, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 10 }}>{title}</p>
       {rows.map((row) => {
         const color = (colors && colors[row.key]) || (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#007AFF');
@@ -60,7 +60,7 @@ function BreakdownBlock({ title, rows, colors }) {
 function NotionStatusBanner({ snap, locale, onRetry }) {
   if (!snap) return null;
   const isMock = snap.source === 'mock' || snap.source === 'error';
-  const bg = snap.source === 'error' ? '#FDECEC' : isMock ? '#F8EAD3' : '#E7F3EA';
+  const bg = snap.source === 'error' ? '#FDECEC' : isMock ? '#E8EEF7' : '#E7F3EA';
   const color = snap.source === 'error' ? '#B42318' : isMock ? (typeof ZENITH !== 'undefined' ? ZENITH.warn : '#B45309') : (typeof ZENITH !== 'undefined' ? ZENITH.live : '#15803D');
   const title = snap.source === 'notion'
     ? t(locale, 'notionLive')
@@ -110,7 +110,7 @@ function NotionExpenseRow({ expense, locale, last }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px',
         minHeight: 72,
-        borderBottom: last ? 'none' : '1px solid rgba(90,50,20,0.08)',
+        borderBottom: last ? 'none' : '1px solid rgba(15,23,42,0.08)',
       }}
     >
       <div style={{
@@ -125,7 +125,7 @@ function NotionExpenseRow({ expense, locale, last }) {
         {expense.status === 'Needs receipt' && (
           <span style={{
             display: 'inline-block', marginTop: 4, padding: '2px 8px', borderRadius: 8,
-            background: '#F8EAD3', color: typeof ZENITH !== 'undefined' ? ZENITH.warn : '#A15C12',
+            background: '#E8EEF7', color: typeof ZENITH !== 'undefined' ? ZENITH.warn : '#D97706',
             fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 700,
           }}>{expense.status}</span>
         )}
@@ -167,7 +167,7 @@ function NotionExpensesScreen({ store, onNavigate }) {
     : '';
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: page, paddingTop: 70, paddingBottom: 110 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: page, paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
       <div style={{ padding: '0 20px 20px' }}>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 28, fontWeight: 800, color: ink, letterSpacing: -0.5, marginBottom: 12 }}>{t(locale, 'notionExpenses')}</h1>
         <SourceSwitch
@@ -179,9 +179,9 @@ function NotionExpensesScreen({ store, onNavigate }) {
         <NotionStatusBanner snap={snap} locale={locale} onRetry={() => refresh(true)} />
 
         <div style={{
-          background: 'linear-gradient(145deg, #C45C26 0%, #9A3D18 100%)',
+          background: 'linear-gradient(145deg, #2563EB 0%, #1D4ED8 100%)',
           borderRadius: 26, padding: '24px 22px', marginBottom: 14,
-          boxShadow: '0 12px 28px rgba(154,61,24,0.28)',
+          boxShadow: '0 12px 28px rgba(29,78,216,0.28)',
         }}>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.82)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>{t(locale, 'notionThisMonth')}</p>
           <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 40, fontWeight: 800, color: '#FFFFFF', letterSpacing: -1.2, lineHeight: 1.05 }}>
@@ -199,7 +199,7 @@ function NotionExpensesScreen({ store, onNavigate }) {
           <>
             <BreakdownBlock title={t(locale, 'notionByCategory')} rows={report.byCategory} colors={CATEGORY_COLORS} />
             <BreakdownBlock title={t(locale, 'notionByKind')} rows={report.byKind} colors={KIND_COLORS} />
-            <BreakdownBlock title={t(locale, 'notionByTrip')} rows={report.byTrip} colors={{ 'Vietnam Sep 2026': '#2F6B3A', 'Varanasi Sep 2026': '#C45C26', 'Other trip': '#8B735F' }} />
+            <BreakdownBlock title={t(locale, 'notionByTrip')} rows={report.byTrip} colors={{ 'Vietnam Sep 2026': '#059669', 'Varanasi Sep 2026': '#2563EB', 'Other trip': '#64748B' }} />
           </>
         )}
 
@@ -211,7 +211,7 @@ function NotionExpensesScreen({ store, onNavigate }) {
             <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: ink }}>{t(locale, 'notionEmpty')}</p>
           </div>
         ) : (
-          <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: '0 2px 12px rgba(90,50,20,0.05)' }}>
+          <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: '0 2px 12px rgba(15,23,42,0.05)' }}>
             {recent.map((e, i) => (
               <NotionExpenseRow key={e.id || i} expense={e} locale={locale} last={i === recent.length - 1} />
             ))}
@@ -255,11 +255,11 @@ function NotionHomeCard({ locale, onOpen }) {
         gap: 14,
         cursor: 'pointer',
         minHeight: 76,
-        boxShadow: '0 2px 14px rgba(90,50,20,0.06)',
+        boxShadow: '0 2px 14px rgba(15,23,42,0.06)',
       }}
     >
       <div style={{
-        width: 44, height: 44, borderRadius: 14, background: '#F3E0D2',
+        width: 44, height: 44, borderRadius: 14, background: '#E8EEF7',
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }} aria-hidden="true">
         <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: accent }}>₹</span>
