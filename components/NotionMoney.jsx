@@ -10,18 +10,27 @@ function accountTint(name) {
   return (typeof ACCOUNT_COLORS !== 'undefined' && ACCOUNT_COLORS[name]) || notionAccent();
 }
 
-function isCreditWallet(name) {
-  return /credit/i.test(String(name || ''));
+function isSpendOnlyWallet(row) {
+  if (!row) return false;
+  if (row.spendOnly) return true;
+  return typeof isSpendOnlyAccount === 'function' && isSpendOnlyAccount(row.name);
+}
+
+function accountInitials(name) {
+  if (name === 'IDFC (UPI/debit)') return 'ID';
+  if (name === 'Kamlesh UPI') return 'KU';
+  return String(name || '?').slice(0, 2);
 }
 
 function formatWalletBalance(row) {
   if (!row) return '₹—';
-  if (isCreditWallet(row.name) && row.balance < 0) return fmtInr(Math.abs(row.balance));
+  if (isSpendOnlyWallet(row)) return fmtInr(row.spent);
+  if (row.balance === null || row.balance === undefined) return '₹—';
   return fmtInr(row.balance);
 }
 
 function walletBalanceHint(row, locale) {
-  if (isCreditWallet(row.name) && row.balance < 0) return t(locale, 'notionOwed');
+  if (isSpendOnlyWallet(row)) return t(locale, 'notionSpendOnly');
   if (row.openingMissing) return t(locale, 'notionOpeningMissing');
   return t(locale, 'notionBalance');
 }
@@ -35,9 +44,10 @@ function NotionMoneyBanner({ snap, locale, onRetry }) {
 
 function AccountCard({ row, locale, compact, onOpen }) {
   const color = accountTint(row.name);
-  const creditOwed = isCreditWallet(row.name) && row.balance < 0;
+  const spendOnly = isSpendOnlyWallet(row);
   const ink = notionInk();
   const muted = notionMuted();
+  const amountColor = spendOnly ? ink : (row.balance < 0 ? '#B42318' : ink);
   return (
     <div
       role={onOpen ? 'button' : undefined}
@@ -45,8 +55,8 @@ function AccountCard({ row, locale, compact, onOpen }) {
       onClick={onOpen}
       onKeyDown={onOpen ? (e) => { if (e.key === 'Enter') onOpen(); } : undefined}
       style={{
-        minWidth: compact ? 168 : undefined,
-        width: compact ? 168 : '100%',
+        minWidth: compact ? 188 : undefined,
+        width: compact ? 188 : '100%',
         background: notionCard(),
         borderRadius: 22,
         padding: compact ? '16px 16px 14px' : '18px 18px 16px',
@@ -60,21 +70,21 @@ function AccountCard({ row, locale, compact, onOpen }) {
           width: 36, height: 36, borderRadius: 12, background: color + '22',
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }} aria-hidden="true">
-          <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: 800, color }}>{String(row.name || '?').slice(0, 2)}</span>
+          <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: 800, color }}>{accountInitials(row.name)}</span>
         </div>
         <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800, color: ink, lineHeight: 1.2 }}>{row.name || '—'}</p>
       </div>
       <p style={{
         fontFamily: 'Manrope, sans-serif', fontSize: compact ? 22 : 28, fontWeight: 800,
-        color: creditOwed ? '#7C3AED' : (row.balance < 0 ? '#B42318' : ink),
+        color: amountColor,
         letterSpacing: -0.6, lineHeight: 1.1,
       }}>{formatWalletBalance(row)}</p>
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 4 }}>{walletBalanceHint(row, locale)}</p>
       {!compact && (
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 8, lineHeight: 1.4 }}>
-          {t(locale, 'notionOpening')} {row.openingMissing ? '₹—' : fmtInr(row.openingBalance)}
-          {' · '}
-          {t(locale, 'notionSpentTagged')} {fmtInr(row.spent)}
+          {spendOnly
+            ? t(locale, 'notionSpendOnlyHint')
+            : (t(locale, 'notionOpening') + ' ' + (row.openingMissing ? '₹—' : fmtInr(row.openingBalance)) + ' · ' + t(locale, 'notionSpentTagged') + ' ' + fmtInr(row.spent))}
         </p>
       )}
     </div>

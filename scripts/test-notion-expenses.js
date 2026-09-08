@@ -13,7 +13,7 @@ const page = {
     Category: { type: 'select', select: { name: 'Food' } },
     Kind: { type: 'select', select: { name: 'Everyday' } },
     Payment: { type: 'select', select: { name: 'UPI' } },
-    Account: { type: 'select', select: { name: 'Primary debit' } },
+    Account: { type: 'select', select: { name: 'IDFC (UPI/debit)' } },
     Status: { type: 'select', select: { name: 'Logged' } },
     Trip: { type: 'select', select: null },
     Notes: { type: 'rich_text', rich_text: [{ plain_text: 'Filter coffee' }] },
@@ -30,7 +30,7 @@ assert.strictEqual(mapped.date, '2026-09-07');
 assert.strictEqual(mapped.category, 'Food');
 assert.strictEqual(mapped.kind, 'Everyday');
 assert.strictEqual(mapped.payment, 'UPI');
-assert.strictEqual(mapped.account, 'Primary debit');
+assert.strictEqual(mapped.account, 'IDFC (UPI/debit)');
 assert.strictEqual(mapped.status, 'Logged');
 assert.strictEqual(mapped.trip, null);
 assert.strictEqual(mapped.notes, 'Filter coffee');
@@ -69,29 +69,29 @@ assert.deepStrictEqual(map.EXPENSE_KINDS, ['Everyday', 'Travel', 'Receipt']);
 assert.deepStrictEqual(map.EXPENSE_PAYMENTS, ['UPI', 'Card', 'Cash', 'Other']);
 assert.deepStrictEqual(map.EXPENSE_STATUSES, ['Logged', 'Needs receipt', 'Submitted', 'Reimbursed']);
 assert.deepStrictEqual(map.EXPENSE_TRIPS, ['Vietnam Sep 2026', 'Varanasi Sep 2026', 'Other trip']);
-assert.deepStrictEqual(map.EXPENSE_ACCOUNTS, ['Cash', 'UPI', 'Primary debit', 'Primary credit', 'Corporate']);
+assert.deepStrictEqual(map.EXPENSE_ACCOUNTS, ['Cash', 'IDFC (UPI/debit)', 'Kamlesh UPI']);
 assert.notStrictEqual(map.EXPENSE_PAYMENTS, map.EXPENSE_ACCOUNTS, 'Payment is instrument; Account is wallet');
 
-const corporateCard = map.mapNotionPageToExpense({
-  id: 'corp',
+const idfcCard = map.mapNotionPageToExpense({
+  id: 'idfc',
   url: '',
   properties: {
     Name: { type: 'title', title: [{ plain_text: 'Client dinner' }] },
     Amount: { type: 'number', number: 2400 },
     Date: { type: 'date', date: { start: '2026-09-03' } },
     Payment: { type: 'select', select: { name: 'Card' } },
-    Account: { type: 'select', select: { name: 'Corporate' } },
+    Account: { type: 'select', select: { name: 'IDFC (UPI/debit)' } },
   },
 });
-assert.strictEqual(corporateCard.payment, 'Card');
-assert.strictEqual(corporateCard.account, 'Corporate');
+assert.strictEqual(idfcCard.payment, 'Card');
+assert.strictEqual(idfcCard.account, 'IDFC (UPI/debit)');
 assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Cash') >= 0);
-assert.ok(map.EXPENSE_ACCOUNTS.indexOf('UPI') >= 0);
-assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Primary debit') >= 0);
-assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Primary credit') >= 0);
-assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Corporate') >= 0);
-assert.strictEqual(map.fromOwnerFixture({ Name: 'Taxi', Amount: 80, date: '2026-09-01', Payment: 'Cash', Account: 'Primary credit' }).account, 'Primary credit');
-assert.strictEqual(map.fromOwnerFixture({ Name: 'Taxi', Amount: 80, date: '2026-09-01', Payment: 'Cash', Account: 'Primary credit' }).payment, 'Cash');
+assert.ok(map.EXPENSE_ACCOUNTS.indexOf('IDFC (UPI/debit)') >= 0);
+assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Kamlesh UPI') >= 0);
+assert.ok(map.EXPENSE_ACCOUNTS.indexOf('UPI') < 0);
+assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Corporate') < 0);
+assert.strictEqual(map.fromOwnerFixture({ Name: 'Taxi', Amount: 80, date: '2026-09-01', Payment: 'UPI', Account: 'Kamlesh UPI' }).account, 'Kamlesh UPI');
+assert.strictEqual(map.fromOwnerFixture({ Name: 'Taxi', Amount: 80, date: '2026-09-01', Payment: 'UPI', Account: 'Kamlesh UPI' }).payment, 'UPI');
 
 assert.strictEqual(map.asCheckbox(true), true);
 assert.strictEqual(map.asCheckbox('__YES__'), true);

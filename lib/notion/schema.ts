@@ -41,8 +41,17 @@ export const EXPENSE_STATUSES = ['Logged', 'Needs receipt', 'Submitted', 'Reimbu
 
 export const EXPENSE_TRIPS = ['Vietnam Sep 2026', 'Varanasi Sep 2026', 'Other trip'] as const;
 
-/** Wallet tagged on the spend. Distinct from Payment (instrument). */
-export const EXPENSE_ACCOUNTS = ['Cash', 'UPI', 'Primary debit', 'Primary credit', 'Corporate'] as const;
+/**
+ * Active wallets tagged on the spend. Distinct from Payment (instrument).
+ * Ignore `(inactive)*` Accounts rows and legacy names: UPI, Primary debit, Primary credit, Corporate.
+ */
+export const EXPENSE_ACCOUNTS = ['Cash', 'IDFC (UPI/debit)', 'Kamlesh UPI'] as const;
+
+/** Retired Expense Account / Accounts DB names — never shown as wallets. */
+export const LEGACY_ACCOUNT_NAMES = ['UPI', 'Primary debit', 'Primary credit', 'Corporate'] as const;
+
+/** Staff UPI: spend totals only, not a wallet balance. */
+export const SPEND_ONLY_ACCOUNTS = ['Kamlesh UPI'] as const;
 
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 export type ExpenseKind = (typeof EXPENSE_KINDS)[number];
@@ -71,7 +80,7 @@ export interface NotionExpense {
   status: ExpenseStatus | null;
   /** Trip (select) */
   trip: ExpenseTrip | null;
-  /** Account (select): Cash, UPI, Primary debit, Primary credit, Corporate */
+  /** Account (select): Cash, IDFC (UPI/debit), Kamlesh UPI */
   account: ExpenseAccount | null;
   /** Notes (text) */
   notes: string;
@@ -137,7 +146,8 @@ export interface NotionAccount {
 
 /**
  * Per-account wallet: opening − tagged Expenses (priced Amounts only).
- * Primary credit may be negative (amount owed). Opening null is treated as 0 for math.
+ * Opening null (and IDFC pending 0) is treated as 0 for math and labelled “Opening not set”.
+ * Kamlesh UPI is spend-only: spent is shown, balance is null.
  */
 export interface AccountBalance {
   id: string;
@@ -146,9 +156,12 @@ export interface AccountBalance {
   notes: string;
   openingBalance: number | null;
   openingMissing: boolean;
+  /** True for Kamlesh UPI — no wallet balance in the UI. */
+  spendOnly: boolean;
   spent: number;
   expenseCount: number;
-  balance: number;
+  /** Null when spendOnly. */
+  balance: number | null;
 }
 
 /** Budgets row. Category enums match Expenses. */

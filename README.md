@@ -33,7 +33,7 @@ Database: [Expenses](https://app.notion.com/p/76941781c8ef4d258923b9c2a6750292).
 | Category | select: Food, Transport, Shopping, Bills, Health, Entertainment, Travel, Stay, Subscriptions, Other |
 | Kind | select: Everyday, Travel, Receipt |
 | Payment | select: UPI, Card, Cash, Other (instrument) |
-| Account | select: Cash, UPI, Primary debit, Primary credit, Corporate (wallet) |
+| Account | select: Cash, IDFC (UPI/debit), Kamlesh UPI (wallet). Ignore `(inactive)*` and legacy UPI / Primary debit / Primary credit / Corporate |
 | Status | select: Logged, Needs receipt, Submitted, Reimbursed |
 | Trip | select: Vietnam Sep 2026, Varanasi Sep 2026, Other trip |
 | Notes | text |
@@ -48,11 +48,17 @@ Database: [Accounts](https://app.notion.com/p/a9effaa05c66492a9780b5a36cda1d63) 
 
 | Property | Type |
 | --- | --- |
-| Name | title (Cash, UPI, Primary debit, Primary credit, Corporate) |
+| Name | title — active: Cash, IDFC (UPI/debit), Kamlesh UPI. Rows starting `(inactive)` are hidden |
 | Notes | text |
-| Opening balance | number (rupee). May be empty/null — treated as ₹0 for math, labelled “Opening not set” |
+| Opening balance | number (rupee). Cash is ₹15,000 (Varanasi office float). IDFC still pending (null/0 → “Opening not set”). Kamlesh stays ₹0 |
 
-**Per-account balance** = Opening balance − priced Expenses tagged with that Account (Expenses `Account` select). Null Amounts are excluded. Primary credit can go negative (amount owed). This app does not write opening balances.
+**Active wallets**
+
+- **Cash** — balance = opening − Cash-tagged expenses.
+- **IDFC (UPI/debit)** — one IDFC First savings wallet (UPI + debit card). Same formula; opening pending.
+- **Kamlesh UPI** — staff UPI on Raaghav’s behalf. **Spend totals only** — no wallet balance in the UI.
+
+**Per-account balance** (Cash / IDFC) = Opening − priced Expenses tagged with that Account. Null Amounts are excluded. This app does not write opening balances. Hold merge until remaining openings are filled (or Raaghav says merge anyway).
 
 `GET /api/accounts` returns `{ source, accounts, balances }`.
 
