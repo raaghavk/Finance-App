@@ -36,7 +36,7 @@ Safari will not reliably install from `http://localhost`. Use HTTPS (Vercel, e.g
 3. Tap **Add to Home Screen**
 4. Confirm **Add**
 
-This is a standalone web app, not Capacitor / App Store.
+This is a standalone web app (PWA). A Capacitor iOS + Android scaffold lives in this repo for later Xcode / TestFlight work — **not App Store submission**. See [docs/native-builds.md](docs/native-builds.md).
 
 ## Notion (optional, off by default)
 
@@ -137,7 +137,18 @@ This repo ships on Vercel as static files plus `api/expenses.js`, `api/accounts.
 2. Set `NOTION_TOKEN` and `NOTION_EXPENSES_DATA_SOURCE_ID` in the project env. Account/Budget source ids have defaults. Optionally set `SARVAM_API_KEY` and `GOOGLE_CLOUD_VISION_API_KEY`.
 3. Deploy. Open the app: **Home** shows local wallets and budgets. Notion panels stay hidden unless `?notion=1`.
 
+`vercel.json` rewrites `/api/expenses|accounts|budgets|status|voice|ocr` to the serverless functions and sets the web manifest content type. Keep that file so static + API deploys keep working. Capacitor uses a copied `www/` folder and does not replace this Vercel setup.
+
 GitHub Pages cannot keep a secret; without Vercel (or `node scripts/dev-server.js` + env) you only get mock Notion mode and local photo attach.
+
+## Native (Capacitor) — later
+
+```bash
+npm install
+npm run cap:sync
+```
+
+Then open `ios/` in Xcode (Mac) or `android/` in Android Studio. Full steps, TestFlight, icons/splash, and the **no App Store** rule: [docs/native-builds.md](docs/native-builds.md).
 
 ## Tests
 

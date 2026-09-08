@@ -1,0 +1,32 @@
+{
+  "appId": "app.zenith.finance",
+  "appName": "Zenith",
+  "webDir": "www",
+  "backgroundColor": "#F2F5FA",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#F2F5FA",
+    "preferredContentMode": "mobile"
+  },
+  "android": {
+    "backgroundColor": "#F2F5FA",
+    "adjustMarginsForEdgeToEdge": "disable",
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 400,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 200,
+      "backgroundColor": "#2563EB",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "LIGHT"
+    }
+  }
+}

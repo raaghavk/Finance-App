@@ -41,6 +41,7 @@ assert.strictEqual(zenithShouldUseDeviceFrame({ hostname: 'localhost', search: '
 assert.strictEqual(zenithShouldUseDeviceFrame({ hostname: '127.0.0.1', search: '?demo=1' }, desktop), true);
 assert.strictEqual(zenithShouldUseDeviceFrame({ hostname: 'example.com', search: '' }, desktop), false);
 assert.strictEqual(zenithShouldUseDeviceFrame({ hostname: 'example.com', search: '?demo=1' }, desktop), true);
+assert.strictEqual(zenithShouldUseDeviceFrame({ hostname: 'localhost', search: '' }, desktop, true), false);
 
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
 assert.strictEqual(manifest.name, 'Zenith');
