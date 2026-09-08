@@ -30,7 +30,8 @@ The Notion database is [Expenses](https://app.notion.com/p/76941781c8ef4d258923b
 | Date | date |
 | Category | select: Food, Transport, Shopping, Bills, Health, Entertainment, Travel, Stay, Subscriptions, Other |
 | Kind | select: Everyday, Travel, Receipt |
-| Payment | select: UPI, Card, Cash, Other |
+| Payment | select: UPI, Card, Cash, Other (instrument) |
+| Account | select: Cash, UPI, Primary debit, Primary credit, Corporate (wallet) |
 | Status | select: Logged, Needs receipt, Submitted, Reimbursed |
 | Trip | select: Vietnam Sep 2026, Varanasi Sep 2026, Other trip |
 | Notes | text |

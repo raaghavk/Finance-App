@@ -13,6 +13,7 @@ const page = {
     Category: { type: 'select', select: { name: 'Food' } },
     Kind: { type: 'select', select: { name: 'Everyday' } },
     Payment: { type: 'select', select: { name: 'UPI' } },
+    Account: { type: 'select', select: { name: 'Primary debit' } },
     Status: { type: 'select', select: { name: 'Logged' } },
     Trip: { type: 'select', select: null },
     Notes: { type: 'rich_text', rich_text: [{ plain_text: 'Filter coffee' }] },
@@ -29,6 +30,7 @@ assert.strictEqual(mapped.date, '2026-09-07');
 assert.strictEqual(mapped.category, 'Food');
 assert.strictEqual(mapped.kind, 'Everyday');
 assert.strictEqual(mapped.payment, 'UPI');
+assert.strictEqual(mapped.account, 'Primary debit');
 assert.strictEqual(mapped.status, 'Logged');
 assert.strictEqual(mapped.trip, null);
 assert.strictEqual(mapped.notes, 'Filter coffee');
@@ -45,6 +47,7 @@ const empty = map.mapNotionPageToExpense({
     Category: { type: 'select', select: null },
     Kind: { type: 'select', select: null },
     Payment: { type: 'select', select: null },
+    Account: { type: 'select', select: null },
     Status: { type: 'select', select: null },
     Trip: { type: 'select', select: null },
     Notes: { type: 'rich_text', rich_text: [] },
@@ -55,6 +58,7 @@ const empty = map.mapNotionPageToExpense({
 assert.strictEqual(empty.name, '');
 assert.strictEqual(empty.amount, null);
 assert.strictEqual(empty.date, null);
+assert.strictEqual(empty.account, null);
 assert.strictEqual(empty.reimbursable, false);
 
 assert.deepStrictEqual(map.EXPENSE_CATEGORIES, [
@@ -65,6 +69,8 @@ assert.deepStrictEqual(map.EXPENSE_KINDS, ['Everyday', 'Travel', 'Receipt']);
 assert.deepStrictEqual(map.EXPENSE_PAYMENTS, ['UPI', 'Card', 'Cash', 'Other']);
 assert.deepStrictEqual(map.EXPENSE_STATUSES, ['Logged', 'Needs receipt', 'Submitted', 'Reimbursed']);
 assert.deepStrictEqual(map.EXPENSE_TRIPS, ['Vietnam Sep 2026', 'Varanasi Sep 2026', 'Other trip']);
+assert.deepStrictEqual(map.EXPENSE_ACCOUNTS, ['Cash', 'UPI', 'Primary debit', 'Primary credit', 'Corporate']);
+assert.notStrictEqual(map.EXPENSE_PAYMENTS, map.EXPENSE_ACCOUNTS, 'Payment is instrument; Account is wallet');
 
 const now = new Date('2026-09-08T12:00:00');
 const report = map.buildMonthReport(map.SAMPLE_NOTION_EXPENSES, now);
