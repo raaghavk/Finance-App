@@ -50,7 +50,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
     <div style={{
       height: '100%', overflowY: 'auto', overflowX: 'hidden',
       paddingTop: 70, paddingBottom: 110,
-      background: '#FFFFFF',
+      background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#FFFFFF',
     }}>
       <div style={{ padding: '0 24px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
@@ -81,7 +81,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
             onClick={() => onNavigate && onNavigate('you')}
             style={{
               width: 38, height: 38, borderRadius: 12,
-              background: 'linear-gradient(145deg, #007AFF, #5856D6)',
+              background: 'linear-gradient(145deg, #C45C26, #9A3D18)',
               border: 'none', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
@@ -101,12 +101,12 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
           onClick={() => onNavigate && onNavigate('budget')}
           onKeyDown={(e) => { if (e.key === 'Enter') onNavigate && onNavigate('budget'); }}
           style={{
-            background: 'linear-gradient(145deg, #007AFF 0%, #0056CC 100%)',
+            background: 'linear-gradient(145deg, #C45C26 0%, #9A3D18 100%)',
             borderRadius: 28,
             padding: '28px 24px 24px',
             position: 'relative',
             overflow: 'hidden',
-            boxShadow: '0 12px 40px rgba(0,122,255,0.35)',
+            boxShadow: '0 12px 40px rgba(154,61,24,0.32)',
             cursor: 'pointer',
           }}
         >
@@ -157,7 +157,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
       <div style={{ marginBottom: 28 }}>
         <div style={{ padding: '0 24px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 700, color: '#121212' }}>{t(locale, 'categories')}</h3>
-          <button type="button" onClick={() => onNavigate && onNavigate('budget')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#007AFF', fontWeight: 600 }}>
+          <button type="button" onClick={() => onNavigate && onNavigate('budget')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#007AFF', fontWeight: 600 }}>
             {t(locale, 'seeAll')}
           </button>
         </div>
@@ -208,7 +208,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
       <div style={{ padding: '0 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h3 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 700, color: '#121212' }}>{t(locale, 'recent')}</h3>
-          <button type="button" onClick={() => onNavigate && onNavigate('activity')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#007AFF', fontWeight: 600 }}>
+          <button type="button" onClick={() => onNavigate && onNavigate('activity')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#007AFF', fontWeight: 600 }}>
             {t(locale, 'all')}
           </button>
         </div>
@@ -223,7 +223,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
               onClick={() => onAdd && onAdd()}
               style={{
                 padding: '12px 20px', border: 'none', borderRadius: 14, cursor: 'pointer',
-                background: '#007AFF', color: '#fff',
+                background: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#007AFF', color: '#fff',
                 fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700,
               }}
             >{t(locale, 'firstExpense')}</button>

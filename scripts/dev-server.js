@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Local static + /api/expenses server for Notion read path.
+ * Local static + /api server for Notion read path, Sarvam voice, and Vision OCR.
  * Usage: node scripts/dev-server.js
- * Optional: NOTION_TOKEN + NOTION_EXPENSES_DATA_SOURCE_ID
+ * Optional: NOTION_TOKEN, SARVAM_API_KEY, GOOGLE_CLOUD_VISION_API_KEY
  */
 'use strict';
 
@@ -12,6 +12,9 @@ const path = require('path');
 const { URL } = require('url');
 
 const handleExpenses = require('../api/expenses');
+const handleStatus = require('../api/status');
+const handleVoice = require('../api/voice');
+const handleOcr = require('../api/ocr');
 const ROOT = path.resolve(__dirname, '..');
 const PORT = Number(process.env.ZENITH_PORT || process.env.PORT || 5173);
 
@@ -41,6 +44,15 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/expenses' || url.pathname === '/api/expenses/') {
     return handleExpenses(req, res);
   }
+  if (url.pathname === '/api/status' || url.pathname === '/api/status/') {
+    return handleStatus(req, res);
+  }
+  if (url.pathname === '/api/voice' || url.pathname === '/api/voice/') {
+    return handleVoice(req, res);
+  }
+  if (url.pathname === '/api/ocr' || url.pathname === '/api/ocr/') {
+    return handleOcr(req, res);
+  }
   const file = safePath(url.pathname);
   if (!file) {
     res.statusCode = 400;
@@ -60,5 +72,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log('Zenith + Notion API at http://127.0.0.1:' + PORT + '/Zenith.html');
+  console.log('Zenith API at http://127.0.0.1:' + PORT + '/Zenith.html');
 });

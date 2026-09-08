@@ -13,6 +13,8 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
   const [method, setMethod] = React.useState(initial && initial.method ? initial.method : 'UPI');
   const [date, setDate] = React.useState(initial && initial.date ? initial.date : todayISO());
   const [saved, setSaved] = React.useState(false);
+  const [receiptPhoto, setReceiptPhoto] = React.useState(initial && initial.receiptPhoto ? initial.receiptPhoto : '');
+  const photoRef = React.useRef(null);
 
   const visibleCats = cats.filter((c) => {
     if (type === 'income') return c.type === 'income' || c.id === 'other' || c.id === 'cashback' || c.id === 'salary';
@@ -55,6 +57,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
       accountId,
       method,
       date,
+      receiptPhoto: receiptPhoto || undefined,
     });
   };
 
@@ -127,6 +130,9 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
               textAlign: 'center', width: '100%', marginTop: 8,
             }}
           />
+          {receiptPhoto ? (
+            <img src={receiptPhoto} alt="Attached receipt" style={{ marginTop: 10, width: 72, height: 72, objectFit: 'cover', borderRadius: 12 }} />
+          ) : null}
         </div>
       </div>
 
@@ -197,6 +203,34 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
             }}
           />
         </label>
+        <input
+          ref={photoRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          aria-label={t(locale, 'attachPhoto')}
+          style={{ display: 'none' }}
+          onChange={async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+              const dataUrl = typeof compressImageFile === 'function' ? await compressImageFile(file) : URL.createObjectURL(file);
+              setReceiptPhoto(dataUrl);
+            } catch (err) {
+              setReceiptPhoto('');
+            }
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => photoRef.current && photoRef.current.click()}
+          style={{
+            minHeight: 44, border: 'none', borderRadius: 12, cursor: 'pointer',
+            background: typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7',
+            color: typeof ZENITH !== 'undefined' ? ZENITH.ink : '#1C1C1E',
+            fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700,
+          }}
+        >{t(locale, 'attachPhoto')}</button>
       </div>
 
       <div style={{ flex: 1, padding: '4px 20px 0', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>

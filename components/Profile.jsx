@@ -36,7 +36,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
       <div style={{ padding: '0 24px 24px', textAlign: 'center' }}>
         <div style={{
           width: 84, height: 84, borderRadius: 28, margin: '0 auto 14px',
-          background: 'linear-gradient(145deg, #007AFF, #5856D6)',
+          background: 'linear-gradient(145deg, #C45C26, #9A3D18)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 34, fontWeight: 800, color: '#FFFFFF' }}>

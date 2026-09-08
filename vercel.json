@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/api/expenses", "destination": "/api/expenses" }
+    { "source": "/api/expenses", "destination": "/api/expenses" },
+    { "source": "/api/status", "destination": "/api/status" },
+    { "source": "/api/voice", "destination": "/api/voice" },
+    { "source": "/api/ocr", "destination": "/api/ocr" }
   ]
 }
