@@ -35,6 +35,14 @@ function zenithSoftShadow() {
   return '0 2px 14px rgba(15,23,42,0.06)';
 }
 
+const CATEGORY_GROUPS = [
+  { id: 'grp-food', name: 'Food', nameHi: 'खाना', emoji: '🍽️', color: '#F97316', type: 'expense', group: 'food' },
+  { id: 'grp-move', name: 'Transport', nameHi: 'यातायात', emoji: '🛺', color: '#3B82F6', type: 'expense', group: 'move' },
+  { id: 'grp-home', name: 'Home', nameHi: 'घर', emoji: '🏠', color: '#8B5CF6', type: 'expense', group: 'home' },
+  { id: 'grp-life', name: 'Life', nameHi: 'जीवन', emoji: '✨', color: '#EC4899', type: 'expense', group: 'life' },
+  { id: 'grp-money', name: 'Money', nameHi: 'पैसा', emoji: '💼', color: '#10B981', type: 'expense', group: 'money' },
+];
+
 const DEFAULT_CATEGORIES = [
   { id: 'kirana', name: 'Kirana', nameHi: 'किराना', emoji: '🛒', color: '#34D399', type: 'expense', group: 'food' },
   { id: 'chai', name: 'Chai / Coffee', nameHi: 'चाय / कॉफ़ी', emoji: '☕', color: '#C4A484', type: 'expense', group: 'food' },
@@ -204,9 +212,20 @@ const COPY = {
     accountsTitle: 'Accounts',
     saveChanges: 'Save',
     installHome: 'Safari → Share → Add to Home Screen to hide the browser bar.',
-    moneyHint: 'Tap an account to rename it, set opening, or set a monthly budget.',
-    categoryHint: 'Tap a category to rename it. Add your own for anything missing.',
+    moneyHint: 'Edit is in the top-right. Manage accounts to rename, set opening cash, and set a monthly budget per bank.',
+    categoryHint: 'Open Categories to add, rename, delete, reorder, and nest subcategories.',
     cannotDeleteLast: 'Keep at least one account.',
+    manageAccounts: 'Manage accounts',
+    manageCategories: 'Manage categories',
+    subcategory: 'Subcategory',
+    addSubcategory: 'Add subcategory',
+    done: 'Done',
+    customizeHint: 'Accounts, category trees, and per-account budgets live here — same depth as a ledger app, calmer UI.',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    parentCategory: 'Parent',
+    noSubcategories: 'No subcategories yet',
+    accountsManageHint: 'Opening balance and a monthly cap per account. Reorder with the arrows.',
   },
   hi: {
     hi: 'नमस्ते, मैं Zenith हूँ।',
@@ -345,9 +364,20 @@ const COPY = {
     accountsTitle: 'खाते',
     saveChanges: 'सेव',
     installHome: 'Safari → Share → होम स्क्रीन पर जोड़ें, ताकि ब्राउज़र बार छिपे।',
-    moneyHint: 'खाते पर टैप करें — नाम, शुरुआती शेष, मासिक बजट।',
-    categoryHint: 'श्रेणी पर टैप करके नाम बदलें। अपनी श्रेणी जोड़ सकते हैं।',
+    moneyHint: 'ऊपर दाएँ Edit है। खाते में नाम, शुरुआती शेष, और बैंक का मासिक बजट सेट करें।',
+    categoryHint: 'श्रेणियाँ खोलकर जोड़ें, नाम बदलें, हटाएँ, क्रम बदलें, और उपश्रेणी बनाएँ।',
     cannotDeleteLast: 'कम से कम एक खाता रखें।',
+    manageAccounts: 'खाते प्रबंधित करें',
+    manageCategories: 'श्रेणियाँ प्रबंधित करें',
+    subcategory: 'उपश्रेणी',
+    addSubcategory: 'उपश्रेणी जोड़ें',
+    done: 'हो गया',
+    customizeHint: 'खाते, श्रेणी पेड़, और हर खाते का बजट यहीं — पूरी डिटेल, साफ़ UI।',
+    moveUp: 'ऊपर',
+    moveDown: 'नीचे',
+    parentCategory: 'मूल श्रेणी',
+    noSubcategories: 'अभी उपश्रेणी नहीं',
+    accountsManageHint: 'शुरुआती शेष और हर खाते की मासिक सीमा। तीर से क्रम बदलें।',
   },
 };
 
@@ -421,6 +451,59 @@ function relDate(iso, locale) {
   });
 }
 
+function moveIndex(list, from, to) {
+  const arr = (list || []).slice();
+  if (from < 0 || to < 0 || from >= arr.length || to >= arr.length || from === to) return arr;
+  const item = arr.splice(from, 1)[0];
+  arr.splice(to, 0, item);
+  return arr.map((row, i) => ({ ...row, sortOrder: i }));
+}
+
+function withCategoryTree(categories) {
+  const list = Array.isArray(categories) ? categories.map((c, i) => ({
+    sortOrder: c.sortOrder != null ? c.sortOrder : i,
+    parentId: c.parentId || null,
+    ...c,
+  })) : [];
+  const hasGroupParent = list.some((c) => c.id && String(c.id).indexOf('grp-') === 0);
+  if (hasGroupParent) {
+    return list.map((c, i) => ({
+      ...c,
+      parentId: c.parentId || null,
+      sortOrder: c.sortOrder != null ? c.sortOrder : i,
+    }));
+  }
+  const parents = CATEGORY_GROUPS.map((g, i) => ({ ...g, parentId: null, sortOrder: i, custom: false }));
+  const offset = parents.length;
+  const children = list.map((c, i) => {
+    const parent = c.type === 'expense' ? CATEGORY_GROUPS.find((g) => g.group === c.group) : null;
+    return {
+      ...c,
+      parentId: parent ? parent.id : null,
+      sortOrder: offset + i,
+    };
+  });
+  return parents.concat(children);
+}
+
+function parentCategories(categories, type) {
+  return (categories || []).filter((c) => !c.parentId && (!type || c.type === type));
+}
+
+function childCategories(categories, parentId) {
+  if (!parentId) return [];
+  return (categories || []).filter((c) => c.parentId === parentId);
+}
+
+function categoryTreeIds(categories, categoryId) {
+  const kids = childCategories(categories, categoryId).map((c) => c.id);
+  return [categoryId].concat(kids);
+}
+
+function categoryPreview(categories, parentId, locale) {
+  return childCategories(categories, parentId).map((c) => catLabel(c, locale)).join(', ');
+}
+
 function createInitialStore() {
   return {
     version: 1,
@@ -429,11 +512,12 @@ function createInitialStore() {
     openingCash: 0,
     monthlyIncome: 0,
     startedAt: todayISO(),
-    accounts: DEFAULT_ACCOUNTS.map((a) => ({ ...a })),
-    categories: DEFAULT_CATEGORIES.map((c) => ({ ...c })),
+    accounts: DEFAULT_ACCOUNTS.map((a, i) => ({ ...a, sortOrder: i })),
+    categories: withCategoryTree(DEFAULT_CATEGORIES.map((c) => ({ ...c }))),
     transactions: [],
     budgets: [],
     alertsRead: {},
+    showSubcategories: true,
   };
 }
 
@@ -447,11 +531,12 @@ function loadStore() {
       ...createInitialStore(),
       ...parsed,
       user: { ...createInitialStore().user, ...(parsed.user || {}) },
-      categories: (parsed.categories && parsed.categories.length) ? parsed.categories : DEFAULT_CATEGORIES.map((c) => ({ ...c })),
+      categories: withCategoryTree((parsed.categories && parsed.categories.length) ? parsed.categories : DEFAULT_CATEGORIES.map((c) => ({ ...c }))),
       accounts: (parsed.accounts && parsed.accounts.length) ? parsed.accounts : DEFAULT_ACCOUNTS.map((a) => ({ ...a })),
       transactions: parsed.transactions || [],
       budgets: parsed.budgets || [],
       alertsRead: parsed.alertsRead || {},
+      showSubcategories: parsed.showSubcategories !== false,
     };
   } catch (e) {
     return createInitialStore();
@@ -524,20 +609,22 @@ function methodForAccount(account) {
 }
 
 function spentInCategory(store, categoryId, mk) {
+  const ids = new Set(categoryTreeIds(store.categories || [], categoryId));
   return monthTxns(store, mk)
-    .filter((tx) => tx.type === 'expense' && tx.categoryId === categoryId)
+    .filter((tx) => tx.type === 'expense' && ids.has(tx.categoryId))
     .reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
 }
 
 function categorySpendRows(store, mk) {
   const key = mk || monthKey();
-  return store.categories
-    .filter((c) => c.type === 'expense')
-    .map((c) => ({
-      ...c,
-      spent: spentInCategory(store, c.id, key),
-      budget: budgetLimit(store, c.id, key),
-    }));
+  const cats = store.categories || [];
+  const parents = cats.filter((c) => c.type === 'expense' && !c.parentId);
+  const extra = cats.filter((c) => c.type === 'expense' && c.parentId && budgetLimit(store, c.id, key) > 0);
+  return parents.concat(extra).map((c) => ({
+    ...c,
+    spent: spentInCategory(store, c.id, key),
+    budget: budgetLimit(store, c.id, key),
+  }));
 }
 
 function leftToSpend(store, mk) {
@@ -574,6 +661,7 @@ Object.assign(window, {
   zenithSoftShadow,
   ZENITH_STORE_KEY,
   DEFAULT_CATEGORIES,
+  CATEGORY_GROUPS,
   DEFAULT_ACCOUNTS,
   COPY,
   t,
@@ -604,4 +692,10 @@ Object.assign(window, {
   spentOnAccount,
   newMoneyId,
   methodForAccount,
+  moveIndex,
+  withCategoryTree,
+  parentCategories,
+  childCategories,
+  categoryTreeIds,
+  categoryPreview,
 });

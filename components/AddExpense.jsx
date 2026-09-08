@@ -21,6 +21,11 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
     if (type === 'transfer') return c.id === 'transfer' || c.id === 'other';
     return c.type === 'expense' || c.id === 'other';
   });
+  const showSubs = type === 'expense' && (!store || store.showSubcategories !== false);
+  const parentChips = visibleCats.filter((c) => (type === 'expense' ? !c.parentId : true));
+  const selected = findCat({ categories: cats }, selectedCat);
+  const selectedParentId = selected && selected.parentId ? selected.parentId : selectedCat;
+  const childChips = showSubs ? visibleCats.filter((c) => c.parentId && c.parentId === selectedParentId) : [];
 
   React.useEffect(() => {
     if (type === 'transfer') setSelectedCat('transfer');
@@ -153,14 +158,14 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
 
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '14px 0 8px' }}>{t(locale, 'category')}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {visibleCats.map((c) => (
+          {parentChips.map((c) => (
             <button
               key={c.id}
               type="button"
-              aria-pressed={selectedCat === c.id}
+              aria-pressed={selectedParentId === c.id}
               aria-label={catLabel(c, locale)}
               onClick={() => setSelectedCat(c.id)}
-              style={chip(selectedCat === c.id, c.color)}
+              style={chip(selectedParentId === c.id, c.color)}
             >
               <span aria-hidden="true">{c.emoji}</span>
               <span style={{ whiteSpace: 'nowrap' }}>{catLabel(c, locale)}</span>
@@ -170,6 +175,29 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
             + {t(locale, 'newCategory')}
           </button>
         </div>
+        {childChips.length > 0 && (
+          <>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '12px 0 8px' }}>{t(locale, 'subcategory')}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {childChips.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  aria-pressed={selectedCat === c.id}
+                  aria-label={catLabel(c, locale)}
+                  onClick={() => setSelectedCat(c.id)}
+                  style={chip(selectedCat === c.id, c.color)}
+                >
+                  <span aria-hidden="true">{c.emoji}</span>
+                  <span style={{ whiteSpace: 'nowrap' }}>{catLabel(c, locale)}</span>
+                </button>
+              ))}
+              <button type="button" onClick={() => setQuick('subcategory')} style={chip(false)}>
+                + {t(locale, 'newCategory')}
+              </button>
+            </div>
+          </>
+        )}
 
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '14px 0 8px' }}>{t(locale, 'account')}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -287,10 +315,11 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
           }}
         />
       )}
-      {quick === 'category' && typeof CategoryForm === 'function' && (
+      {(quick === 'category' || quick === 'subcategory') && typeof CategoryForm === 'function' && (
         <CategoryForm
           locale={locale}
-          category={null}
+          category={quick === 'subcategory' && selectedParentId ? { parentId: selectedParentId } : null}
+          parents={parentChips.filter((c) => c.type === 'expense')}
           canDelete={false}
           onCancel={() => setQuick(null)}
           onSave={(draft) => {

@@ -5,24 +5,46 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { localAccountBalances } = require('../lib/local-ledger');
+const { zenithSafeAreaFallback, zenithApplyIosSafeArea } = require('../lib/ios-safe-area');
 
 const root = path.join(__dirname, '..');
 const add = fs.readFileSync(path.join(root, 'components/AddExpense.jsx'), 'utf8');
 const profile = fs.readFileSync(path.join(root, 'components/Profile.jsx'), 'utf8');
 const budget = fs.readFileSync(path.join(root, 'components/BudgetSetup.jsx'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const zenithHtml = fs.readFileSync(path.join(root, 'Zenith.html'), 'utf8');
 const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+const catsMgr = fs.readFileSync(path.join(root, 'components/CategoriesManager.jsx'), 'utf8');
+const acctsMgr = fs.readFileSync(path.join(root, 'components/AccountsManager.jsx'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'app.jsx'), 'utf8');
 
 assert.doesNotMatch(add, /\['UPI', 'Card', 'Cash'\]/);
 assert.match(add, /overflowY: 'auto'/);
 assert.match(add, /--zenith-pad-top/);
 assert.match(add, /newAccount/);
 assert.match(add, /newCategory/);
+assert.match(add, /subcategory/);
 assert.match(html, /MoneyForms\.jsx/);
-assert.match(profile, /addAccount/);
-assert.match(profile, /addCategory/);
+assert.match(html, /ios-safe-area\.js/);
+assert.match(html, /AccountsManager\.jsx/);
+assert.match(html, /CategoriesManager\.jsx/);
+assert.match(html, /--zenith-safe-top/);
+assert.match(html, /100dvh/);
+assert.match(html, /--zenith-pad-bottom[\s\S]*?\}\s*html, body/);
+assert.match(zenithHtml, /ios-safe-area\.js/);
+assert.match(profile, /manageAccounts/);
+assert.match(profile, /manageCategories/);
+assert.match(profile, /t\(locale, 'edit'\)/);
+assert.match(profile, /ZenithScreenHeader/);
+assert.match(profile, /--zenith-pad-top/);
 assert.match(budget, /accountsTitle/);
 assert.match(budget, /onSetAccountBudget/);
+assert.match(catsMgr, /subcategory/);
+assert.match(catsMgr, /addSubcategory/);
+assert.match(acctsMgr, /addAccount/);
+assert.match(app, /AccountsManagerScreen/);
+assert.match(app, /CategoriesManagerScreen/);
+assert.match(app, /reorderAccounts/);
 
 assert.match(readme, /zenith-raaghavks-projects\.vercel\.app/);
 assert.doesNotMatch(readme, /ivory-one/);
@@ -60,4 +82,53 @@ const bals = localAccountBalances({
 assert.strictEqual(bals.find((r) => r.id === 'bank').balance, 80000);
 assert.strictEqual(bals.find((r) => r.id === 'hdfc').balance, 4500);
 
-console.log('custom accounts, categories, account budgets, add layout ok');
+const store = ctx.createInitialStore();
+assert.ok(store.categories.some((c) => c.id === 'grp-food'));
+assert.strictEqual(store.categories.find((c) => c.id === 'kirana').parentId, 'grp-food');
+assert.strictEqual(store.showSubcategories, true);
+assert.ok(ctx.parentCategories(store.categories, 'expense').some((c) => c.id === 'grp-food'));
+assert.ok(ctx.childCategories(store.categories, 'grp-food').some((c) => c.id === 'kirana'));
+
+store.transactions = [{ type: 'expense', categoryId: 'kirana', amount: 120, date: '2026-09-08' }];
+assert.strictEqual(ctx.spentInCategory(store, 'kirana', '2026-09'), 120);
+assert.strictEqual(ctx.spentInCategory(store, 'grp-food', '2026-09'), 120);
+
+const moved = ctx.moveIndex([{ id: 'a' }, { id: 'b' }, { id: 'c' }], 0, 2);
+assert.deepStrictEqual(moved.map((x) => x.id), ['b', 'c', 'a']);
+
+const migrated = ctx.withCategoryTree([
+  { id: 'kirana', name: 'Kirana', type: 'expense', group: 'food' },
+  { id: 'salary', name: 'Salary', type: 'income', group: 'money' },
+]);
+assert.ok(migrated.some((c) => c.id === 'grp-food'));
+assert.strictEqual(migrated.find((c) => c.id === 'kirana').parentId, 'grp-food');
+assert.strictEqual(migrated.find((c) => c.id === 'salary').parentId, null);
+
+const iphone14promax = zenithSafeAreaFallback({
+  navigator: { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', standalone: true },
+  matchMedia: () => ({ matches: true }),
+  screen: { width: 430, height: 932 },
+  document: { documentElement: { style: { setProperty() {} }, dataset: {} } },
+});
+assert.strictEqual(iphone14promax.top, 59);
+assert.strictEqual(iphone14promax.bottom, 34);
+
+const simulated = zenithSafeAreaFallback({
+  location: { search: '?iphone=1' },
+  navigator: { userAgent: 'Mozilla/5.0' },
+  screen: { width: 1280, height: 800 },
+  document: { documentElement: { style: { setProperty() {} }, dataset: {} } },
+});
+assert.strictEqual(simulated.top, 59);
+
+const props = {};
+const applied = zenithApplyIosSafeArea({
+  location: { search: '?iphone=1' },
+  navigator: { userAgent: 'Mozilla/5.0' },
+  screen: { width: 1280, height: 800 },
+  document: { documentElement: { style: { setProperty(k, v) { props[k] = v; } }, dataset: {} } },
+});
+assert.strictEqual(applied.top, 59);
+assert.strictEqual(props['--zenith-safe-top'], '59px');
+
+console.log('custom accounts, categories, account budgets, add layout, iPhone safe area ok');

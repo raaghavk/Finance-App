@@ -19,6 +19,10 @@ Safari will not install from `http://localhost`. After it opens:
 
 That icon opens like a normal iOS app: no Safari address bar, no nested fake iPhone. This is a web app on the Home Screen (PWA), not the App Store. A native Capacitor wrap can come later.
 
+**The Home Screen icon only updates after this code is on production.** Until the customize PR is merged, Add to Home Screen still shows the older You tab (no Edit). After merge, delete the icon and Add to Home Screen again, or force-close the PWA.
+
+On iPhone 14 Pro Max the status bar / Dynamic Island is padded with `env(safe-area-inset-*)` plus a 59px fallback when Safari reports 0. **You** has a sticky **Edit** button in the top-right. **Manage accounts** and **Manage categories** open full editors: add, rename, delete, reorder, per-account monthly budgets, and nested subcategories.
+
 ## Local data
 
 Home, Activity, Plan, and You read the on-device ledger. On **You** you can add or edit accounts (including a monthly budget for Bank), and add your own categories. Adding an expense uses those same lists. Notion is not part of this install.
@@ -46,7 +50,7 @@ Static files plus optional `/api/*` functions. `vercel.json` is in the repo so H
 - **Activity** — local ledger
 - **Plan** — local budgets and goals
 - **+** — Voice, Scan, or Manual (voice/OCR only if those keys are set; you can always type)
-- **You** — local accounts and budgets
+- **You** — **Edit** (top-right), local accounts, category tree, budgets
 
 ## Tests
 

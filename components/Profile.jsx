@@ -1,7 +1,8 @@
-// Profile.jsx — You tab: locale, INR-only, local-only copy
+// Profile.jsx — You tab: obvious Edit, then dedicated account / category managers
 
-function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSaveAccount, onDeleteAccount, onSaveCategory, onDeleteCategory }) {
+function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSaveAccount, onDeleteAccount }) {
   const locale = store.user.locale || 'en';
+  const [editing, setEditing] = React.useState(false);
   const [sheet, setSheet] = React.useState(null);
   const standalone = typeof window !== 'undefined' && (
     (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
@@ -17,28 +18,57 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
   const budget = totalBudgetLimit(store);
   const spent = monthExpenseTotal(store);
   const saved = Math.max(budget - spent, 0);
+  const page = typeof ZENITH !== 'undefined' ? ZENITH.page : '#F5F5F7';
+  const accent = typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB';
+  const cats = store.categories || [];
+  const parents = typeof parentCategories === 'function'
+    ? parentCategories(cats, 'expense')
+    : cats.filter((c) => c.type === 'expense' && !c.parentId);
 
-  const Row = ({ label, sub, last, danger, children, onClick }) => (
+  const Row = ({ label, sub, last, danger, children, onClick, showChevron }) => (
     <div
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter') onClick(); } : undefined}
       style={{
         padding: '14px 20px',
         borderBottom: last ? 'none' : '1px solid #F2F2F7',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12,
         cursor: onClick ? 'pointer' : 'default',
+        minHeight: 56,
       }}
     >
-      <div>
+      <div style={{ minWidth: 0, flex: 1 }}>
         <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: danger ? '#FF3B30' : '#1C1C1E' }}>{label}</p>
-        {sub && <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93', marginTop: 3 }}>{sub}</p>}
+        {sub && <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</p>}
       </div>
-      {children}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        {children}
+        {showChevron && typeof ZenithChevron === 'function' ? <ZenithChevron /> : null}
+      </div>
     </div>
   );
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', position: 'relative', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F5F5F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
-      <div style={{ padding: '0 24px 24px', textAlign: 'center' }}>
+    <div style={{ height: '100%', overflowY: 'auto', position: 'relative', background: page, paddingBottom: 'var(--zenith-pad-bottom)' }}>
+      {typeof ZenithScreenHeader === 'function' ? (
+        <ZenithScreenHeader
+          title={t(locale, 'you')}
+          rightLabel={editing ? t(locale, 'done') : t(locale, 'edit')}
+          rightAria={editing ? t(locale, 'done') : t(locale, 'edit')}
+          onRight={() => setEditing((v) => !v)}
+        />
+      ) : (
+        <div style={{ paddingTop: 'var(--zenith-pad-top)', padding: '12px 16px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button type="button" aria-label={t(locale, 'edit')} onClick={() => setEditing((v) => !v)} style={{
+            border: 'none', background: 'none', color: accent, fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 800,
+          }}>{editing ? t(locale, 'done') : t(locale, 'edit')}</button>
+        </div>
+      )}
+
+      <div style={{ padding: '4px 24px 24px', textAlign: 'center' }}>
         <div style={{
           width: 84, height: 84, borderRadius: 28, margin: '0 auto 14px',
           background: 'linear-gradient(145deg, #2563EB, #1D4ED8)',
@@ -61,12 +91,17 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
             { label: locale === 'hi' ? 'बचा' : 'Left', value: fmtCompact(saved) },
           ].map((s) => (
             <div key={s.label} style={{ flex: 1, background: '#FFFFFF', borderRadius: 18, padding: '14px 8px' }}>
-              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB' }}>{s.value}</p>
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, color: accent }}>{s.value}</p>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8E8E93' }}>{s.label}</p>
             </div>
           ))}
         </div>
       </div>
+
+      <p style={{
+        margin: '0 20px 16px', padding: '12px 14px', borderRadius: 14, background: '#E8EEF7',
+        fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#1D4ED8', lineHeight: 1.4,
+      }}>{t(locale, 'customizeHint')}</p>
 
       {!standalone && (
         <p style={{
@@ -87,7 +122,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
                 onClick={() => onSetLocale && onSetLocale(id)}
                 style={{
                   padding: '6px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                  background: locale === id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB') : '#F0F0F3',
+                  background: locale === id ? accent : '#F0F0F3',
                   color: locale === id ? '#fff' : '#3C3C43',
                   fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700,
                 }}
@@ -109,16 +144,19 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
               label={t(locale, 'notionExpenses')}
               sub={locale === 'hi' ? 'Notion से पढ़ें · INR' : 'Read-only from Notion · INR'}
               onClick={() => onNavigate && onNavigate('notionExpenses')}
+              showChevron
             />
             <Row
               label={t(locale, 'notionAccounts')}
               sub={locale === 'hi' ? 'शुरुआती शेष ± खर्च' : 'Opening ± tagged spend'}
               onClick={() => onNavigate && onNavigate('notionAccounts')}
+              showChevron
             />
             <Row
               label={t(locale, 'notionBudgets')}
               sub={locale === 'hi' ? 'इस महीने बचा' : 'Left this month by category'}
               onClick={() => onNavigate && onNavigate('notionBudgets')}
+              showChevron
             />
           </>
         ) : (
@@ -130,12 +168,47 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
                 label={acctLabel(row, locale) || row.name}
                 sub={fmt(row.balance) + (cap > 0 ? ' · ' + t(locale, 'monthlyCap') + ' ' + fmt(cap) : '')}
                 onClick={() => setSheet({ kind: 'account', item: row })}
-              />
+                showChevron={!editing}
+              >
+                {editing ? (
+                  <span aria-hidden="true">{typeof ZenithPencil === 'function' ? <ZenithPencil /> : '✎'}</span>
+                ) : null}
+              </Row>
             );
           })
         )}
-        <Row label={'+ ' + t(locale, 'addAccount')} onClick={() => setSheet({ kind: 'account', item: null })} />
-        <Row label={t(locale, 'budgets')} sub={budget > 0 ? fmt(budget) : t(locale, 'noBudgetYet')} onClick={() => onNavigate && onNavigate('budget')} last />
+        <Row
+          label={t(locale, 'manageAccounts')}
+          sub={t(locale, 'addAccount') + ' · ' + t(locale, 'edit')}
+          onClick={() => onNavigate && onNavigate('accounts')}
+          showChevron
+        />
+        <Row label={t(locale, 'budgets')} sub={budget > 0 ? fmt(budget) : t(locale, 'noBudgetYet')} onClick={() => onNavigate && onNavigate('budget')} last showChevron />
+      </div>
+
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>{t(locale, 'categories')}</p>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', padding: '0 24px', marginBottom: 8, lineHeight: 1.4 }}>{t(locale, 'categoryHint')}</p>
+      <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
+        {parents.slice(0, 4).map((c) => {
+          const kids = typeof childCategories === 'function' ? childCategories(cats, c.id) : [];
+          const preview = typeof categoryPreview === 'function' ? categoryPreview(cats, c.id, locale) : kids.map((k) => k.name).join(', ');
+          return (
+            <Row
+              key={c.id}
+              label={catLabel(c, locale) + (kids.length ? '(' + kids.length + ')' : '')}
+              sub={preview || c.emoji}
+              onClick={() => onNavigate && onNavigate('categories')}
+              showChevron
+            />
+          );
+        })}
+        <Row
+          label={t(locale, 'manageCategories')}
+          sub={t(locale, 'addCategory') + ' · ' + t(locale, 'subcategory')}
+          last
+          onClick={() => onNavigate && onNavigate('categories')}
+          showChevron
+        />
       </div>
 
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
@@ -153,6 +226,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
           label={locale === 'hi' ? 'CSV निकालें' : 'Export CSV'}
           sub={locale === 'hi' ? 'इस डिवाइस पर डाउनलोड' : 'Download on this device'}
           onClick={onExport}
+          showChevron
         />
         <Row
           label={locale === 'hi' ? 'सारा डेटा मिटाएँ' : 'Clear all data'}
@@ -163,15 +237,6 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
         />
       </div>
 
-      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>{t(locale, 'categories')}</p>
-      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', padding: '0 24px', marginBottom: 8, lineHeight: 1.4 }}>{t(locale, 'categoryHint')}</p>
-      <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
-        {(store.categories || []).filter((c) => c.type === 'expense').map((c, i, arr) => (
-          <Row key={c.id} label={catLabel(c, locale)} sub={c.emoji} onClick={() => setSheet({ kind: 'category', item: c })} last={false} />
-        ))}
-        <Row label={'+ ' + t(locale, 'addCategory')} last onClick={() => setSheet({ kind: 'category', item: null })} />
-      </div>
-
       <div style={{ textAlign: 'center', padding: '8px 24px 20px' }}>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93', lineHeight: 1.45 }}>{t(locale, 'localOnly')}</p>
       </div>
@@ -180,20 +245,10 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
         <AccountForm
           locale={locale}
           account={sheet.item ? { ...sheet.item, _cap: typeof accountBudgetLimit === 'function' ? accountBudgetLimit(store, sheet.item.id) : 0 } : null}
-          canDelete={!!(sheet.item && (store.accounts || []).length > 1)}
+          canDelete={!!(sheet.item && (store.accounts || []).length > 1 && editing)}
           onCancel={() => setSheet(null)}
           onDelete={() => { onDeleteAccount && onDeleteAccount(sheet.item.id); setSheet(null); }}
           onSave={(draft) => { onSaveAccount && onSaveAccount(sheet.item && sheet.item.id, draft); setSheet(null); }}
-        />
-      )}
-      {sheet && sheet.kind === 'category' && typeof CategoryForm === 'function' && (
-        <CategoryForm
-          locale={locale}
-          category={sheet.item}
-          canDelete={!!(sheet.item && (store.categories || []).filter((c) => c.type === 'expense').length > 1)}
-          onCancel={() => setSheet(null)}
-          onDelete={() => { onDeleteCategory && onDeleteCategory(sheet.item.id); setSheet(null); }}
-          onSave={(draft) => { onSaveCategory && onSaveCategory(sheet.item && sheet.item.id, draft); setSheet(null); }}
         />
       )}
     </div>

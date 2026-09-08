@@ -76,10 +76,18 @@ function ZenithApp() {
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
 
-  const TABS = ['home', 'activity', 'plan', 'you', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
+  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
 
   const patch = (fn) => setStore((prev) => {
-    const next = fn({ ...prev, user: { ...prev.user }, transactions: [...(prev.transactions || [])], budgets: [...(prev.budgets || [])], alertsRead: { ...(prev.alertsRead || {}) } });
+    const next = fn({
+      ...prev,
+      user: { ...prev.user },
+      transactions: [...(prev.transactions || [])],
+      budgets: [...(prev.budgets || [])],
+      accounts: [...(prev.accounts || [])],
+      categories: [...(prev.categories || [])],
+      alertsRead: { ...(prev.alertsRead || {}) },
+    });
     return next;
   });
 
@@ -176,12 +184,20 @@ function ZenithApp() {
       color: draft.color || '#2563EB',
       type: draft.type || 'expense',
       group: 'custom',
+      parentId: draft.parentId || null,
       custom: true,
     };
     patch((s) => {
       let categories = [...(s.categories || [])];
       if (id) {
-        categories = categories.map((c) => (c.id === id ? { ...c, name: draft.name, nameHi: draft.name, emoji: draft.emoji, color: draft.color } : c));
+        categories = categories.map((c) => (c.id === id ? {
+          ...c,
+          name: draft.name,
+          nameHi: draft.name,
+          emoji: draft.emoji,
+          color: draft.color,
+          parentId: draft.parentId !== undefined ? (draft.parentId || null) : c.parentId,
+        } : c));
       } else {
         categories = categories.concat([created]);
       }
@@ -192,10 +208,45 @@ function ZenithApp() {
 
   const deleteCategory = (id) => {
     patch((s) => {
-      const expenseCats = (s.categories || []).filter((c) => c.type === 'expense' && c.id !== id);
-      if (expenseCats.length === 0) return s;
-      return { ...s, categories: (s.categories || []).filter((c) => c.id !== id) };
+      const cats = s.categories || [];
+      const target = cats.find((c) => c.id === id);
+      if (!target) return s;
+      const next = cats.filter((c) => c.id !== id).map((c) => (c.parentId === id ? { ...c, parentId: null } : c));
+      if (!next.some((c) => c.type === 'expense')) return s;
+      const fallback = next.find((c) => c.type === 'expense') || next[0];
+      const transactions = (s.transactions || []).map((tx) => (tx.categoryId === id ? { ...tx, categoryId: fallback.id } : tx));
+      const budgets = (s.budgets || []).filter((b) => b.categoryId !== id);
+      return { ...s, categories: next, transactions, budgets };
     });
+  };
+
+  const reorderAccounts = (from, to) => {
+    patch((s) => ({ ...s, accounts: typeof moveIndex === 'function' ? moveIndex(s.accounts, from, to) : s.accounts }));
+  };
+
+  const reorderCategory = (id, dir) => {
+    patch((s) => {
+      const cats = (s.categories || []).slice();
+      const idx = cats.findIndex((c) => c.id === id);
+      if (idx < 0) return s;
+      const target = cats[idx];
+      const siblingIdxs = [];
+      cats.forEach((c, i) => {
+        if ((c.parentId || null) === (target.parentId || null) && c.type === target.type) siblingIdxs.push(i);
+      });
+      const pos = siblingIdxs.indexOf(idx);
+      const nextPos = pos + dir;
+      if (pos < 0 || nextPos < 0 || nextPos >= siblingIdxs.length) return s;
+      const swapWith = siblingIdxs[nextPos];
+      const tmp = cats[idx];
+      cats[idx] = cats[swapWith];
+      cats[swapWith] = tmp;
+      return { ...s, categories: cats };
+    });
+  };
+
+  const toggleSubcategories = (on) => {
+    patch((s) => ({ ...s, showSubcategories: !!on }));
   };
 
   const exportCsv = () => {
@@ -290,8 +341,25 @@ function ZenithApp() {
                       onExport={exportCsv}
                       onSaveAccount={saveAccount}
                       onDeleteAccount={deleteAccount}
+                    />
+                  )}
+                  {tab === 'accounts' && (
+                    <AccountsManagerScreen
+                      store={store}
+                      onBack={() => goTab('you')}
+                      onSaveAccount={saveAccount}
+                      onDeleteAccount={deleteAccount}
+                      onReorder={reorderAccounts}
+                    />
+                  )}
+                  {tab === 'categories' && (
+                    <CategoriesManagerScreen
+                      store={store}
+                      onBack={() => goTab('you')}
                       onSaveCategory={saveCategory}
                       onDeleteCategory={deleteCategory}
+                      onReorder={reorderCategory}
+                      onToggleSubcategories={toggleSubcategories}
                     />
                   )}
                   {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetAccountBudget={setAccountBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
@@ -412,8 +480,8 @@ function ZenithApp() {
                 <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
-                <NavBtn label={t(locale, 'you')} active={activeTab === 'you'} accent={accent} onClick={() => goTab('you')}
-                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke={activeTab === 'you' ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M5 19c1.4-3 4-4.5 7-4.5S17.6 16 19 19" stroke={activeTab === 'you' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
+                <NavBtn label={t(locale, 'you')} active={['you', 'accounts', 'categories'].includes(activeTab)} accent={accent} onClick={() => goTab('you')}
+                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M5 19c1.4-3 4-4.5 7-4.5S17.6 16 19 19" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
               </div>
             )}

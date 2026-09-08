@@ -34,23 +34,28 @@
       --zenith-page: #F2F5FA;
       --zenith-ink: #0F172A;
       --zenith-accent: #2563EB;
-      --zenith-pad-top: calc(env(safe-area-inset-top, 0px) + 12px);
-      --zenith-pad-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+      --zenith-safe-top: 0px;
+      --zenith-safe-bottom: 0px;
+      --zenith-pad-top: calc(max(env(safe-area-inset-top, 0px), var(--zenith-safe-top, 0px)) + 14px);
+      --zenith-pad-bottom: calc(108px + max(env(safe-area-inset-bottom, 0px), var(--zenith-safe-bottom, 0px)));
     }
 
-    body {
+    html, body {
       background: var(--zenith-page);
-      display: block;
-      min-height: 100dvh;
-      min-height: 100vh;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      height: -webkit-fill-available;
       overflow: hidden;
+      overscroll-behavior: none;
     }
     #root {
       width: 100%;
+      height: 100%;
       height: 100dvh;
-      height: 100vh;
-      height: 100svh;
+      height: -webkit-fill-available;
       display: block;
+      overflow: hidden;
     }
     #device-scaler {
       transform: none !important;
@@ -80,6 +85,7 @@
 <body>
   <div id="root"></div>
 
+  <script src="lib/ios-safe-area.js"></script>
   <script src="lib/zenith-chrome.js"></script>
   <script src="lib/local-ledger.js"></script>
   <script type="text/babel" src="state.js"></script>
@@ -96,6 +102,8 @@
   <script type="text/babel" src="components/TravelExtras.jsx"></script>
   <script type="text/babel" src="components/TravelMode.jsx"></script>
   <script type="text/babel" src="components/Profile.jsx"></script>
+  <script type="text/babel" src="components/AccountsManager.jsx"></script>
+  <script type="text/babel" src="components/CategoriesManager.jsx"></script>
   <script type="text/babel" src="components/BudgetSetup.jsx"></script>
   <script type="text/babel" src="components/Plan.jsx"></script>
   <script type="text/babel" src="components/Search.jsx"></script>
