@@ -3,8 +3,24 @@
   "private": true,
   "description": "Zenith personal finance app — local ledger + Notion Expenses read path",
   "scripts": {
-    "test": "node scripts/test-theme.js && node scripts/test-notion-expenses.js && node scripts/test-notion-accounts-budgets.js && node scripts/test-parse-expense.js && node scripts/test-capture-api.js",
+    "test": "node scripts/test-theme.js && node scripts/test-capacitor.js && node scripts/test-notion-expenses.js && node scripts/test-notion-accounts-budgets.js && node scripts/test-parse-expense.js && node scripts/test-capture-api.js",
     "start": "node scripts/dev-server.js",
-    "dev": "node scripts/dev-server.js"
+    "dev": "node scripts/dev-server.js",
+    "cap:prepare": "node scripts/prepare-www.js",
+    "cap:sync": "node scripts/prepare-www.js && npx cap sync",
+    "cap:ios": "node scripts/prepare-www.js && npx cap sync ios",
+    "cap:android": "node scripts/prepare-www.js && npx cap sync android",
+    "cap:assets": "npx capacitor-assets generate --iconBackgroundColor '#2563EB' --iconBackgroundColorDark '#2563EB' --splashBackgroundColor '#2563EB' --splashBackgroundColorDark '#2563EB'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
+    "@capacitor/splash-screen": "^7.0.3",
+    "@capacitor/status-bar": "^7.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.4.3"
   }
 }

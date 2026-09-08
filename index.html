@@ -18,6 +18,12 @@
       // Fake iPhone chrome is OFF by default (Vercel + real phones). Opt-in: localhost desktop or ?demo=1.
       function zenithShouldUseDeviceFrame(loc) {
         loc = loc || location;
+        try {
+          if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return false;
+        } catch (e) {}
+        try {
+          if (/Capacitor/i.test(String(navigator.userAgent || ''))) return false;
+        } catch (e) {}
         var host = String(loc.hostname || '');
         if (/\.vercel\.app$/i.test(host)) return false;
         var standalone = false;
@@ -135,6 +141,7 @@
   <div id="root"></div>
 
   <script src="lib/zenith-chrome.js"></script>
+  <script src="lib/capacitor-bridge.js"></script>
   <script src="lib/local-ledger.js"></script>
   <script type="text/babel" src="state.js"></script>
   <script src="lib/notion/map.js"></script>
