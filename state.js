@@ -2,6 +2,18 @@
 
 const ZENITH_STORE_KEY = 'zenith_v1_store';
 
+const ZENITH = {
+  page: '#F7F0E6',
+  ink: '#2A2118',
+  muted: '#8B735F',
+  accent: '#C45C26',
+  accentDeep: '#9A3D18',
+  card: '#FFFDF8',
+  cream: '#F1E4D2',
+  live: '#2F6B3A',
+  warn: '#A15C12',
+};
+
 const DEFAULT_CATEGORIES = [
   { id: 'kirana', name: 'Kirana', nameHi: 'किराना', emoji: '🛒', color: '#34D399', type: 'expense', group: 'food' },
   { id: 'chai', name: 'Chai / Coffee', nameHi: 'चाय / कॉफ़ी', emoji: '☕', color: '#C4A484', type: 'expense', group: 'food' },
@@ -48,7 +60,7 @@ const COPY = {
     setBalance: 'Set opening cash',
     privacyTitle: 'Your data stays with you.',
     noCloud: 'No Cloud Sync',
-    noCloudDesc: 'v1 is local-only. Everything lives on this device.',
+    noCloudDesc: 'The ledger lives on this device. Optional voice and receipt OCR use Sarvam and Cloud Vision when those keys are set.',
     encrypt: 'Local storage',
     encryptDesc: 'Your ledger stays in this browser. We never see it.',
     noHarvest: 'Zero Data Harvest',
@@ -108,7 +120,7 @@ const COPY = {
     later: 'Later',
     travelLater: 'Travel Mode is coming later.',
     language: 'Language',
-    localOnly: 'Zenith v1 · Local-only · No data leaves this device',
+    localOnly: 'Ledger stays in this browser. Notion is read-only. Voice/OCR leave the device only if Sarvam or Vision keys are set.',
     alerts: 'Alerts',
     allCaughtUp: 'All caught up',
     allCaughtUpSub: 'Budget warnings will show here when a category hits 90%.',
@@ -129,6 +141,19 @@ const COPY = {
     notionByCategory: 'By category',
     notionByKind: 'By kind',
     notionByTrip: 'By trip',
+    notionUnpriced: '{n} unpriced (₹—) left out of this total',
+    voiceTitle: 'Voice',
+    voiceHint: 'Try “Zomato pe 349” or “spent 200 on chai”.',
+    voiceNeedKey: 'Add SARVAM_API_KEY to transcribe with Sarvam Saaras. You can still log manually.',
+    voiceHold: 'Tap to speak',
+    voiceStop: 'Stop',
+    voiceListening: 'Listening…',
+    voiceSending: 'Transcribing…',
+    scanTitle: 'Scan receipt',
+    scanHint: 'Photo is compressed on this device. Cloud Vision reads it when GOOGLE_CLOUD_VISION_API_KEY is set.',
+    scanNoOcr: 'OCR is off. The photo still attaches locally.',
+    addFromVoice: 'Review & add',
+    attachPhoto: 'Attach photo',
   },
   hi: {
     hi: 'नमस्ते, मैं Zenith हूँ।',
@@ -144,7 +169,7 @@ const COPY = {
     setBalance: 'नकदी सेट करें',
     privacyTitle: 'आपका डेटा आपके पास रहता है।',
     noCloud: 'कोई क्लाउड सिंक नहीं',
-    noCloudDesc: 'v1 सिर्फ़ इस डिवाइस पर है।',
+    noCloudDesc: 'बही इस डिवाइस पर है। Voice और रसीद OCR तभी Sarvam/Vision पर जाते हैं जब कुंजी सेट हो।',
     encrypt: 'लोकल स्टोरेज',
     encryptDesc: 'आपकी बही इसी ब्राउज़र में रहती है।',
     noHarvest: 'कोई डेटा कलेक्ट नहीं',
@@ -204,7 +229,7 @@ const COPY = {
     later: 'बाद में',
     travelLater: 'ट्रैवल मोड बाद में आएगा।',
     language: 'भाषा',
-    localOnly: 'Zenith v1 · सिर्फ़ इस डिवाइस पर',
+    localOnly: 'बही इस ब्राउज़र में रहती है। Notion सिर्फ़ पढ़ने के लिए। Voice/OCR तभी बाहर जाते हैं जब Sarvam या Vision की कुंजी हो।',
     alerts: 'अलर्ट',
     allCaughtUp: 'सब ठीक है',
     allCaughtUpSub: 'कोई श्रेणी 90% पर पहुँचे तो चेतावनी यहाँ दिखेगी।',
@@ -225,6 +250,19 @@ const COPY = {
     notionByCategory: 'श्रेणी',
     notionByKind: 'प्रकार',
     notionByTrip: 'ट्रिप',
+    notionUnpriced: '{n} बिना राशि (₹—) कुल में नहीं हैं',
+    voiceTitle: 'आवाज़',
+    voiceHint: '“Zomato pe 349” या “spent 200 on chai” कहें।',
+    voiceNeedKey: 'Sarvam Saaras के लिए SARVAM_API_KEY लगाएँ। मैन्युअल जोड़ अभी भी चलता है।',
+    voiceHold: 'बोलने के लिए टैप करें',
+    voiceStop: 'रोकें',
+    voiceListening: 'सुन रहा है…',
+    voiceSending: 'लिख रहा है…',
+    scanTitle: 'रसीद स्कैन',
+    scanHint: 'फ़ोटो यहीं कंप्रेस होती है। GOOGLE_CLOUD_VISION_API_KEY हो तो Vision पढ़ेगा।',
+    scanNoOcr: 'OCR बंद है। फ़ोटो लोकल अटैच रहेगी।',
+    addFromVoice: 'जाँचकर जोड़ें',
+    attachPhoto: 'फ़ोटो जोड़ें',
   },
 };
 
@@ -419,6 +457,7 @@ function newTxnId() {
 }
 
 Object.assign(window, {
+  ZENITH,
   ZENITH_STORE_KEY,
   DEFAULT_CATEGORIES,
   DEFAULT_ACCOUNTS,

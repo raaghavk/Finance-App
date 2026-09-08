@@ -26,7 +26,7 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
   const totalShown = results.filter((t) => t.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F2F2F7' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F2F2F7' }}>
       <div style={{ padding: '70px 20px 12px' }}>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 30, fontWeight: 800, color: '#1C1C1E', letterSpacing: -0.5, marginBottom: 14 }}>{t(locale, 'activity')}</h1>
         {typeof SourceSwitch === 'function' && (
@@ -40,12 +40,12 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           background: '#FFFFFF', borderRadius: 16, padding: '12px 16px',
-          border: `1.5px solid ${focused ? '#007AFF' : 'transparent'}`,
+          border: `1.5px solid ${focused ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : 'transparent'}`,
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <circle cx="6.5" cy="6.5" r="5" stroke={focused ? '#007AFF' : '#8E8E93'} strokeWidth="1.6"/>
-            <path d="M10 10l4 4" stroke={focused ? '#007AFF' : '#8E8E93'} strokeWidth="1.6" strokeLinecap="round"/>
+            <circle cx="6.5" cy="6.5" r="5" stroke={focused ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#8E8E93'} strokeWidth="1.6"/>
+            <path d="M10 10l4 4" stroke={focused ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#8E8E93'} strokeWidth="1.6" strokeLinecap="round"/>
           </svg>
           <input
             type="search"
@@ -64,7 +64,7 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
             onClick={() => setActiveCat('All')}
             style={{
               flexShrink: 0, padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
-              background: activeCat === 'All' ? '#007AFF' : '#FFFFFF',
+              background: activeCat === 'All' ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#FFFFFF',
               color: activeCat === 'All' ? '#fff' : '#1C1C1E',
               fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600,
             }}
@@ -92,7 +92,7 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
               style={{
                 padding: '6px 10px', borderRadius: 10, border: 'none', cursor: 'pointer',
                 background: sort === id ? '#E8F1FF' : 'transparent',
-                color: sort === id ? '#007AFF' : '#8E8E93',
+                color: sort === id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#8E8E93',
                 fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
               }}
             >{label}</button>

@@ -13,6 +13,8 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
   const [method, setMethod] = React.useState(initial && initial.method ? initial.method : 'UPI');
   const [date, setDate] = React.useState(initial && initial.date ? initial.date : todayISO());
   const [saved, setSaved] = React.useState(false);
+  const [receiptPhoto, setReceiptPhoto] = React.useState(initial && initial.receiptPhoto ? initial.receiptPhoto : '');
+  const photoRef = React.useRef(null);
 
   const visibleCats = cats.filter((c) => {
     if (type === 'income') return c.type === 'income' || c.id === 'other' || c.id === 'cashback' || c.id === 'salary';
@@ -55,6 +57,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
       accountId,
       method,
       date,
+      receiptPhoto: receiptPhoto || undefined,
     });
   };
 
@@ -63,11 +66,11 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
   const title = initial ? t(locale, 'edit') : t(locale, 'addTxn');
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'absolute', inset: 0, background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#FFFDF8', display: 'flex', flexDirection: 'column' }}>
       <div style={{ paddingTop: 72, paddingLeft: 24, paddingRight: 24, paddingBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" aria-label={t(locale, 'close')} onClick={onClose} style={{
-          background: '#F5F5F7', border: 'none', borderRadius: 14,
-          width: 40, height: 40, cursor: 'pointer',
+          background: typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7', border: 'none', borderRadius: 14,
+          width: 44, height: 44, cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -87,7 +90,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
             onClick={() => setType(id)}
             style={{
               flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
-              background: type === id ? '#007AFF' : '#F5F5F7',
+              background: type === id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : (typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7'),
               color: type === id ? '#fff' : '#1C1C1E',
               fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700,
             }}
@@ -96,7 +99,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
       </div>
 
       <div style={{ padding: '8px 24px 4px', textAlign: 'center' }}>
-        <div style={{ background: '#F5F5F7', borderRadius: 22, padding: '18px 16px' }}>
+        <div style={{ background: typeof ZENITH !== 'undefined' ? ZENITH.card : '#F5F5F7', borderRadius: 22, padding: '18px 16px', boxShadow: '0 2px 12px rgba(90,50,20,0.05)' }}>
           {cat && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -108,7 +111,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-            <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 32, fontWeight: 700, color: '#007AFF' }}>₹</span>
+            <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 32, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26' }}>₹</span>
             <span style={{
               fontFamily: 'Manrope, sans-serif',
               fontSize: amount.length > 5 ? 40 : 56,
@@ -127,6 +130,9 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
               textAlign: 'center', width: '100%', marginTop: 8,
             }}
           />
+          {receiptPhoto ? (
+            <img src={receiptPhoto} alt="Attached receipt" style={{ marginTop: 10, width: 72, height: 72, objectFit: 'cover', borderRadius: 12 }} />
+          ) : null}
         </div>
       </div>
 
@@ -161,8 +167,8 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
               onClick={() => setAccountId(a.id)}
               style={{
                 flex: 1, padding: '8px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: accountId === a.id ? '#E8F1FF' : '#F5F5F7',
-                color: accountId === a.id ? '#007AFF' : '#3C3C43',
+                background: accountId === a.id ? '#F3E0D2' : (typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7'),
+                color: accountId === a.id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#3C3C43',
                 fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
               }}
             >{acctLabel(a, locale)}</button>
@@ -177,8 +183,8 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
               onClick={() => setMethod(m)}
               style={{
                 flex: 1, padding: '8px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: method === m ? '#E8F1FF' : '#F5F5F7',
-                color: method === m ? '#007AFF' : '#3C3C43',
+                background: method === m ? '#F3E0D2' : (typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7'),
+                color: method === m ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#3C3C43',
                 fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
               }}
             >{m}</button>
@@ -197,6 +203,34 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
             }}
           />
         </label>
+        <input
+          ref={photoRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          aria-label={t(locale, 'attachPhoto')}
+          style={{ display: 'none' }}
+          onChange={async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+              const dataUrl = typeof compressImageFile === 'function' ? await compressImageFile(file) : URL.createObjectURL(file);
+              setReceiptPhoto(dataUrl);
+            } catch (err) {
+              setReceiptPhoto('');
+            }
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => photoRef.current && photoRef.current.click()}
+          style={{
+            minHeight: 44, border: 'none', borderRadius: 12, cursor: 'pointer',
+            background: typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7',
+            color: typeof ZENITH !== 'undefined' ? ZENITH.ink : '#1C1C1E',
+            fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700,
+          }}
+        >{t(locale, 'attachPhoto')}</button>
       </div>
 
       <div style={{ flex: 1, padding: '4px 20px 0', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -233,10 +267,10 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
           style={{
             width: '100%', padding: '16px', borderRadius: 16, border: 'none',
             cursor: canSave ? 'pointer' : 'default',
-            background: saved ? '#34D399' : (canSave ? '#007AFF' : '#E5E5EA'),
+            background: saved ? '#34D399' : (canSave ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#E5E5EA'),
             color: '#fff',
             fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 800,
-            boxShadow: canSave ? '0 8px 24px rgba(0,122,255,0.35)' : 'none',
+            boxShadow: canSave ? '0 8px 24px rgba(196,92,38,0.32)' : 'none',
           }}
         >
           {saved ? t(locale, 'save') : t(locale, 'addAmount', { n: fmt(amt) })}

@@ -1,7 +1,7 @@
 // app.jsx — Zenith v1: store, four-tab IA, honest first run
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "accentColor": "#007AFF",
+  "accentColor": "#C45C26",
   "userName": "",
   "startOnHome": false,
   "showTravelBadge": false
@@ -159,7 +159,7 @@ function ZenithApp() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0A0A0A' }} id="device-scaler">
       <div style={{ position: 'relative' }}>
         <IOSDevice width={402} height={874}>
-          <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: '#F2F2F7' }}>
+          <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: '#F7F0E6' }}>
 
             {screen === 'onboarding' && (
               <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
@@ -241,8 +241,10 @@ function ZenithApp() {
               }}>
                 {screen === 'voiceEntry' && (
                   <VoiceEntryScreen
+                    locale={locale}
                     onClose={() => setScreen(activeTab)}
                     onManual={() => { setEditTx(null); setScreen('addExpense'); }}
+                    onDraft={(draft) => { setEditTx(draft); setScreen('addExpense'); }}
                   />
                 )}
               </div>
@@ -257,8 +259,10 @@ function ZenithApp() {
               }}>
                 {screen === 'cameraScan' && (
                   <CameraScanScreen
+                    locale={locale}
                     onClose={() => setScreen(activeTab)}
                     onManual={() => { setEditTx(null); setScreen('addExpense'); }}
+                    onDraft={(draft) => { setEditTx(draft); setScreen('addExpense'); }}
                   />
                 )}
               </div>
