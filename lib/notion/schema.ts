@@ -1,13 +1,24 @@
 /**
- * Notion Expenses schema — mirror of collection://b35c3e74-0bc7-432d-8309-80a7583d3601
- * Database: https://app.notion.com/p/76941781c8ef4d258923b9c2a6750292
- *
+ * Notion schema mirrors — Expenses, Accounts, Budgets.
  * Currency is INR (Notion number format: rupee).
  * Writes are owned by Expense Tracker. This app is read-only.
+ *
+ * Expenses: https://app.notion.com/p/76941781c8ef4d258923b9c2a6750292
+ *   collection://b35c3e74-0bc7-432d-8309-80a7583d3601
+ * Accounts: https://app.notion.com/p/a9effaa05c66492a9780b5a36cda1d63
+ *   collection://2c0de472-1d21-4243-bcd8-1fb19ab89bba
+ * Budgets: https://app.notion.com/p/301bb78c3c094fb1aee38bcb57f7beb0
+ *   collection://3f8d31df-d13d-49a2-a9ac-f5b8489f737f
  */
 
 export const NOTION_EXPENSES_DATABASE_ID = '76941781c8ef4d258923b9c2a6750292';
 export const NOTION_EXPENSES_DATA_SOURCE_ID = 'b35c3e74-0bc7-432d-8309-80a7583d3601';
+
+export const NOTION_ACCOUNTS_DATABASE_ID = 'a9effaa05c66492a9780b5a36cda1d63';
+export const NOTION_ACCOUNTS_DATA_SOURCE_ID = '2c0de472-1d21-4243-bcd8-1fb19ab89bba';
+
+export const NOTION_BUDGETS_DATABASE_ID = '301bb78c3c094fb1aee38bcb57f7beb0';
+export const NOTION_BUDGETS_DATA_SOURCE_ID = '3f8d31df-d13d-49a2-a9ac-f5b8489f737f';
 
 export const EXPENSE_CATEGORIES = [
   'Food',
@@ -112,4 +123,78 @@ export interface NotionExpenseWriteInput {
   notes?: string;
   receipt?: string | null;
   reimbursable?: boolean;
+}
+
+/** Accounts row. Name matches Expenses Account select. */
+export interface NotionAccount {
+  id: string;
+  url: string;
+  name: string;
+  notes: string;
+  /** Opening balance (number, rupee). Null when Notion has no value. */
+  openingBalance: number | null;
+}
+
+/**
+ * Per-account wallet: opening − tagged Expenses (priced Amounts only).
+ * Primary credit may be negative (amount owed). Opening null is treated as 0 for math.
+ */
+export interface AccountBalance {
+  id: string;
+  url: string;
+  name: string;
+  notes: string;
+  openingBalance: number | null;
+  openingMissing: boolean;
+  spent: number;
+  expenseCount: number;
+  balance: number;
+}
+
+/** Budgets row. Category enums match Expenses. */
+export interface NotionBudget {
+  id: string;
+  url: string;
+  name: string;
+  category: ExpenseCategory | null;
+  monthlyCap: number | null;
+  notes: string;
+}
+
+/** Monthly cap − this-month spend in that Category. */
+export interface BudgetProgress {
+  id: string;
+  url: string;
+  name: string;
+  category: ExpenseCategory | null;
+  notes: string;
+  monthlyCap: number | null;
+  capMissing: boolean;
+  spent: number;
+  expenseCount: number;
+  /** Null when the cap is missing. */
+  left: number | null;
+  over: boolean;
+  /** spent / cap, or null when cap is missing or 0. */
+  pct: number | null;
+  monthKey: string;
+}
+
+export type NotionMoneySource = 'notion' | 'mock' | 'error';
+
+export interface NotionAccountsSnapshot {
+  source: NotionMoneySource;
+  accounts: NotionAccount[];
+  balances: AccountBalance[];
+  warning?: string;
+  error?: string;
+}
+
+export interface NotionBudgetsSnapshot {
+  source: NotionMoneySource;
+  budgets: NotionBudget[];
+  progress: BudgetProgress[];
+  monthKey: string;
+  warning?: string;
+  error?: string;
 }

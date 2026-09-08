@@ -12,6 +12,8 @@ const path = require('path');
 const { URL } = require('url');
 
 const handleExpenses = require('../api/expenses');
+const handleAccounts = require('../api/accounts');
+const handleBudgets = require('../api/budgets');
 const handleStatus = require('../api/status');
 const handleVoice = require('../api/voice');
 const handleOcr = require('../api/ocr');
@@ -61,6 +63,12 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', 'http://127.0.0.1');
   if (url.pathname === '/api/expenses' || url.pathname === '/api/expenses/') {
     return handleExpenses(req, res);
+  }
+  if (url.pathname === '/api/accounts' || url.pathname === '/api/accounts/') {
+    return handleAccounts(req, res);
+  }
+  if (url.pathname === '/api/budgets' || url.pathname === '/api/budgets/') {
+    return handleBudgets(req, res);
   }
   if (url.pathname === '/api/status' || url.pathname === '/api/status/') {
     return handleStatus(req, res);
