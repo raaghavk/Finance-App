@@ -276,4 +276,4 @@ function NotionHomeCard({ locale, onOpen }) {
   );
 }
 
-Object.assign(window, { NotionExpensesScreen, NotionHomeCard, SourceSwitch });
+Object.assign(window, { NotionExpensesScreen, NotionHomeCard, SourceSwitch, NotionStatusBanner });

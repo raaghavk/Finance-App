@@ -7,6 +7,7 @@ function PlanScreen({ store, onNavigate }) {
   const spent = monthExpenseTotal(store, mk);
 
   const cards = [
+    { id: 'notionBudgets', title: t(locale, 'notionBudgets'), sub: t(locale, 'notionLeftMonth'), emoji: '📒' },
     { id: 'budget', title: t(locale, 'budgets'), sub: budget > 0 ? fmt(spent) + ' / ' + fmt(budget) : t(locale, 'noBudgetYet'), emoji: '🎯' },
     { id: 'recurring', title: t(locale, 'recurring'), sub: locale === 'hi' ? 'बिल और सब्सक्रिप्शन' : 'Bills & subscriptions', emoji: '🔄' },
     { id: 'goals', title: t(locale, 'goals'), sub: locale === 'hi' ? 'बचत लक्ष्य' : 'Savings targets', emoji: '🏆' },

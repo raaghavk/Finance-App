@@ -76,7 +76,7 @@ function ZenithApp() {
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
 
-  const TABS = ['home', 'activity', 'plan', 'you', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'notionExpenses'];
+  const TABS = ['home', 'activity', 'plan', 'you', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
 
   const patch = (fn) => setStore((prev) => {
     const next = fn({ ...prev, user: { ...prev.user }, transactions: [...(prev.transactions || [])], budgets: [...(prev.budgets || [])], alertsRead: { ...(prev.alertsRead || {}) } });
@@ -210,6 +210,8 @@ function ZenithApp() {
                   {tab === 'notifications' && <NotificationsScreen store={store} onBack={goBack} onMarkRead={(id) => patch((s) => ({ ...s, alertsRead: { ...s.alertsRead, [id]: true } }))} />}
                   {tab === 'categoryDetail' && <CategoryDetailScreen store={store} category={categoryArg} onBack={goBack} onSelectTx={openDrawer} />}
                   {tab === 'notionExpenses' && <NotionExpensesScreen store={store} onNavigate={goTab} />}
+                  {tab === 'notionAccounts' && <NotionAccountsScreen store={store} onNavigate={goTab} />}
+                  {tab === 'notionBudgets' && <NotionBudgetsScreen store={store} onNavigate={goTab} />}
                 </div>
               );
             })}
@@ -307,15 +309,15 @@ function ZenithApp() {
                 background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(24px)',
                 borderTop: '0.5px solid rgba(0,0,0,0.08)',
               }}>
-                <NavBtn label={t(locale, 'home')} active={activeTab === 'home'} accent={accent} onClick={() => goTab('home')}
-                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z" stroke={activeTab === 'home' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinejoin="round" fill={activeTab === 'home' ? accent + '18' : 'none'}/></svg>}
+                <NavBtn label={t(locale, 'home')} active={activeTab === 'home' || activeTab === 'notionAccounts'} accent={accent} onClick={() => goTab('home')}
+                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z" stroke={activeTab === 'home' || activeTab === 'notionAccounts' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinejoin="round" fill={activeTab === 'home' || activeTab === 'notionAccounts' ? accent + '18' : 'none'}/></svg>}
                 />
                 <NavBtn label={t(locale, 'activity')} active={activeTab === 'activity' || activeTab === 'notionExpenses'} accent={accent} onClick={() => goTab('activity')}
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h13" stroke={activeTab === 'activity' || activeTab === 'notionExpenses' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
                 <div style={{ width: 58 }} />
-                <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
-                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
+                <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
+                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
                 <NavBtn label={t(locale, 'you')} active={activeTab === 'you'} accent={accent} onClick={() => goTab('you')}
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke={activeTab === 'you' ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M5 19c1.4-3 4-4.5 7-4.5S17.6 16 19 19" stroke={activeTab === 'you' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
