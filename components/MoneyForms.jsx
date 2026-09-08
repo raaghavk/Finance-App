@@ -4,28 +4,32 @@ const ZENITH_CAT_COLORS = ['#2563EB', '#34D399', '#F97316', '#8B5CF6', '#EC4899'
 const ZENITH_CAT_EMOJI = ['🛒', '☕', '🚗', '🏠', '💊', '🎬', '📱', '🏦', '✦', '📦'];
 
 function MoneySheet({ title, onClose, children, footer }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(15,23,42,0.35)', display: 'flex', alignItems: 'flex-end' }}>
+  const node = (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(15,23,42,0.35)', display: 'flex', alignItems: 'flex-end' }}>
       <div
         role="dialog"
         aria-label={title}
         style={{
           width: '100%', background: '#FFFFFF', borderRadius: '24px 24px 0 0',
           padding: '16px 20px calc(18px + env(safe-area-inset-bottom, 0px))',
-          maxHeight: '88%', overflowY: 'auto',
+          maxHeight: '88%', display: 'flex', flexDirection: 'column',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
           <h2 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 18, fontWeight: 800, color: '#0F172A' }}>{title}</h2>
           <button type="button" onClick={onClose} aria-label="Close" style={{
             width: 36, height: 36, border: 'none', borderRadius: 12, background: '#F2F5FA', cursor: 'pointer', fontSize: 18,
           }}>×</button>
         </div>
-        {children}
-        {footer}
+        <div style={{ overflowY: 'auto', minHeight: 0, flex: 1 }}>{children}</div>
+        <div style={{ flexShrink: 0 }}>{footer}</div>
       </div>
     </div>
   );
+  if (typeof ReactDOM !== 'undefined' && ReactDOM.createPortal && typeof document !== 'undefined') {
+    return ReactDOM.createPortal(node, document.body);
+  }
+  return node;
 }
 
 function AccountForm({ locale, account, canDelete, onSave, onCancel, onDelete }) {
