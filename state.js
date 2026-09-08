@@ -61,9 +61,9 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const DEFAULT_ACCOUNTS = [
-  { id: 'cash', name: 'Cash', nameHi: 'नकद' },
-  { id: 'bank', name: 'Bank', nameHi: 'बैंक' },
-  { id: 'card', name: 'Credit card', nameHi: 'क्रेडिट कार्ड' },
+  { id: 'cash', name: 'Cash', nameHi: 'नकद', opening: 0 },
+  { id: 'bank', name: 'Bank', nameHi: 'बैंक', opening: 0 },
+  { id: 'card', name: 'Credit card', nameHi: 'क्रेडिट कार्ड', opening: 0 },
 ];
 
 const COPY = {
@@ -191,6 +191,22 @@ const COPY = {
     scanNoOcr: 'OCR is off. The photo still attaches locally.',
     addFromVoice: 'Review & add',
     attachPhoto: 'Attach photo',
+    addAccount: 'Add account',
+    editAccount: 'Edit account',
+    accountName: 'Account name',
+    openingBalance: 'Opening balance',
+    monthlyCap: 'Monthly budget',
+    addCategory: 'Add category',
+    editCategory: 'Edit category',
+    categoryName: 'Category name',
+    newAccount: 'New',
+    newCategory: 'New',
+    accountsTitle: 'Accounts',
+    saveChanges: 'Save',
+    installHome: 'Safari → Share → Add to Home Screen to hide the browser bar.',
+    moneyHint: 'Tap an account to rename it, set opening, or set a monthly budget.',
+    categoryHint: 'Tap a category to rename it. Add your own for anything missing.',
+    cannotDeleteLast: 'Keep at least one account.',
   },
   hi: {
     hi: 'नमस्ते, मैं Zenith हूँ।',
@@ -316,6 +332,22 @@ const COPY = {
     scanNoOcr: 'OCR बंद है। फ़ोटो लोकल अटैच रहेगी।',
     addFromVoice: 'जाँचकर जोड़ें',
     attachPhoto: 'फ़ोटो जोड़ें',
+    addAccount: 'खाता जोड़ें',
+    editAccount: 'खाता बदलें',
+    accountName: 'खाते का नाम',
+    openingBalance: 'शुरुआती शेष',
+    monthlyCap: 'मासिक बजट',
+    addCategory: 'श्रेणी जोड़ें',
+    editCategory: 'श्रेणी बदलें',
+    categoryName: 'श्रेणी का नाम',
+    newAccount: 'नया',
+    newCategory: 'नई',
+    accountsTitle: 'खाते',
+    saveChanges: 'सेव',
+    installHome: 'Safari → Share → होम स्क्रीन पर जोड़ें, ताकि ब्राउज़र बार छिपे।',
+    moneyHint: 'खाते पर टैप करें — नाम, शुरुआती शेष, मासिक बजट।',
+    categoryHint: 'श्रेणी पर टैप करके नाम बदलें। अपनी श्रेणी जोड़ सकते हैं।',
+    cannotDeleteLast: 'कम से कम एक खाता रखें।',
   },
 };
 
@@ -455,15 +487,40 @@ function monthIncomeTotal(store, mk) {
 
 function budgetLimit(store, categoryId, mk) {
   const key = mk || monthKey();
-  const row = (store.budgets || []).find((b) => b.categoryId === categoryId && b.monthKey === key);
+  const row = (store.budgets || []).find((b) => b.categoryId === categoryId && !b.accountId && b.monthKey === key);
+  return row ? Number(row.limit) || 0 : 0;
+}
+
+function accountBudgetLimit(store, accountId, mk) {
+  const key = mk || monthKey();
+  const row = (store.budgets || []).find((b) => b.accountId === accountId && b.monthKey === key);
   return row ? Number(row.limit) || 0 : 0;
 }
 
 function totalBudgetLimit(store, mk) {
   const key = mk || monthKey();
   return (store.budgets || [])
-    .filter((b) => b.monthKey === key)
+    .filter((b) => b.monthKey === key && b.categoryId && !b.accountId)
     .reduce((s, b) => s + (Number(b.limit) || 0), 0);
+}
+
+function spentOnAccount(store, accountId, mk) {
+  return monthTxns(store, mk)
+    .filter((tx) => tx.type === 'expense' && tx.accountId === accountId)
+    .reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+}
+
+function newMoneyId(prefix, name) {
+  const s = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 12);
+  return prefix + '-' + (s || 'x') + '-' + Date.now().toString(36).slice(-4);
+}
+
+function methodForAccount(account) {
+  if (!account) return 'UPI';
+  const n = String(account.name || account.id || '');
+  if (account.id === 'cash' || /cash|नकद/i.test(n)) return 'Cash';
+  if (account.id === 'card' || /card|credit|क्रेडिट/i.test(n)) return 'Card';
+  return 'UPI';
 }
 
 function spentInCategory(store, categoryId, mk) {
@@ -543,4 +600,8 @@ Object.assign(window, {
   leftToSpend,
   buildAlerts,
   newTxnId,
+  accountBudgetLimit,
+  spentOnAccount,
+  newMoneyId,
+  methodForAccount,
 });

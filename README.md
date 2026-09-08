@@ -4,7 +4,13 @@ Personal finance app. INR. Cool blue. Your expenses and account balances are sav
 
 ## Install on iPhone
 
-Use HTTPS (production: https://zenith-raaghavks-projects.vercel.app). Safari will not install from `http://localhost`.
+Use this link only: **https://zenith-raaghavks-projects.vercel.app**
+
+Safari will not install from `http://localhost`. After it opens:
+
+1. Tap **Share**
+2. Tap **Add to Home Screen**
+3. Confirm **Add**
 
 1. Open Zenith in **Safari**
 2. Tap **Share**
@@ -15,7 +21,7 @@ That icon opens like a normal iOS app: no Safari address bar, no nested fake iPh
 
 ## Local data
 
-Home, Activity, Plan, and You read the on-device ledger. Adding an expense updates that same store. Notion sync is not part of this install.
+Home, Activity, Plan, and You read the on-device ledger. On **You** you can add or edit accounts (including a monthly budget for Bank), and add your own categories. Adding an expense uses those same lists. Notion is not part of this install.
 
 Open locally:
 

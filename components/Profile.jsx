@@ -1,7 +1,12 @@
 // Profile.jsx — You tab: locale, INR-only, local-only copy
 
-function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
+function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSaveAccount, onDeleteAccount, onSaveCategory, onDeleteCategory }) {
   const locale = store.user.locale || 'en';
+  const [sheet, setSheet] = React.useState(null);
+  const standalone = typeof window !== 'undefined' && (
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+    || window.navigator.standalone === true
+  );
   const daysTracking = (() => {
     if (!store.startedAt) return 1;
     const a = new Date(store.startedAt + 'T12:00:00');
@@ -32,7 +37,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
   );
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F5F5F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
+    <div style={{ height: '100%', overflowY: 'auto', position: 'relative', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F5F5F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
       <div style={{ padding: '0 24px 24px', textAlign: 'center' }}>
         <div style={{
           width: 84, height: 84, borderRadius: 28, margin: '0 auto 14px',
@@ -63,6 +68,13 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
         </div>
       </div>
 
+      {!standalone && (
+        <p style={{
+          margin: '0 20px 16px', padding: '12px 14px', borderRadius: 14, background: '#E8EEF7',
+          fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#1D4ED8', lineHeight: 1.4,
+        }}>{t(locale, 'installHome')}</p>
+      )}
+
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>{t(locale, 'language')}</p>
       <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
         <Row label={t(locale, 'language')} last>
@@ -88,6 +100,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
         {locale === 'hi' ? 'पैसा' : 'Money'}
       </p>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', padding: '0 24px', marginBottom: 8, lineHeight: 1.4 }}>{t(locale, 'moneyHint')}</p>
       <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
         <Row label={locale === 'hi' ? 'मुद्रा' : 'Currency'} sub="INR" />
         {(typeof zenithNotionEnabled === 'function' && zenithNotionEnabled()) ? (
@@ -109,14 +122,19 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
             />
           </>
         ) : (
-          (typeof localAccountBalances === 'function' ? localAccountBalances(store) : []).map((row) => (
-            <Row
-              key={row.id}
-              label={acctLabel(row, locale) || row.name}
-              sub={fmt(row.balance)}
-            />
-          ))
+          (typeof localAccountBalances === 'function' ? localAccountBalances(store) : []).map((row) => {
+            const cap = typeof accountBudgetLimit === 'function' ? accountBudgetLimit(store, row.id) : 0;
+            return (
+              <Row
+                key={row.id}
+                label={acctLabel(row, locale) || row.name}
+                sub={fmt(row.balance) + (cap > 0 ? ' · ' + t(locale, 'monthlyCap') + ' ' + fmt(cap) : '')}
+                onClick={() => setSheet({ kind: 'account', item: row })}
+              />
+            );
+          })
         )}
+        <Row label={'+ ' + t(locale, 'addAccount')} onClick={() => setSheet({ kind: 'account', item: null })} />
         <Row label={t(locale, 'budgets')} sub={budget > 0 ? fmt(budget) : t(locale, 'noBudgetYet')} onClick={() => onNavigate && onNavigate('budget')} last />
       </div>
 
@@ -146,15 +164,38 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport }) {
       </div>
 
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>{t(locale, 'categories')}</p>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', padding: '0 24px', marginBottom: 8, lineHeight: 1.4 }}>{t(locale, 'categoryHint')}</p>
       <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
-        {store.categories.filter((c) => c.type === 'expense').slice(0, 8).map((c, i, arr) => (
-          <Row key={c.id} label={catLabel(c, locale)} sub={c.emoji} last={i === arr.length - 1} />
+        {(store.categories || []).filter((c) => c.type === 'expense').map((c, i, arr) => (
+          <Row key={c.id} label={catLabel(c, locale)} sub={c.emoji} onClick={() => setSheet({ kind: 'category', item: c })} last={false} />
         ))}
+        <Row label={'+ ' + t(locale, 'addCategory')} last onClick={() => setSheet({ kind: 'category', item: null })} />
       </div>
 
       <div style={{ textAlign: 'center', padding: '8px 24px 20px' }}>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93', lineHeight: 1.45 }}>{t(locale, 'localOnly')}</p>
       </div>
+
+      {sheet && sheet.kind === 'account' && typeof AccountForm === 'function' && (
+        <AccountForm
+          locale={locale}
+          account={sheet.item ? { ...sheet.item, _cap: typeof accountBudgetLimit === 'function' ? accountBudgetLimit(store, sheet.item.id) : 0 } : null}
+          canDelete={!!(sheet.item && (store.accounts || []).length > 1)}
+          onCancel={() => setSheet(null)}
+          onDelete={() => { onDeleteAccount && onDeleteAccount(sheet.item.id); setSheet(null); }}
+          onSave={(draft) => { onSaveAccount && onSaveAccount(sheet.item && sheet.item.id, draft); setSheet(null); }}
+        />
+      )}
+      {sheet && sheet.kind === 'category' && typeof CategoryForm === 'function' && (
+        <CategoryForm
+          locale={locale}
+          category={sheet.item}
+          canDelete={!!(sheet.item && (store.categories || []).filter((c) => c.type === 'expense').length > 1)}
+          onCancel={() => setSheet(null)}
+          onDelete={() => { onDeleteCategory && onDeleteCategory(sheet.item.id); setSheet(null); }}
+          onSave={(draft) => { onSaveCategory && onSaveCategory(sheet.item && sheet.item.id, draft); setSheet(null); }}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 // BudgetSetup.jsx — Live store budgets + optional monthly income
 
-function BudgetSetupScreen({ store, onSetBudget, onSetIncome }) {
+function BudgetSetupScreen({ store, onSetBudget, onSetIncome, onSetAccountBudget, onNavigate }) {
   const locale = store.user.locale || 'en';
   const mk = monthKey();
   const rows = categorySpendRows(store, mk);
@@ -92,6 +92,72 @@ function BudgetSetupScreen({ store, onSetBudget, onSetIncome }) {
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      <div style={{ padding: '0 20px', marginBottom: 20 }}>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10 }}>{t(locale, 'accountsTitle')}</p>
+        <div style={{ background: '#FFFFFF', borderRadius: 22, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          {(store.accounts || []).map((acct, i, arr) => {
+            const cap = typeof accountBudgetLimit === 'function' ? accountBudgetLimit(store, acct.id, mk) : 0;
+            const spent = typeof spentOnAccount === 'function' ? spentOnAccount(store, acct.id, mk) : 0;
+            const isEditing = editing === 'acct:' + acct.id;
+            const pct = cap > 0 ? spent / cap : 0;
+            return (
+              <div key={acct.id} style={{ padding: '14px 18px', borderBottom: i < arr.length - 1 ? '1px solid #F2F2F7' : 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E' }}>{acctLabel(acct, locale)}</span>
+                  {isEditing ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, color: '#2563EB' }}>₹</span>
+                      <input
+                        autoFocus
+                        type="number"
+                        aria-label={acctLabel(acct, locale)}
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        onBlur={() => {
+                          const val = parseInt(draft, 10);
+                          if (!isNaN(val) && val >= 0 && onSetAccountBudget) onSetAccountBudget(acct.id, val);
+                          setEditing(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = parseInt(draft, 10);
+                            if (!isNaN(val) && val >= 0 && onSetAccountBudget) onSetAccountBudget(acct.id, val);
+                            setEditing(null);
+                          }
+                        }}
+                        style={{
+                          width: 80, border: 'none', outline: 'none',
+                          borderBottom: '2px solid #2563EB',
+                          fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700,
+                          color: '#2563EB', background: 'transparent', textAlign: 'right',
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => { setEditing('acct:' + acct.id); setDraft(String(cap || '')); }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E' }}>
+                        {cap > 0 ? fmt(cap) : '₹0'}
+                      </span>
+                    </button>
+                  )}
+                </div>
+                <div style={{ height: 4, background: '#F2F2F7', borderRadius: 2 }}>
+                  <div style={{ height: '100%', width: `${Math.min(pct, 1) * 100}%`, background: pct >= 1 ? '#FF3B30' : '#2563EB', borderRadius: 2 }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8E8E93' }}>{fmt(spent)}</span>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8E8E93' }}>{cap > 0 ? fmt(Math.max(cap - spent, 0)) : '—'}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

@@ -117,8 +117,84 @@ function ZenithApp() {
   const setBudget = (categoryId, limit) => {
     patch((s) => {
       const mk = monthKey();
-      const rest = s.budgets.filter((b) => !(b.categoryId === categoryId && b.monthKey === mk));
+      const rest = s.budgets.filter((b) => !(b.categoryId === categoryId && !b.accountId && b.monthKey === mk));
       return { ...s, budgets: [...rest, { categoryId, monthKey: mk, limit }] };
+    });
+  };
+
+  const setAccountBudget = (accountId, limit) => {
+    patch((s) => {
+      const mk = monthKey();
+      const rest = (s.budgets || []).filter((b) => !(b.accountId === accountId && b.monthKey === mk));
+      const next = [...rest];
+      if (limit > 0) next.push({ accountId, monthKey: mk, limit });
+      return { ...s, budgets: next };
+    });
+  };
+
+  const saveAccount = (id, draft) => {
+    const created = id ? null : {
+      id: typeof newMoneyId === 'function' ? newMoneyId('acct', draft.name) : ('acct-' + Date.now()),
+      name: draft.name,
+      nameHi: draft.name,
+      opening: Number(draft.opening) || 0,
+      custom: true,
+    };
+    patch((s) => {
+      let accounts = [...(s.accounts || [])];
+      if (id) {
+        accounts = accounts.map((a) => (a.id === id ? { ...a, name: draft.name, nameHi: draft.name, opening: Number(draft.opening) || 0 } : a));
+      } else {
+        accounts = accounts.concat([created]);
+      }
+      const targetId = id || created.id;
+      const cash = accounts.find((a) => a.id === 'cash');
+      const openingCash = cash ? (Number(cash.opening) || 0) : s.openingCash;
+      const mk = monthKey();
+      let budgets = (s.budgets || []).filter((b) => !(b.accountId === targetId && b.monthKey === mk));
+      if (Number(draft.cap) > 0) budgets = budgets.concat([{ accountId: targetId, monthKey: mk, limit: Number(draft.cap) }]);
+      return { ...s, accounts, openingCash, budgets };
+    });
+    return created;
+  };
+
+  const deleteAccount = (id) => {
+    patch((s) => {
+      const accounts = (s.accounts || []).filter((a) => a.id !== id);
+      if (accounts.length === 0) return s;
+      const budgets = (s.budgets || []).filter((b) => b.accountId !== id);
+      return { ...s, accounts, budgets };
+    });
+  };
+
+  const saveCategory = (id, draft) => {
+    const created = id ? null : {
+      id: typeof newMoneyId === 'function' ? newMoneyId('cat', draft.name) : ('cat-' + Date.now()),
+      name: draft.name,
+      nameHi: draft.name,
+      emoji: draft.emoji || '✦',
+      color: draft.color || '#2563EB',
+      type: draft.type || 'expense',
+      group: 'custom',
+      custom: true,
+    };
+    patch((s) => {
+      let categories = [...(s.categories || [])];
+      if (id) {
+        categories = categories.map((c) => (c.id === id ? { ...c, name: draft.name, nameHi: draft.name, emoji: draft.emoji, color: draft.color } : c));
+      } else {
+        categories = categories.concat([created]);
+      }
+      return { ...s, categories };
+    });
+    return created;
+  };
+
+  const deleteCategory = (id) => {
+    patch((s) => {
+      const expenseCats = (s.categories || []).filter((c) => c.type === 'expense' && c.id !== id);
+      if (expenseCats.length === 0) return s;
+      return { ...s, categories: (s.categories || []).filter((c) => c.id !== id) };
     });
   };
 
@@ -174,7 +250,11 @@ function ZenithApp() {
                   locale={locale}
                   onSetLocale={(id) => patch((s) => ({ ...s, user: { ...s.user, locale: id } }))}
                   onSetName={(name) => patch((s) => ({ ...s, user: { ...s.user, name } }))}
-                  onSetCash={(n) => patch((s) => ({ ...s, openingCash: n }))}
+                  onSetCash={(n) => patch((s) => ({
+                    ...s,
+                    openingCash: n,
+                    accounts: (s.accounts || []).map((a) => (a.id === 'cash' ? { ...a, opening: n } : a)),
+                  }))}
                   onNext={() => {
                     if (onboardStep < 3) setOnboardStep((x) => x + 1);
                     else {
@@ -208,9 +288,13 @@ function ZenithApp() {
                       onReset={resetAll}
                       onNavigate={goTab}
                       onExport={exportCsv}
+                      onSaveAccount={saveAccount}
+                      onDeleteAccount={deleteAccount}
+                      onSaveCategory={saveCategory}
+                      onDeleteCategory={deleteCategory}
                     />
                   )}
-                  {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
+                  {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetAccountBudget={setAccountBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
                   {tab === 'goals' && <SavingsGoalsScreen />}
                   {tab === 'recurring' && <RecurringScreen />}
                   {tab === 'notifications' && <NotificationsScreen store={store} onBack={goBack} onMarkRead={(id) => patch((s) => ({ ...s, alertsRead: { ...s.alertsRead, [id]: true } }))} />}
@@ -235,6 +319,8 @@ function ZenithApp() {
                     initial={editTx}
                     onClose={() => { setEditTx(null); setScreen(activeTab); }}
                     onSave={saveTxn}
+                    onQuickAddAccount={(draft) => saveAccount(null, draft)}
+                    onQuickAddCategory={(draft) => saveCategory(null, draft)}
                   />
                 )}
               </div>
