@@ -94,13 +94,15 @@ function NotionExpenseRow({ expense, locale, last }) {
   const color = (CATEGORY_COLORS && CATEGORY_COLORS[expense.category]) || (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#007AFF');
   const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#1C1C1E';
   const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#8E8E93';
+  const payLabel = locale === 'hi' ? 'भुगतान' : 'Pay';
+  const acctLabelText = locale === 'hi' ? 'खाता' : 'Account';
   const bits = [
     relDate(expense.date, locale),
     expense.category,
     expense.kind,
-    expense.payment,
-    expense.account,
     expense.trip,
+    expense.payment ? payLabel + ' ' + expense.payment : null,
+    acctLabelText + ' ' + (expense.account || '—'),
   ].filter(Boolean);
   const unpriced = expense.amount === null || expense.amount === undefined;
   return (

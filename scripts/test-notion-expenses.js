@@ -72,6 +72,27 @@ assert.deepStrictEqual(map.EXPENSE_TRIPS, ['Vietnam Sep 2026', 'Varanasi Sep 202
 assert.deepStrictEqual(map.EXPENSE_ACCOUNTS, ['Cash', 'UPI', 'Primary debit', 'Primary credit', 'Corporate']);
 assert.notStrictEqual(map.EXPENSE_PAYMENTS, map.EXPENSE_ACCOUNTS, 'Payment is instrument; Account is wallet');
 
+const corporateCard = map.mapNotionPageToExpense({
+  id: 'corp',
+  url: '',
+  properties: {
+    Name: { type: 'title', title: [{ plain_text: 'Client dinner' }] },
+    Amount: { type: 'number', number: 2400 },
+    Date: { type: 'date', date: { start: '2026-09-03' } },
+    Payment: { type: 'select', select: { name: 'Card' } },
+    Account: { type: 'select', select: { name: 'Corporate' } },
+  },
+});
+assert.strictEqual(corporateCard.payment, 'Card');
+assert.strictEqual(corporateCard.account, 'Corporate');
+assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Cash') >= 0);
+assert.ok(map.EXPENSE_ACCOUNTS.indexOf('UPI') >= 0);
+assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Primary debit') >= 0);
+assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Primary credit') >= 0);
+assert.ok(map.EXPENSE_ACCOUNTS.indexOf('Corporate') >= 0);
+assert.strictEqual(map.fromOwnerFixture({ Name: 'Taxi', Amount: 80, date: '2026-09-01', Payment: 'Cash', Account: 'Primary credit' }).account, 'Primary credit');
+assert.strictEqual(map.fromOwnerFixture({ Name: 'Taxi', Amount: 80, date: '2026-09-01', Payment: 'Cash', Account: 'Primary credit' }).payment, 'Cash');
+
 assert.strictEqual(map.asCheckbox(true), true);
 assert.strictEqual(map.asCheckbox('__YES__'), true);
 assert.strictEqual(map.asCheckbox('__NO__'), false);
