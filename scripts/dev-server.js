@@ -48,6 +48,7 @@ const TYPES = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.webp': 'image/webp',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.ts': 'text/plain; charset=utf-8',
 };
 

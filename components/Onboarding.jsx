@@ -26,13 +26,13 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
       onClick={() => { if (!disabled) action(); }}
       style={{
         width: '100%', padding: '18px', marginBottom: extra ? 12 : 40,
-        background: disabled ? '#E8D8C8' : (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26'),
-        color: disabled ? '#8A7464' : '#FFFFFF',
+        background: disabled ? '#C7D2E0' : (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB'),
+        color: disabled ? '#64748B' : '#FFFFFF',
         border: 'none', borderRadius: 18,
         fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 700,
         cursor: disabled ? 'default' : 'pointer',
         transition: 'all 0.25s',
-        boxShadow: disabled ? 'none' : '0 8px 24px rgba(196,92,38,0.32)',
+        boxShadow: disabled ? 'none' : '0 8px 24px rgba(37,99,235,0.32)',
       }}
     >{label}</button>
   );
@@ -43,7 +43,7 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
       background: bg,
       display: 'flex', flexDirection: 'column',
       padding: '24px',
-      paddingTop: '80px',
+      paddingTop: 'calc(var(--zenith-pad-top) + 10px)',
       transform: animIn ? 'translateX(0)' : 'translateX(24px)',
       opacity: animIn ? 1 : 0,
       transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
@@ -54,12 +54,12 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
 
   const brand = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32 }}>
-      <div style={{ width: 36, height: 36, borderRadius: 10, background: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">
+      <div style={{ width: 36, height: 36, borderRadius: 10, background: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M9 9C11.2 9 13 7.2 13 5S11.2 1 9 1 5 2.8 5 5s1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v1h16v-1c0-2.7-5.3-4-8-4z" fill="white"/>
         </svg>
       </div>
-      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26', letterSpacing: 1.4, textTransform: 'uppercase' }}>Zenith</span>
+      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB', letterSpacing: 1.4, textTransform: 'uppercase' }}>Zenith</span>
     </div>
   );
 
@@ -85,7 +85,7 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
             onClick={() => { onSetLocale(opt.id); onNext(); }}
             style={{
               textAlign: 'left', padding: '18px 20px', borderRadius: 18,
-              border: L === opt.id ? '2px solid #C45C26' : '1.5px solid #E5E5EA',
+              border: L === opt.id ? '2px solid #2563EB' : '1.5px solid #E5E5EA',
               background: L === opt.id ? '#F0F7FF' : '#FFFFFF',
               cursor: 'pointer',
             }}
@@ -130,7 +130,7 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
             width: '100%',
             fontSize: 28, fontWeight: 700,
             padding: '16px 0',
-            borderBottom: `2.5px solid ${focused ? '#C45C26' : '#E5E5EA'}`,
+            borderBottom: `2.5px solid ${focused ? '#2563EB' : '#E5E5EA'}`,
           }}
         />
       </div>
@@ -146,8 +146,8 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
           display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
           background: '#F0F7FF', borderRadius: 20, marginBottom: 28,
         }}>
-          <div style={{ width: 6, height: 6, borderRadius: 3, background: '#C45C26' }} />
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600, color: '#C45C26' }}>3 / 4</span>
+          <div style={{ width: 6, height: 6, borderRadius: 3, background: '#2563EB' }} />
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600, color: '#2563EB' }}>3 / 4</span>
         </div>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 30, fontWeight: 800, color: '#121212', lineHeight: 1.2, marginBottom: 6 }}>
           {t(L, 'cashTitle')}
@@ -160,7 +160,7 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
             {L === 'hi' ? 'शुरुआती नकदी' : 'Opening cash'}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-            <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 40, fontWeight: 800, color: '#C45C26' }}>₹</span>
+            <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 40, fontWeight: 800, color: '#2563EB' }}>₹</span>
             <input
               type="number"
               placeholder="0"
@@ -190,7 +190,7 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
         onClick={() => { onSetCash(0); onNext(); }}
         style={{
           width: '100%', padding: '14px', marginBottom: 36,
-          background: 'transparent', color: '#C45C26',
+          background: 'transparent', color: '#2563EB',
           border: 'none', borderRadius: 14,
           fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 700,
           cursor: 'pointer',
@@ -205,7 +205,7 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
       position: 'absolute', inset: 0,
       background: '#0D0D0D',
       display: 'flex', flexDirection: 'column',
-      padding: '24px', paddingTop: '80px',
+      padding: '24px', paddingTop: 'calc(var(--zenith-pad-top) + 10px)',
     }}>
       <div style={{ flex: 1 }}>
         <div style={{
@@ -216,8 +216,8 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
           marginBottom: 28,
         }} aria-hidden="true">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <rect x="5" y="14" width="22" height="15" rx="5" fill="#C45C26"/>
-            <path d="M9.5 14V10.5C9.5 7.46 12 5 15 5h2c3 0 5.5 2.46 5.5 5.5V14" stroke="#C45C26" strokeWidth="2.5" strokeLinecap="round"/>
+            <rect x="5" y="14" width="22" height="15" rx="5" fill="#2563EB"/>
+            <path d="M9.5 14V10.5C9.5 7.46 12 5 15 5h2c3 0 5.5 2.46 5.5 5.5V14" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round"/>
             <circle cx="16" cy="21.5" r="2.5" fill="white"/>
           </svg>
         </div>
@@ -249,7 +249,7 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
         onClick={onNext}
         style={{
           width: '100%', padding: '18px', marginBottom: 40,
-          background: '#C45C26', color: '#FFFFFF',
+          background: '#2563EB', color: '#FFFFFF',
           border: 'none', borderRadius: 18,
           fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 700,
           cursor: 'pointer',

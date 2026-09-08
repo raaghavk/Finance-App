@@ -3,7 +3,7 @@
 function TripSetupScreen({ tripName, setTripName, startDate, setStartDate, endDate, setEndDate, budget, setBudget, onBack, onNext }) {
   const valid = tripName.trim().length > 0 && budget && parseFloat(budget) > 0;
   return (
-    <div style={{ height: '100%', background: '#F2F2F7', display: 'flex', flexDirection: 'column', paddingTop: 70 }}>
+    <div style={{ height: '100%', background: '#F2F2F7', display: 'flex', flexDirection: 'column', paddingTop: 'var(--zenith-pad-top)' }}>
       <div style={{ padding: '4px 20px 14px', flexShrink: 0 }}>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 14 }}>
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -66,7 +66,7 @@ function TripSetupScreen({ tripName, setTripName, startDate, setStartDate, endDa
 
 function TripHistoryScreen({ trips, onBack, onSelect }) {
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 15, background: '#F2F2F7', display: 'flex', flexDirection: 'column', paddingTop: 70 }}>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 15, background: '#F2F2F7', display: 'flex', flexDirection: 'column', paddingTop: 'var(--zenith-pad-top)' }}>
       <div style={{ padding: '4px 20px 16px', flexShrink: 0 }}>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 14 }}>
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -114,7 +114,7 @@ function TripSummaryScreen({ trip, onDone }) {
   const pctOfBudget = trip.pctOfBudget ?? Math.round((trip.spentINR / trip.budgetINR) * 100);
   const CAT_COLORS = { Food:'#FF6B6B', Transport:'#60A5FA', Stay:'#A78BFA', Shopping:'#EC4899', Groceries:'#34D399', Other:'#6E6E73' };
   return (
-    <div style={{ height: '100%', background: '#F2F2F7', overflowY: 'auto', paddingTop: 70, paddingBottom: 40 }}>
+    <div style={{ height: '100%', background: '#F2F2F7', overflowY: 'auto', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 40 }}>
       <div style={{ padding: '4px 20px 20px', textAlign: 'center' }}>
         <div style={{ fontSize: 44, marginBottom: 8 }}>{trip.flag}</div>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 24, fontWeight: 800, color: '#1C1C1E', letterSpacing: -0.5, marginBottom: 4 }}>Trip Complete</h1>
@@ -172,7 +172,7 @@ function EmergencyScreen({ country, onBack }) {
     { label: 'Travel Insurance', num: 'Policy #ZN-88213', icon: '📄' },
   ];
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 15, background: '#F2F2F7', display: 'flex', flexDirection: 'column', paddingTop: 70 }}>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 15, background: '#F2F2F7', display: 'flex', flexDirection: 'column', paddingTop: 'var(--zenith-pad-top)' }}>
       <div style={{ padding: '4px 20px 16px', flexShrink: 0 }}>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 14 }}>
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>

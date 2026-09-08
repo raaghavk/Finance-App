@@ -27,11 +27,12 @@ jobs:
 
       - name: Package static site
         run: |
-          mkdir -p _site/components _site/lib/notion _site/lib
-          cp index.html Zenith.html app.jsx state.js ios-frame.jsx _site/
+          mkdir -p _site/components _site/lib/notion _site/lib _site/icons
+          cp index.html Zenith.html app.jsx state.js ios-frame.jsx manifest.webmanifest _site/
           cp components/*.jsx _site/components/
           cp lib/notion/*.js _site/lib/notion/
-          cp lib/parse-expense.js lib/capture.js _site/lib/
+          cp lib/parse-expense.js lib/capture.js lib/zenith-chrome.js _site/lib/
+          cp icons/*.png _site/icons/
           touch _site/.nojekyll
           echo "=== _site ==="
           find _site -type f | sort

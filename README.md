@@ -19,6 +19,25 @@ With the API proxy (mock Notion data if env is missing):
 node scripts/dev-server.js
 ```
 
+The fake iPhone bezel (Dynamic Island, 9:41 status bar) is **off by default**, including on Vercel production and real iPhones. Full-bleed UI only. To preview the old desktop mockup locally:
+
+```text
+http://127.0.0.1:5173/?demo=1
+```
+
+Localhost on a wide desktop also shows the frame. Phones, PWA standalone, and `*.vercel.app` never do.
+
+## Install on iPhone (PWA)
+
+Safari will not reliably install from `http://localhost`. Use HTTPS (Vercel, e.g. https://zenith-raaghavks-projects.vercel.app, or GitHub Pages).
+
+1. Open Zenith in **Safari**
+2. Tap **Share**
+3. Tap **Add to Home Screen**
+4. Confirm **Add**
+
+This is a standalone web app, not Capacitor / App Store.
+
 ## Notion Expenses (read path)
 
 Prefer a **live Notion API query** against data source `collection://b35c3e74-0bc7-432d-8309-80a7583d3601` (paginated `POST /v1/data_sources/{id}/query`, fallback `POST /v1/databases/{id}/query`). This is not a one-shot export.
@@ -102,9 +121,9 @@ If env is missing (GitHub Pages, local static server), the UI shows **example da
 
 ### Vercel
 
-This repo can ship as static files plus `api/expenses.js`, `api/accounts.js`, `api/budgets.js`, `api/status.js`, `api/voice.js`, and `api/ocr.js`.
+This repo ships on Vercel as static files plus `api/expenses.js`, `api/accounts.js`, `api/budgets.js`, `api/status.js`, `api/voice.js`, and `api/ocr.js`. Production: https://zenith-raaghavks-projects.vercel.app (HTTPS — required for Add to Home Screen).
 
-1. Import the GitHub repo in Vercel.
+1. Import the GitHub repo in Vercel (already linked as the Zenith project).
 2. Set `NOTION_TOKEN` and `NOTION_EXPENSES_DATA_SOURCE_ID` in the project env. Account/Budget source ids have defaults. Optionally set `SARVAM_API_KEY` and `GOOGLE_CLOUD_VISION_API_KEY`.
 3. Deploy. Open the app: **Home** shows account cards and left-this-month; **Activity → Notion** is still the Expenses list; **Plan** and **You** open Notion budgets/accounts.
 

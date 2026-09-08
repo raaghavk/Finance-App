@@ -66,7 +66,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
   const title = initial ? t(locale, 'edit') : t(locale, 'addTxn');
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#FFFDF8', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'absolute', inset: 0, background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
       <div style={{ paddingTop: 72, paddingLeft: 24, paddingRight: 24, paddingBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button type="button" aria-label={t(locale, 'close')} onClick={onClose} style={{
           background: typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7', border: 'none', borderRadius: 14,
@@ -90,7 +90,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
             onClick={() => setType(id)}
             style={{
               flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
-              background: type === id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : (typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7'),
+              background: type === id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB') : (typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7'),
               color: type === id ? '#fff' : '#1C1C1E',
               fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700,
             }}
@@ -99,7 +99,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
       </div>
 
       <div style={{ padding: '8px 24px 4px', textAlign: 'center' }}>
-        <div style={{ background: typeof ZENITH !== 'undefined' ? ZENITH.card : '#F5F5F7', borderRadius: 22, padding: '18px 16px', boxShadow: '0 2px 12px rgba(90,50,20,0.05)' }}>
+        <div style={{ background: typeof ZENITH !== 'undefined' ? ZENITH.card : '#F5F5F7', borderRadius: 22, padding: '18px 16px', boxShadow: '0 2px 12px rgba(15,23,42,0.05)' }}>
           {cat && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -111,7 +111,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-            <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 32, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26' }}>₹</span>
+            <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 32, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB' }}>₹</span>
             <span style={{
               fontFamily: 'Manrope, sans-serif',
               fontSize: amount.length > 5 ? 40 : 56,
@@ -167,8 +167,8 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
               onClick={() => setAccountId(a.id)}
               style={{
                 flex: 1, padding: '8px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: accountId === a.id ? '#F3E0D2' : (typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7'),
-                color: accountId === a.id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#3C3C43',
+                background: accountId === a.id ? '#E8EEF7' : (typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7'),
+                color: accountId === a.id ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB') : '#3C3C43',
                 fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
               }}
             >{acctLabel(a, locale)}</button>
@@ -183,8 +183,8 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
               onClick={() => setMethod(m)}
               style={{
                 flex: 1, padding: '8px 6px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: method === m ? '#F3E0D2' : (typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7'),
-                color: method === m ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#3C3C43',
+                background: method === m ? '#E8EEF7' : (typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F5F5F7'),
+                color: method === m ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB') : '#3C3C43',
                 fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
               }}
             >{m}</button>
@@ -267,10 +267,10 @@ function AddExpenseScreen({ store, onClose, onSave, initial }) {
           style={{
             width: '100%', padding: '16px', borderRadius: 16, border: 'none',
             cursor: canSave ? 'pointer' : 'default',
-            background: saved ? '#34D399' : (canSave ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#C45C26') : '#E5E5EA'),
+            background: saved ? '#34D399' : (canSave ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB') : '#E5E5EA'),
             color: '#fff',
             fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 800,
-            boxShadow: canSave ? '0 8px 24px rgba(196,92,38,0.32)' : 'none',
+            boxShadow: canSave ? '0 8px 24px rgba(37,99,235,0.32)' : 'none',
           }}
         >
           {saved ? t(locale, 'save') : t(locale, 'addAmount', { n: fmt(amt) })}

@@ -3,16 +3,37 @@
 const ZENITH_STORE_KEY = 'zenith_v1_store';
 
 const ZENITH = {
-  page: '#F7F0E6',
-  ink: '#2A2118',
-  muted: '#8B735F',
-  accent: '#C45C26',
-  accentDeep: '#9A3D18',
-  card: '#FFFDF8',
-  cream: '#F1E4D2',
-  live: '#2F6B3A',
-  warn: '#A15C12',
+  page: '#F2F5FA',
+  ink: '#0F172A',
+  muted: '#64748B',
+  accent: '#2563EB',
+  accentDeep: '#1D4ED8',
+  card: '#FFFFFF',
+  cream: '#E8EEF7',
+  live: '#059669',
+  warn: '#D97706',
 };
+
+function zenithTone(key) {
+  const fallback = {
+    page: '#F2F5FA', ink: '#0F172A', muted: '#64748B',
+    accent: '#2563EB', accentDeep: '#1D4ED8', card: '#FFFFFF',
+    cream: '#E8EEF7', live: '#059669', warn: '#D97706',
+  };
+  return (typeof ZENITH !== 'undefined' && ZENITH[key]) || fallback[key];
+}
+
+function zenithHeroGradient() {
+  return 'linear-gradient(145deg, ' + ZENITH.accent + ' 0%, ' + ZENITH.accentDeep + ' 100%)';
+}
+
+function zenithHeroShadow() {
+  return '0 12px 40px rgba(29,78,216,0.28)';
+}
+
+function zenithSoftShadow() {
+  return '0 2px 14px rgba(15,23,42,0.06)';
+}
 
 const DEFAULT_CATEGORIES = [
   { id: 'kirana', name: 'Kirana', nameHi: 'किराना', emoji: '🛒', color: '#34D399', type: 'expense', group: 'food' },
@@ -490,6 +511,10 @@ function newTxnId() {
 
 Object.assign(window, {
   ZENITH,
+  zenithTone,
+  zenithHeroGradient,
+  zenithHeroShadow,
+  zenithSoftShadow,
   ZENITH_STORE_KEY,
   DEFAULT_CATEGORIES,
   DEFAULT_ACCOUNTS,

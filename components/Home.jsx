@@ -49,7 +49,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
   return (
     <div style={{
       height: '100%', overflowY: 'auto', overflowX: 'hidden',
-      paddingTop: 70, paddingBottom: 110,
+      paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)',
       background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#FFFFFF',
     }}>
       <div style={{ padding: '0 24px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -81,7 +81,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
             onClick={() => onNavigate && onNavigate('you')}
             style={{
               width: 38, height: 38, borderRadius: 12,
-              background: 'linear-gradient(145deg, #C45C26, #9A3D18)',
+              background: 'linear-gradient(145deg, #2563EB, #1D4ED8)',
               border: 'none', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
@@ -101,12 +101,12 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
           onClick={() => onNavigate && onNavigate('budget')}
           onKeyDown={(e) => { if (e.key === 'Enter') onNavigate && onNavigate('budget'); }}
           style={{
-            background: 'linear-gradient(145deg, #C45C26 0%, #9A3D18 100%)',
+            background: 'linear-gradient(145deg, #2563EB 0%, #1D4ED8 100%)',
             borderRadius: 28,
             padding: '28px 24px 24px',
             position: 'relative',
             overflow: 'hidden',
-            boxShadow: '0 12px 40px rgba(154,61,24,0.32)',
+            boxShadow: '0 12px 40px rgba(29,78,216,0.32)',
             cursor: 'pointer',
           }}
         >

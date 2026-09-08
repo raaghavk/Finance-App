@@ -1,5 +1,7 @@
 
 // iOS.jsx — Simplified iOS 26 (Liquid Glass) device frame
+// Used only for localhost / ?demo=1 desktop mockups. Production and real
+// phones pass native={true} so Dynamic Island, 9:41 bar, and bezel are gone.
 // Based on the iOS 26 UI Kit + Figma status bar spec. No assets, no deps.
 // Exports: IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard
 
@@ -189,42 +191,50 @@ function IOSList({ header, children, dark = false }) {
 // ─────────────────────────────────────────────────────────────
 function IOSDevice({
   children, width = 402, height = 874, dark = false,
-  title, keyboard = false,
+  title, keyboard = false, native = false,
 }) {
+  const page = typeof ZENITH !== 'undefined' ? ZENITH.page : '#F2F5FA';
   return (
-    <div style={{
+    <div style={native ? {
+      width: '100%', height: '100%', borderRadius: 0, overflow: 'hidden',
+      position: 'relative', background: dark ? '#000' : page,
+      fontFamily: '-apple-system, system-ui, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+    } : {
       width, height, borderRadius: 48, overflow: 'hidden',
-      position: 'relative', background: dark ? '#000' : '#F2F2F7',
-      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      position: 'relative', background: dark ? '#000' : page,
+      boxShadow: '0 40px 80px rgba(15,23,42,0.28), 0 0 0 1px rgba(15,23,42,0.12)',
       fontFamily: '-apple-system, system-ui, sans-serif',
       WebkitFontSmoothing: 'antialiased',
     }}>
-      {/* dynamic island */}
-      <div style={{
-        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
-        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
-      }} />
-      {/* status bar (absolute) */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
-        <IOSStatusBar dark={dark} />
-      </div>
-      {/* nav + content */}
+      {!native && (
+        <div style={{
+          position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+          width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+        }} />
+      )}
+      {!native && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+          <IOSStatusBar dark={dark} />
+        </div>
+      )}
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         {title !== undefined && <IOSNavBar title={title} dark={dark} />}
         <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
         {keyboard && <IOSKeyboard dark={dark} />}
       </div>
-      {/* home indicator — always on top */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
-        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
-        paddingBottom: 8, pointerEvents: 'none',
-      }}>
+      {!native && (
         <div style={{
-          width: 139, height: 5, borderRadius: 100,
-          background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
-        }} />
-      </div>
+          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+          height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+          paddingBottom: 8, pointerEvents: 'none',
+        }}>
+          <div style={{
+            width: 139, height: 5, borderRadius: 100,
+            background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
+          }} />
+        </div>
+      )}
     </div>
   );
 }

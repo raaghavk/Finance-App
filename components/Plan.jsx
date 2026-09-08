@@ -14,7 +14,7 @@ function PlanScreen({ store, onNavigate }) {
   ];
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F2F2F7', paddingTop: 70, paddingBottom: 110 }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: typeof ZENITH !== 'undefined' ? ZENITH.page : '#F2F2F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
       <div style={{ padding: '4px 24px 20px' }}>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93', marginBottom: 3 }}>{monthLabel(undefined, locale)}</p>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 30, fontWeight: 800, color: '#1C1C1E', letterSpacing: -0.5 }}>{t(locale, 'plan')}</h1>

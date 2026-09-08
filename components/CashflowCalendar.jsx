@@ -51,7 +51,7 @@ function CashflowCalendarScreen({ onBack, onSelectTx }) {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F2F2F7' }}>
-      <div style={{ paddingTop: 70, padding: '70px 20px 16px', flexShrink: 0 }}>
+      <div style={{ paddingTop: 'var(--zenith-pad-top)', padding: 'var(--zenith-pad-top) 20px 16px', flexShrink: 0 }}>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93', marginBottom: 3 }}>April 2026</p>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 30, fontWeight: 800, color: '#1C1C1E', letterSpacing: -0.5 }}>Calendar</h1>
       </div>
@@ -117,7 +117,7 @@ function CashflowCalendarScreen({ onBack, onSelectTx }) {
       </div>
 
       {/* Selected day detail */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px', paddingBottom: 100 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px', paddingBottom: 'var(--zenith-pad-bottom)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1C1E' }}>
             April {selectedDay}
