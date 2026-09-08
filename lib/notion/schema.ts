@@ -81,6 +81,8 @@ export interface MonthReport {
   currency: 'INR';
   total: number;
   count: number;
+  /** Rows with null Amount — shown as ₹— and excluded from totals. */
+  unpricedCount: number;
   byCategory: BreakdownRow[];
   byKind: BreakdownRow[];
   byTrip: BreakdownRow[];
