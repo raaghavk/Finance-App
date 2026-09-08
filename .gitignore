@@ -12,6 +12,7 @@ __pycache__/
 # Secrets
 .env
 .env.*
+!.env.example
 
 # Local server artifacts
 .venv/

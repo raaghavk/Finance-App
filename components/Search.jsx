@@ -1,6 +1,6 @@
 // Search.jsx — Activity: live transactions + search
 
-function ActivityScreen({ store, onSelectTx }) {
+function ActivityScreen({ store, onSelectTx, onNavigate }) {
   const locale = store.user.locale || 'en';
   const [query, setQuery] = React.useState('');
   const [activeCat, setActiveCat] = React.useState('All');
@@ -29,6 +29,14 @@ function ActivityScreen({ store, onSelectTx }) {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F2F2F7' }}>
       <div style={{ padding: '70px 20px 12px' }}>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 30, fontWeight: 800, color: '#1C1C1E', letterSpacing: -0.5, marginBottom: 14 }}>{t(locale, 'activity')}</h1>
+        {typeof SourceSwitch === 'function' && (
+          <SourceSwitch
+            locale={locale}
+            active="local"
+            onLocal={() => {}}
+            onNotion={() => onNavigate && onNavigate('notionExpenses')}
+          />
+        )}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           background: '#FFFFFF', borderRadius: 16, padding: '12px 16px',

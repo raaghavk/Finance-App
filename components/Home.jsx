@@ -140,6 +140,8 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
         </div>
       </div>
 
+      <NotionHomeCard locale={locale} onOpen={() => onNavigate && onNavigate('notionExpenses')} />
+
       <div style={{ padding: '0 24px', marginBottom: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>

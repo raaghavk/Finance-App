@@ -76,7 +76,7 @@ function ZenithApp() {
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
 
-  const TABS = ['home', 'activity', 'plan', 'you', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail'];
+  const TABS = ['home', 'activity', 'plan', 'you', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'notionExpenses'];
 
   const patch = (fn) => setStore((prev) => {
     const next = fn({ ...prev, user: { ...prev.user }, transactions: [...(prev.transactions || [])], budgets: [...(prev.budgets || [])], alertsRead: { ...(prev.alertsRead || {}) } });
@@ -193,7 +193,7 @@ function ZenithApp() {
                   zIndex: activeTab === tab ? 2 : 1,
                 }}>
                   {tab === 'home' && <HomeScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} onAdd={() => { setEditTx(null); setScreen('addExpense'); }} />}
-                  {tab === 'activity' && <ActivityScreen store={store} onSelectTx={openDrawer} />}
+                  {tab === 'activity' && <ActivityScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} />}
                   {tab === 'plan' && <PlanScreen store={store} onNavigate={goTab} />}
                   {tab === 'you' && (
                     <ProfileScreen
@@ -209,6 +209,7 @@ function ZenithApp() {
                   {tab === 'recurring' && <RecurringScreen />}
                   {tab === 'notifications' && <NotificationsScreen store={store} onBack={goBack} onMarkRead={(id) => patch((s) => ({ ...s, alertsRead: { ...s.alertsRead, [id]: true } }))} />}
                   {tab === 'categoryDetail' && <CategoryDetailScreen store={store} category={categoryArg} onBack={goBack} onSelectTx={openDrawer} />}
+                  {tab === 'notionExpenses' && <NotionExpensesScreen store={store} onNavigate={goTab} />}
                 </div>
               );
             })}
@@ -305,8 +306,8 @@ function ZenithApp() {
                 <NavBtn label={t(locale, 'home')} active={activeTab === 'home'} accent={accent} onClick={() => goTab('home')}
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z" stroke={activeTab === 'home' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinejoin="round" fill={activeTab === 'home' ? accent + '18' : 'none'}/></svg>}
                 />
-                <NavBtn label={t(locale, 'activity')} active={activeTab === 'activity'} accent={accent} onClick={() => goTab('activity')}
-                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h13" stroke={activeTab === 'activity' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
+                <NavBtn label={t(locale, 'activity')} active={activeTab === 'activity' || activeTab === 'notionExpenses'} accent={accent} onClick={() => goTab('activity')}
+                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h13" stroke={activeTab === 'activity' || activeTab === 'notionExpenses' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
                 <div style={{ width: 58 }} />
                 <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
