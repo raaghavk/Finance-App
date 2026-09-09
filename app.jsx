@@ -75,35 +75,19 @@ function ZenithApp() {
   const locale = store.user.locale || 'en';
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
-  const [showDeviceFrame, setShowDeviceFrame] = React.useState(() => {
-    if (typeof window === 'undefined') return false;
-    if (typeof zenithShouldUseDeviceFrame === 'function') return zenithShouldUseDeviceFrame();
-    return document.documentElement.dataset.zenithChrome === 'frame';
-  });
-  React.useEffect(() => {
-    const apply = () => {
-      const useFrame = typeof zenithShouldUseDeviceFrame === 'function'
-        ? zenithShouldUseDeviceFrame()
-        : false;
-      document.documentElement.dataset.zenithChrome = useFrame ? 'frame' : 'native';
-      setShowDeviceFrame(useFrame);
-      if (typeof window.scaleDevice === 'function') window.scaleDevice();
-    };
-    apply();
-    const mq = window.matchMedia('(max-width: 540px)');
-    const dm = window.matchMedia('(display-mode: standalone)');
-    mq.addEventListener('change', apply);
-    dm.addEventListener('change', apply);
-    return () => {
-      mq.removeEventListener('change', apply);
-      dm.removeEventListener('change', apply);
-    };
-  }, []);
 
-  const TABS = ['home', 'activity', 'plan', 'you', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
+  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
 
   const patch = (fn) => setStore((prev) => {
-    const next = fn({ ...prev, user: { ...prev.user }, transactions: [...(prev.transactions || [])], budgets: [...(prev.budgets || [])], alertsRead: { ...(prev.alertsRead || {}) } });
+    const next = fn({
+      ...prev,
+      user: { ...prev.user },
+      transactions: [...(prev.transactions || [])],
+      budgets: [...(prev.budgets || [])],
+      accounts: [...(prev.accounts || [])],
+      categories: [...(prev.categories || [])],
+      alertsRead: { ...(prev.alertsRead || {}) },
+    });
     return next;
   });
 
@@ -141,9 +125,128 @@ function ZenithApp() {
   const setBudget = (categoryId, limit) => {
     patch((s) => {
       const mk = monthKey();
-      const rest = s.budgets.filter((b) => !(b.categoryId === categoryId && b.monthKey === mk));
+      const rest = s.budgets.filter((b) => !(b.categoryId === categoryId && !b.accountId && b.monthKey === mk));
       return { ...s, budgets: [...rest, { categoryId, monthKey: mk, limit }] };
     });
+  };
+
+  const setAccountBudget = (accountId, limit) => {
+    patch((s) => {
+      const mk = monthKey();
+      const rest = (s.budgets || []).filter((b) => !(b.accountId === accountId && b.monthKey === mk));
+      const next = [...rest];
+      if (limit > 0) next.push({ accountId, monthKey: mk, limit });
+      return { ...s, budgets: next };
+    });
+  };
+
+  const saveAccount = (id, draft) => {
+    const created = id ? null : {
+      id: typeof newMoneyId === 'function' ? newMoneyId('acct', draft.name) : ('acct-' + Date.now()),
+      name: draft.name,
+      nameHi: draft.name,
+      opening: Number(draft.opening) || 0,
+      custom: true,
+    };
+    patch((s) => {
+      let accounts = [...(s.accounts || [])];
+      if (id) {
+        accounts = accounts.map((a) => (a.id === id ? { ...a, name: draft.name, nameHi: draft.name, opening: Number(draft.opening) || 0 } : a));
+      } else {
+        accounts = accounts.concat([created]);
+      }
+      const targetId = id || created.id;
+      const cash = accounts.find((a) => a.id === 'cash');
+      const openingCash = cash ? (Number(cash.opening) || 0) : s.openingCash;
+      const mk = monthKey();
+      let budgets = (s.budgets || []).filter((b) => !(b.accountId === targetId && b.monthKey === mk));
+      if (Number(draft.cap) > 0) budgets = budgets.concat([{ accountId: targetId, monthKey: mk, limit: Number(draft.cap) }]);
+      return { ...s, accounts, openingCash, budgets };
+    });
+    return created;
+  };
+
+  const deleteAccount = (id) => {
+    patch((s) => {
+      const accounts = (s.accounts || []).filter((a) => a.id !== id);
+      if (accounts.length === 0) return s;
+      const budgets = (s.budgets || []).filter((b) => b.accountId !== id);
+      return { ...s, accounts, budgets };
+    });
+  };
+
+  const saveCategory = (id, draft) => {
+    const created = id ? null : {
+      id: typeof newMoneyId === 'function' ? newMoneyId('cat', draft.name) : ('cat-' + Date.now()),
+      name: draft.name,
+      nameHi: draft.name,
+      emoji: draft.emoji || '✦',
+      color: draft.color || '#2563EB',
+      type: draft.type || 'expense',
+      group: 'custom',
+      parentId: draft.parentId || null,
+      custom: true,
+    };
+    patch((s) => {
+      let categories = [...(s.categories || [])];
+      if (id) {
+        categories = categories.map((c) => (c.id === id ? {
+          ...c,
+          name: draft.name,
+          nameHi: draft.name,
+          emoji: draft.emoji,
+          color: draft.color,
+          parentId: draft.parentId !== undefined ? (draft.parentId || null) : c.parentId,
+        } : c));
+      } else {
+        categories = categories.concat([created]);
+      }
+      return { ...s, categories };
+    });
+    return created;
+  };
+
+  const deleteCategory = (id) => {
+    patch((s) => {
+      const cats = s.categories || [];
+      const target = cats.find((c) => c.id === id);
+      if (!target) return s;
+      const next = cats.filter((c) => c.id !== id).map((c) => (c.parentId === id ? { ...c, parentId: null } : c));
+      if (!next.some((c) => c.type === 'expense')) return s;
+      const fallback = next.find((c) => c.type === 'expense') || next[0];
+      const transactions = (s.transactions || []).map((tx) => (tx.categoryId === id ? { ...tx, categoryId: fallback.id } : tx));
+      const budgets = (s.budgets || []).filter((b) => b.categoryId !== id);
+      return { ...s, categories: next, transactions, budgets };
+    });
+  };
+
+  const reorderAccounts = (from, to) => {
+    patch((s) => ({ ...s, accounts: typeof moveIndex === 'function' ? moveIndex(s.accounts, from, to) : s.accounts }));
+  };
+
+  const reorderCategory = (id, dir) => {
+    patch((s) => {
+      const cats = (s.categories || []).slice();
+      const idx = cats.findIndex((c) => c.id === id);
+      if (idx < 0) return s;
+      const target = cats[idx];
+      const siblingIdxs = [];
+      cats.forEach((c, i) => {
+        if ((c.parentId || null) === (target.parentId || null) && c.type === target.type) siblingIdxs.push(i);
+      });
+      const pos = siblingIdxs.indexOf(idx);
+      const nextPos = pos + dir;
+      if (pos < 0 || nextPos < 0 || nextPos >= siblingIdxs.length) return s;
+      const swapWith = siblingIdxs[nextPos];
+      const tmp = cats[idx];
+      cats[idx] = cats[swapWith];
+      cats[swapWith] = tmp;
+      return { ...s, categories: cats };
+    });
+  };
+
+  const toggleSubcategories = (on) => {
+    patch((s) => ({ ...s, showSubcategories: !!on }));
   };
 
   const exportCsv = () => {
@@ -182,13 +285,13 @@ function ZenithApp() {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      minHeight: showDeviceFrame ? '100vh' : '100%',
-      width: showDeviceFrame ? undefined : '100%',
-      height: showDeviceFrame ? undefined : '100%',
-      background: showDeviceFrame ? '#0B1220' : zenithTone('page'),
+      minHeight: '100%',
+      width: '100%',
+      height: '100%',
+      background: zenithTone('page'),
     }} id="device-scaler">
-      <div style={{ position: 'relative', width: showDeviceFrame ? undefined : '100%', height: showDeviceFrame ? undefined : '100%' }}>
-        <IOSDevice width={402} height={874} native={!showDeviceFrame}>
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <IOSDevice width={402} height={874} native={true}>
           <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: zenithTone('page') }}>
 
             {screen === 'onboarding' && (
@@ -198,7 +301,11 @@ function ZenithApp() {
                   locale={locale}
                   onSetLocale={(id) => patch((s) => ({ ...s, user: { ...s.user, locale: id } }))}
                   onSetName={(name) => patch((s) => ({ ...s, user: { ...s.user, name } }))}
-                  onSetCash={(n) => patch((s) => ({ ...s, openingCash: n }))}
+                  onSetCash={(n) => patch((s) => ({
+                    ...s,
+                    openingCash: n,
+                    accounts: (s.accounts || []).map((a) => (a.id === 'cash' ? { ...a, opening: n } : a)),
+                  }))}
                   onNext={() => {
                     if (onboardStep < 3) setOnboardStep((x) => x + 1);
                     else {
@@ -232,9 +339,30 @@ function ZenithApp() {
                       onReset={resetAll}
                       onNavigate={goTab}
                       onExport={exportCsv}
+                      onSaveAccount={saveAccount}
+                      onDeleteAccount={deleteAccount}
                     />
                   )}
-                  {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
+                  {tab === 'accounts' && (
+                    <AccountsManagerScreen
+                      store={store}
+                      onBack={() => goTab('you')}
+                      onSaveAccount={saveAccount}
+                      onDeleteAccount={deleteAccount}
+                      onReorder={reorderAccounts}
+                    />
+                  )}
+                  {tab === 'categories' && (
+                    <CategoriesManagerScreen
+                      store={store}
+                      onBack={() => goTab('you')}
+                      onSaveCategory={saveCategory}
+                      onDeleteCategory={deleteCategory}
+                      onReorder={reorderCategory}
+                      onToggleSubcategories={toggleSubcategories}
+                    />
+                  )}
+                  {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetAccountBudget={setAccountBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
                   {tab === 'goals' && <SavingsGoalsScreen />}
                   {tab === 'recurring' && <RecurringScreen />}
                   {tab === 'notifications' && <NotificationsScreen store={store} onBack={goBack} onMarkRead={(id) => patch((s) => ({ ...s, alertsRead: { ...s.alertsRead, [id]: true } }))} />}
@@ -259,6 +387,8 @@ function ZenithApp() {
                     initial={editTx}
                     onClose={() => { setEditTx(null); setScreen(activeTab); }}
                     onSave={saveTxn}
+                    onQuickAddAccount={(draft) => saveAccount(null, draft)}
+                    onQuickAddCategory={(draft) => saveCategory(null, draft)}
                   />
                 )}
               </div>
@@ -315,7 +445,7 @@ function ZenithApp() {
               const ty = Math.sin(rad) * dist;
               return (
                 <div key={item.label} style={{
-                  position: 'absolute', bottom: !showDeviceFrame ? 'calc(44px + env(safe-area-inset-bottom, 0px))' : 44, left: '50%', marginLeft: -28,
+                  position: 'absolute', bottom: 'calc(44px + env(safe-area-inset-bottom, 0px))', left: '50%', marginLeft: -28,
                   width: 56, height: 56, zIndex: 50,
                   transform: fabOpen ? `translate(${tx}px,${ty}px) scale(1)` : 'translate(0,0) scale(0.4)',
                   opacity: fabOpen ? 1 : 0,
@@ -336,7 +466,7 @@ function ZenithApp() {
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30,
                 minHeight: 86, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-around', paddingTop: 10,
-                paddingBottom: !showDeviceFrame ? 'calc(10px + env(safe-area-inset-bottom, 0px))' : 12,
+                paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
                 background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(24px)',
                 borderTop: '0.5px solid rgba(15,23,42,0.08)',
               }}>
@@ -350,15 +480,15 @@ function ZenithApp() {
                 <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
-                <NavBtn label={t(locale, 'you')} active={activeTab === 'you'} accent={accent} onClick={() => goTab('you')}
-                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke={activeTab === 'you' ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M5 19c1.4-3 4-4.5 7-4.5S17.6 16 19 19" stroke={activeTab === 'you' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
+                <NavBtn label={t(locale, 'you')} active={['you', 'accounts', 'categories'].includes(activeTab)} accent={accent} onClick={() => goTab('you')}
+                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M5 19c1.4-3 4-4.5 7-4.5S17.6 16 19 19" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
               </div>
             )}
 
             {showChrome && (
               <button type="button" aria-label={t(locale, 'addTxn')} onClick={() => { setFabOpen((o) => !o); }} style={{
-                position: 'absolute', bottom: !showDeviceFrame ? 'calc(26px + env(safe-area-inset-bottom, 0px))' : 26, left: '50%', marginLeft: -29,
+                position: 'absolute', bottom: 'calc(26px + env(safe-area-inset-bottom, 0px))', left: '50%', marginLeft: -29,
                 width: 58, height: 58, borderRadius: 29,
                 background: fabOpen ? '#1C1C2E' : accent, border: 'none', cursor: 'pointer', zIndex: 51,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

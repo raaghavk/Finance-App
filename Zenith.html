@@ -15,24 +15,7 @@
       var el = document.createElement('base');
       el.href = onPages ? '/Finance-App/' : '/';
       document.head.appendChild(el);
-      // Fake iPhone chrome is OFF by default (Vercel + real phones). Opt-in: localhost desktop or ?demo=1.
-      function zenithShouldUseDeviceFrame(loc) {
-        loc = loc || location;
-        var host = String(loc.hostname || '');
-        if (/\.vercel\.app$/i.test(host)) return false;
-        var standalone = false;
-        try {
-          standalone = window.matchMedia('(display-mode: standalone)').matches
-            || window.navigator.standalone === true;
-        } catch (e) {}
-        if (standalone) return false;
-        if (window.matchMedia('(max-width: 540px)').matches) return false;
-        var local = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-        var demo = /(?:^|[?&])demo=1(?:&|$)/.test(String(loc.search || ''));
-        return local || demo;
-      }
-      document.documentElement.dataset.zenithChrome = zenithShouldUseDeviceFrame() ? 'frame' : 'native';
-      window.zenithShouldUseDeviceFrame = zenithShouldUseDeviceFrame;
+      document.documentElement.dataset.zenithChrome = 'native';
     })();
   </script>
   <link rel="manifest" href="manifest.webmanifest">
@@ -51,65 +34,33 @@
       --zenith-page: #F2F5FA;
       --zenith-ink: #0F172A;
       --zenith-accent: #2563EB;
-      --zenith-pad-top: calc(env(safe-area-inset-top, 0px) + 12px);
-      --zenith-pad-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-    }
-    html[data-zenith-chrome="frame"] {
-      --zenith-pad-top: 70px;
-      --zenith-pad-bottom: 110px;
+      --zenith-safe-top: 0px;
+      --zenith-safe-bottom: 0px;
+      --zenith-pad-top: calc(max(env(safe-area-inset-top, 0px), var(--zenith-safe-top, 0px)) + 14px);
+      --zenith-pad-bottom: calc(108px + max(env(safe-area-inset-bottom, 0px), var(--zenith-safe-bottom, 0px)));
     }
 
-    /* Default: full-bleed app (production, iPhone Safari, PWA). */
-    body {
+    html, body {
       background: var(--zenith-page);
-      display: block;
-      min-height: 100dvh;
-      min-height: 100vh;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      height: -webkit-fill-available;
       overflow: hidden;
+      overscroll-behavior: none;
     }
     #root {
       width: 100%;
+      height: 100%;
       height: 100dvh;
-      height: 100vh;
-      height: 100svh;
+      height: -webkit-fill-available;
       display: block;
+      overflow: hidden;
     }
     #device-scaler {
       transform: none !important;
-      transform-origin: center center;
       width: 100%;
       height: 100%;
-    }
-
-    /* Opt-in desktop mockup only (localhost / ?demo=1, never Vercel). */
-    html[data-zenith-chrome="frame"] body {
-      background: radial-gradient(ellipse at 40% 60%, #0B1220 0%, #020617 70%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-    html[data-zenith-chrome="frame"] body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-    }
-    html[data-zenith-chrome="frame"] #root {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    html[data-zenith-chrome="frame"] #device-scaler {
-      transform: none;
-      width: auto;
-      height: auto;
     }
 
     /* Hide scrollbars everywhere */
@@ -134,6 +85,7 @@
 <body>
   <div id="root"></div>
 
+  <script src="lib/ios-safe-area.js"></script>
   <script src="lib/zenith-chrome.js"></script>
   <script src="lib/local-ledger.js"></script>
   <script type="text/babel" src="state.js"></script>
@@ -144,11 +96,14 @@
   <script type="text/babel" src="ios-frame.jsx"></script>
   <script type="text/babel" src="components/Onboarding.jsx"></script>
   <script type="text/babel" src="components/Home.jsx"></script>
+  <script type="text/babel" src="components/MoneyForms.jsx"></script>
   <script type="text/babel" src="components/AddExpense.jsx"></script>
   <script type="text/babel" src="components/Analysis.jsx"></script>
   <script type="text/babel" src="components/TravelExtras.jsx"></script>
   <script type="text/babel" src="components/TravelMode.jsx"></script>
   <script type="text/babel" src="components/Profile.jsx"></script>
+  <script type="text/babel" src="components/AccountsManager.jsx"></script>
+  <script type="text/babel" src="components/CategoriesManager.jsx"></script>
   <script type="text/babel" src="components/BudgetSetup.jsx"></script>
   <script type="text/babel" src="components/Plan.jsx"></script>
   <script type="text/babel" src="components/Search.jsx"></script>
@@ -166,25 +121,11 @@
   <script type="text/babel" src="app.jsx"></script>
 
   <script>
-    // Scale device to fit viewport with padding
     function scaleDevice() {
       const el = document.getElementById('device-scaler');
-      if (!el) return;
-      if (document.documentElement.dataset.zenithChrome !== 'frame') {
-        el.style.transform = 'none';
-        return;
-      }
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-      const deviceW = 402;
-      const deviceH = 874;
-      const scale = Math.min((W - 48) / deviceW, (H - 48) / deviceH, 1.1);
-      el.style.transform = `scale(${scale})`;
+      if (el) el.style.transform = 'none';
     }
     window.scaleDevice = scaleDevice;
-    window.addEventListener('resize', scaleDevice);
-    // Run after React renders
-    setTimeout(scaleDevice, 200);
   </script>
 
   <template id="__bundler_thumbnail">

@@ -1,7 +1,7 @@
 {
   "name": "Zenith",
   "short_name": "Zenith",
-  "description": "Personal finance — local ledger and Notion money views.",
+  "description": "Personal finance. Expenses and balances stay on this device.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
