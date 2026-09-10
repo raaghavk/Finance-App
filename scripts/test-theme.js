@@ -32,6 +32,7 @@ assert.match(html, /data-zenith-chrome="native"/);
 assert.match(zenithHtml, /data-zenith-chrome="native"/);
 assert.match(zenithHtml, /apple-mobile-web-app-capable/);
 assert.match(app, /native=\{true\}/);
+assert.match(app, /ZenithErrorBoundary/);
 assert.doesNotMatch(app, /showDeviceFrame/);
 assert.doesNotMatch(html, /html\[data-zenith-chrome="frame"\]/);
 assert.doesNotMatch(readme, /full-bleed/i);
