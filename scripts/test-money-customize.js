@@ -30,7 +30,9 @@ assert.match(html, /AccountsManager\.jsx/);
 assert.match(html, /CategoriesManager\.jsx/);
 assert.match(html, /--zenith-safe-top/);
 assert.match(html, /100dvh/);
-assert.match(html, /--zenith-pad-bottom[\s\S]*?\}\s*html, body/);
+assert.match(html, /Loading Zenith/);
+assert.doesNotMatch(html, /-webkit-fill-available/);
+assert.doesNotMatch(html, /html, body \{/);
 assert.match(zenithHtml, /ios-safe-area\.js/);
 assert.match(profile, /manageAccounts/);
 assert.match(profile, /manageCategories/);
@@ -126,9 +128,15 @@ const applied = zenithApplyIosSafeArea({
   location: { search: '?iphone=1' },
   navigator: { userAgent: 'Mozilla/5.0' },
   screen: { width: 1280, height: 800 },
-  document: { documentElement: { style: { setProperty(k, v) { props[k] = v; } }, dataset: {} } },
+  innerHeight: 932,
+  document: {
+    documentElement: { style: { setProperty(k, v) { props[k] = v; } }, dataset: {} },
+    body: { style: {} },
+    getElementById() { return { style: {} }; },
+  },
 });
 assert.strictEqual(applied.top, 59);
 assert.strictEqual(props['--zenith-safe-top'], '59px');
+assert.strictEqual(props['--zenith-pad-top'], '73px');
 
 console.log('custom accounts, categories, account budgets, add layout, iPhone safe area ok');

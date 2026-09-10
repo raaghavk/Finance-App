@@ -20,6 +20,28 @@ function NavBtn({ icon, label, active, accent, onClick }) {
   );
 }
 
+class ZenithErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error: error };
+  }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div style={{ padding: '72px 24px 24px', fontFamily: 'Inter, sans-serif', color: '#0F172A', background: '#F2F5FA', height: '100%' }}>
+        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Zenith hit a snag.</p>
+        <p style={{ fontSize: 14, color: '#64748B', marginBottom: 16 }}>Reload the Home Screen app. Your ledger on this phone is still here.</p>
+        <button type="button" onClick={() => { this.setState({ error: null }); if (typeof location !== 'undefined') location.reload(); }} style={{
+          border: 'none', borderRadius: 14, padding: '12px 16px', background: '#2563EB', color: '#fff', fontWeight: 800,
+        }}>Reload</button>
+      </div>
+    );
+  }
+}
+
 function ConfirmSheet({ title, sub, confirmLabel, cancelLabel, onConfirm, onCancel }) {
   return (
     <>
@@ -343,7 +365,7 @@ function ZenithApp() {
                       onDeleteAccount={deleteAccount}
                     />
                   )}
-                  {tab === 'accounts' && (
+                  {tab === 'accounts' && typeof AccountsManagerScreen === 'function' && (
                     <AccountsManagerScreen
                       store={store}
                       onBack={() => goTab('you')}
@@ -352,7 +374,7 @@ function ZenithApp() {
                       onReorder={reorderAccounts}
                     />
                   )}
-                  {tab === 'categories' && (
+                  {tab === 'categories' && typeof CategoriesManagerScreen === 'function' && (
                     <CategoriesManagerScreen
                       store={store}
                       onBack={() => goTab('you')}
@@ -581,4 +603,4 @@ function ZenithApp() {
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<ZenithApp />);
+root.render(<ZenithErrorBoundary><ZenithApp /></ZenithErrorBoundary>);
