@@ -60,12 +60,12 @@ function ZenithPencil() {
 
 function MoneySheet({ title, onClose, children, footer }) {
   const node = (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(15,23,42,0.35)', display: 'flex', alignItems: 'flex-end' }}>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(15,23,42,0.35)', display: 'flex', alignItems: 'flex-end' }}>
       <div
         role="dialog"
         aria-label={title}
         style={{
-          width: '100%', background: '#FFFFFF', borderRadius: '24px 24px 0 0',
+          width: '100%', background: typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF', borderRadius: '24px 24px 0 0',
           padding: '16px 20px calc(18px + env(safe-area-inset-bottom, 0px))',
           maxHeight: '88%', display: 'flex', flexDirection: 'column',
         }}
@@ -82,7 +82,8 @@ function MoneySheet({ title, onClose, children, footer }) {
     </div>
   );
   if (typeof ReactDOM !== 'undefined' && ReactDOM.createPortal && typeof document !== 'undefined') {
-    return ReactDOM.createPortal(node, document.body);
+    const host = document.getElementById('root') || document.body;
+    return ReactDOM.createPortal(node, host);
   }
   return node;
 }

@@ -159,6 +159,7 @@ const travel = fs.readFileSync(path.join(root, 'components/TravelMode.jsx'), 'ut
 assert.match(travel, /canStartTrip/);
 assert.match(travel, /onNeedPro/);
 assert.match(travel, /demoBanner/);
+assert.match(travel, /position: 'absolute'/);
 
 const extras = fs.readFileSync(path.join(root, 'components/TravelExtras.jsx'), 'utf8');
 assert.match(extras, /travelChrome/);

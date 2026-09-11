@@ -68,30 +68,48 @@ function TripExpenseForm({ locale, trip, onSave, onCancel }) {
   const ok = merchant.trim() && (parseFloat(amount) || 0) > 0;
   const rate = Number(trip.rate) || 1;
   const inr = Math.round((parseFloat(amount) || 0) * rate);
+  const card = ZENITH.card;
+  const ink = ZENITH.ink;
+  const muted = ZENITH.muted;
+  const accent = ZENITH.accent;
+  const cream = ZENITH.cream;
   return (
-    <MoneySheet title={t(locale, 'addTripExpense')} onClose={onCancel} footer={(
-      <button type="button" disabled={!ok} onClick={() => onSave({
-        merchant: merchant.trim(), amount: parseFloat(amount) || 0, cat, inr, date: todayISO(),
-      })} style={{
-        width: '100%', marginTop: 16, padding: '14px', border: 'none', borderRadius: 14,
-        background: ok ? ZENITH.accent : '#E5E5EA', color: '#fff', fontFamily: 'Manrope, sans-serif', fontWeight: 800, cursor: ok ? 'pointer' : 'default',
-      }}>{t(locale, 'save')}</button>
-    )}>
-      <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: ZENITH.muted, marginBottom: 6 }}>{t(locale, 'note')}</label>
-      <input value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="Pad Thai, Grab, hotel…" style={moneyInputStyle()} />
-      <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: ZENITH.muted, margin: '14px 0 6px' }}>{trip.currency}</label>
-      <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" style={moneyInputStyle()} />
-      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: ZENITH.muted, marginTop: 6 }}>≈ {fmt(inr)}</p>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
-        {(TRAVEL_CATS || ['Food', 'Other']).map((c) => (
-          <button key={c} type="button" onClick={() => setCat(c)} style={{
-            padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer',
-            background: cat === c ? ZENITH.accent : ZENITH.cream, color: cat === c ? '#fff' : ZENITH.ink,
-            fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
-          }}>{c}</button>
-        ))}
+    <div style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'flex-end' }}>
+      <div role="dialog" aria-label={t(locale, 'addTripExpense')} style={{
+        width: '100%', background: card, borderRadius: '24px 24px 0 0',
+        padding: '16px 20px var(--zenith-pad-bottom)', maxHeight: '85%',
+        display: 'flex', flexDirection: 'column', boxShadow: '0 -8px 32px rgba(15,23,42,0.18)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexShrink: 0 }}>
+          <h2 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 18, fontWeight: 800, color: ink }}>{t(locale, 'addTripExpense')}</h2>
+          <button type="button" onClick={onCancel} aria-label="Close" style={{
+            width: 36, height: 36, border: 'none', borderRadius: 12, background: cream, cursor: 'pointer', fontSize: 18, color: ink,
+          }}>×</button>
+        </div>
+        <div style={{ overflowY: 'auto', minHeight: 0, flex: 1 }}>
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginBottom: 6 }}>{t(locale, 'note')}</label>
+          <input value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="Pad Thai, Grab, hotel…" style={moneyInputStyle()} />
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, margin: '12px 0 6px' }}>{trip.currency}</label>
+          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" style={moneyInputStyle()} />
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 6 }}>≈ {fmt(inr)}</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+            {(TRAVEL_CATS || ['Food', 'Other']).map((c) => (
+              <button key={c} type="button" onClick={() => setCat(c)} style={{
+                padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer',
+                background: cat === c ? accent : cream, color: cat === c ? '#fff' : ink,
+                fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
+              }}>{c}</button>
+            ))}
+          </div>
+        </div>
+        <button type="button" disabled={!ok} onClick={() => onSave({
+          merchant: merchant.trim(), amount: parseFloat(amount) || 0, cat, inr, date: todayISO(),
+        })} style={{
+          width: '100%', marginTop: 12, padding: '14px', border: 'none', borderRadius: 14, flexShrink: 0,
+          background: ok ? accent : cream, color: ok ? '#fff' : muted, fontFamily: 'Manrope, sans-serif', fontWeight: 800, cursor: ok ? 'pointer' : 'default',
+        }}>{t(locale, 'save')}</button>
       </div>
-    </MoneySheet>
+    </div>
   );
 }
 
