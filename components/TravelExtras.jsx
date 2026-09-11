@@ -52,7 +52,7 @@ function TripSetupScreen({ tripName, setTripName, startDate, setStartDate, endDa
         <div style={{ height: 100 }} />
       </div>
 
-      <div style={{ padding: '12px 20px 24px', flexShrink: 0, background: 'rgba(242,242,247,0.95)', backdropFilter: 'blur(12px)', borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
+      <div style={{ padding: '12px 20px var(--zenith-pad-bottom)', flexShrink: 0, background: 'rgba(242,242,247,0.95)', backdropFilter: 'blur(12px)', borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
         <button onClick={() => valid && onNext()} style={{
           width: '100%', padding: '17px', border: 'none', borderRadius: 18, cursor: valid ? 'pointer' : 'default',
           background: valid ? '#007AFF' : '#E5E5EA', color: valid ? '#FFFFFF' : '#AAAAAA',

@@ -48,7 +48,7 @@ function CountryPickerScreen({ countries, selectedCountry, onSelect, onBack, onC
         </div>
         <div style={{ height: 100 }} />
       </div>
-      <div style={{ padding: '12px 20px 24px', flexShrink: 0 }}>
+      <div style={{ padding: '12px 20px var(--zenith-pad-bottom)', flexShrink: 0 }}>
         <button type="button" onClick={onConfirm} style={{
           width: '100%', padding: '17px', border: 'none', borderRadius: 18,
           cursor: selectedCountry ? 'pointer' : 'default',
