@@ -8,8 +8,14 @@ function PlanScreen({ store, onNavigate }) {
 
   const cards = [
     { id: 'budget', title: t(locale, 'budgets'), sub: budget > 0 ? fmt(spent) + ' / ' + fmt(budget) : t(locale, 'noBudgetYet'), emoji: '🎯' },
-    { id: 'recurring', title: t(locale, 'recurring'), sub: locale === 'hi' ? 'बिल और सब्सक्रिप्शन' : 'Bills & subscriptions', emoji: '🔄' },
-    { id: 'goals', title: t(locale, 'goals'), sub: locale === 'hi' ? 'बचत लक्ष्य' : 'Savings targets', emoji: '🏆' },
+    { id: 'recurring', title: t(locale, 'recurring'), sub: (store.recurring || []).filter((r) => r.active).length
+      ? String((store.recurring || []).filter((r) => r.active).length) + (locale === 'hi' ? ' सक्रिय' : ' active')
+      : (locale === 'hi' ? 'बिल और सब्सक्रिप्शन' : 'Bills & subscriptions'), emoji: '🔄' },
+    { id: 'goals', title: t(locale, 'goals'), sub: (store.goals || []).length
+      ? String((store.goals || []).length)
+      : (locale === 'hi' ? 'बचत लक्ष्य' : 'Savings targets'), emoji: '🏆' },
+    { id: 'insights', title: t(locale, 'insights'), sub: locale === 'hi' ? 'इस vs पिछले महीने' : 'This vs last month', emoji: '📊' },
+    { id: 'travel', title: t(locale, 'travel'), sub: zenithIsPro && zenithIsPro(store) ? t(locale, 'paid') : t(locale, 'demoTrip'), emoji: '✈️' },
   ];
   if (typeof zenithNotionEnabled === 'function' && zenithNotionEnabled()) {
     cards.unshift({ id: 'notionBudgets', title: t(locale, 'notionBudgets'), sub: t(locale, 'notionLeftMonth'), emoji: '📒' });
@@ -30,7 +36,7 @@ function PlanScreen({ store, onNavigate }) {
             onClick={() => onNavigate && onNavigate(card.id)}
             style={{
               display: 'flex', alignItems: 'center', gap: 14,
-              background: '#FFFFFF', border: 'none', borderRadius: 20,
+              background: typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF', border: 'none', borderRadius: 20,
               padding: '18px 16px', cursor: 'pointer', textAlign: 'left',
               boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             }}

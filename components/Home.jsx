@@ -13,30 +13,138 @@ function MerchantIcon({ merchant, color }) {
   );
 }
 
-function LocalWalletsStrip({ store, locale }) {
+function LocalWalletsStrip({ store, locale, onOpen }) {
   const rows = typeof localAccountBalances === 'function' ? localAccountBalances(store) : [];
   const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A';
   const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#64748B';
   const card = typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF';
+  const cream = typeof ZENITH !== 'undefined' ? ZENITH.cream : '#E8EEF7';
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={{ padding: '0 24px', marginBottom: 12 }}>
-        <h3 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 700, color: ink }}>{t(locale, 'notionAccounts')}</h3>
+      <div style={{ padding: '0 24px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 700, color: ink }}>{t(locale, 'wallets')}</h3>
+        {onOpen ? (
+          <button type="button" onClick={onOpen} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, color: ZENITH.accent, fontWeight: 600 }}>{t(locale, 'seeAll')}</button>
+        ) : null}
       </div>
       <div style={{ overflowX: 'auto', paddingLeft: 20, paddingRight: 20, display: 'flex', gap: 12 }}>
-        {rows.map((row) => (
-          <div key={row.id} style={{
-            minWidth: 168, background: card, borderRadius: 22, padding: '16px 16px 14px',
-            boxShadow: '0 2px 14px rgba(15,23,42,0.06)', flexShrink: 0,
-          }}>
-            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 800, color: row.color, marginBottom: 8 }}>
-              {acctLabel(row, locale) || row.name}
-            </p>
-            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 22, fontWeight: 800, color: ink, letterSpacing: -0.5 }}>{fmt(row.balance)}</p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 4 }}>{t(locale, 'notionBalance')}</p>
-          </div>
-        ))}
+        {rows.map((row) => {
+          const cap = typeof accountBudgetLimit === 'function' ? accountBudgetLimit(store, row.id) : 0;
+          const spent = typeof spentOnAccount === 'function' ? spentOnAccount(store, row.id) : 0;
+          const pct = cap > 0 ? Math.min(spent / cap, 1) : 0;
+          return (
+            <div key={row.id} style={{
+              minWidth: 168, background: card, borderRadius: 22, padding: '16px 16px 14px',
+              boxShadow: '0 2px 14px rgba(15,23,42,0.06)', flexShrink: 0,
+            }}>
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 800, color: row.color, marginBottom: 8 }}>
+                {acctLabel(row, locale) || row.name}
+              </p>
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 22, fontWeight: 800, color: ink, letterSpacing: -0.5 }}>{fmt(row.balance)}</p>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 4 }}>{t(locale, 'notionBalance')}</p>
+              {cap > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ height: 4, background: cream, borderRadius: 2 }}>
+                    <div style={{ height: '100%', width: (pct * 100) + '%', background: pct >= 1 ? '#EF4444' : row.color, borderRadius: 2 }} />
+                  </div>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted, marginTop: 4 }}>{fmt(spent)} / {fmt(cap)}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+    </div>
+  );
+}
+
+function HealthScoreCard({ store, locale, onOpen }) {
+  const health = typeof healthScore === 'function' ? healthScore(store) : { score: 0, label: 'start' };
+  const ink = ZENITH.ink;
+  const muted = ZENITH.muted;
+  const card = ZENITH.card;
+  const accent = ZENITH.accent;
+  const labelMap = { strong: t(locale, 'strong'), ok: t(locale, 'okLabel'), watch: t(locale, 'watch'), tight: t(locale, 'tight'), start: t(locale, 'startTracking') };
+  const r = 28;
+  const circ = 2 * Math.PI * r;
+  const dash = (health.score / 100) * circ;
+  return (
+    <div style={{ padding: '0 20px', marginBottom: 18 }}>
+      <button type="button" onClick={onOpen} style={{
+        width: '100%', background: card, border: 'none', borderRadius: 22, padding: '16px 18px',
+        boxShadow: zenithSoftShadow(), cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left',
+      }}>
+        <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden="true">
+          <circle cx="36" cy="36" r={r} fill="none" stroke={ZENITH.cream} strokeWidth="8" />
+          <circle cx="36" cy="36" r={r} fill="none" stroke={accent} strokeWidth="8"
+            strokeDasharray={dash + ' ' + circ} strokeLinecap="round" transform="rotate(-90 36 36)" />
+          <text x="36" y="41" textAnchor="middle" fontFamily="Manrope, sans-serif" fontSize="16" fontWeight="800" fill={ink}>{health.score}</text>
+        </svg>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: ink }}>{t(locale, 'healthScore')}</p>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginTop: 4 }}>{labelMap[health.label] || health.label}</p>
+        </div>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: accent, fontWeight: 600 }}>{t(locale, 'insights')}</span>
+      </button>
+    </div>
+  );
+}
+
+function GoalsPeek({ store, locale, onOpen }) {
+  const goals = store.goals || [];
+  if (!goals.length) return null;
+  const ink = ZENITH.ink;
+  const muted = ZENITH.muted;
+  const card = ZENITH.card;
+  const cream = ZENITH.cream;
+  return (
+    <div style={{ padding: '0 20px', marginBottom: 18 }}>
+      <button type="button" onClick={onOpen} style={{
+        width: '100%', background: card, border: 'none', borderRadius: 22, padding: '16px 18px',
+        boxShadow: zenithSoftShadow(), cursor: 'pointer', textAlign: 'left',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color: ink }}>{t(locale, 'goals')}</p>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: ZENITH.accent, fontWeight: 600 }}>{t(locale, 'seeAll')}</span>
+        </div>
+        {goals.slice(0, 3).map((g) => {
+          const pct = g.target > 0 ? Math.min(g.saved / g.target, 1) : 0;
+          return (
+            <div key={g.id} style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: ink }}>{g.emoji} {g.name}</p>
+                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 700, color: ink }}>{Math.round(pct * 100)}%</p>
+              </div>
+              <div style={{ height: 4, background: cream, borderRadius: 2 }}>
+                <div style={{ height: '100%', width: (pct * 100) + '%', background: g.color, borderRadius: 2 }} />
+              </div>
+            </div>
+          );
+        })}
+      </button>
+    </div>
+  );
+}
+
+function InsightsDigest({ store, locale, onOpen }) {
+  const insight = typeof monthInsights === 'function' ? monthInsights(store) : null;
+  if (!insight || insight.spent <= 0) return null;
+  const muted = ZENITH.muted;
+  const card = ZENITH.card;
+  const ink = ZENITH.ink;
+  const vs = insight.delta == null ? t(locale, 'noChange')
+    : insight.delta < 0 ? t(locale, 'lessSpend') : t(locale, 'moreSpend');
+  return (
+    <div style={{ padding: '0 20px', marginBottom: 18 }}>
+      <button type="button" onClick={onOpen} style={{
+        width: '100%', background: card, border: 'none', borderRadius: 22, padding: '14px 18px',
+        boxShadow: zenithSoftShadow(), cursor: 'pointer', textAlign: 'left',
+      }}>
+        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color: ink, marginBottom: 4 }}>{t(locale, 'insightsDigest')}</p>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted }}>
+          {vs}{insight.delta != null ? ' · ' + Math.abs(Math.round(insight.delta * 100)) + '%' : ''} · {fmt(insight.spent)}
+        </p>
+      </button>
     </div>
   );
 }
@@ -221,7 +329,10 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
         </>
       ) : (
         <>
-          <LocalWalletsStrip store={store} locale={locale} />
+          <LocalWalletsStrip store={store} locale={locale} onOpen={() => onNavigate && onNavigate('you')} />
+          <HealthScoreCard store={store} locale={locale} onOpen={() => onNavigate && onNavigate('insights')} />
+          <GoalsPeek store={store} locale={locale} onOpen={() => onNavigate && onNavigate('goals')} />
+          <InsightsDigest store={store} locale={locale} onOpen={() => onNavigate && onNavigate('insights')} />
           <LocalBudgetsPreview store={store} locale={locale} onOpen={() => onNavigate && onNavigate('budget')} />
         </>
       )}
@@ -352,4 +463,4 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
   );
 }
 
-Object.assign(window, { HomeScreen, MerchantIcon, LocalWalletsStrip, LocalBudgetsPreview });
+Object.assign(window, { HomeScreen, MerchantIcon, LocalWalletsStrip, LocalBudgetsPreview, HealthScoreCard, GoalsPeek, InsightsDigest });

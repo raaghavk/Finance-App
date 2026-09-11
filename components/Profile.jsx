@@ -1,6 +1,6 @@
 // Profile.jsx — You tab: obvious Edit, then dedicated account / category managers
 
-function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSaveAccount, onDeleteAccount }) {
+function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSaveAccount, onDeleteAccount, onSetTheme, onSetLock, onExportJson, onImportJson, onUnlockPro }) {
   const locale = store.user.locale || 'en';
   const [editing, setEditing] = React.useState(false);
   const [sheet, setSheet] = React.useState(null);
@@ -212,10 +212,64 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
       </div>
 
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
-        {locale === 'hi' ? 'बाद में' : 'Later'}
+        {t(locale, 'appearance')}
       </p>
       <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
-        <Row label={locale === 'hi' ? 'ट्रैवल' : 'Travel'} sub={t(locale, 'travelLater')} last />
+        <Row label={t(locale, 'darkMode')} last>
+          <button
+            type="button"
+            aria-pressed={(store.settings && store.settings.theme) === 'dark'}
+            onClick={() => onSetTheme && onSetTheme((store.settings && store.settings.theme) === 'dark' ? 'light' : 'dark')}
+            style={{
+              width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+              background: (store.settings && store.settings.theme) === 'dark' ? accent : '#E5E5EA', position: 'relative',
+            }}
+          >
+            <span style={{
+              position: 'absolute', top: 3, left: (store.settings && store.settings.theme) === 'dark' ? 21 : 3,
+              width: 20, height: 20, borderRadius: 10, background: '#fff', display: 'block',
+            }} />
+          </button>
+        </Row>
+      </div>
+
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
+        {t(locale, 'security')}
+      </p>
+      <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
+        <Row
+          label={t(locale, 'appLock')}
+          sub={(store.settings && store.settings.lock && store.settings.lock.enabled) ? t(locale, 'turnOffLock') : t(locale, 'pinDigits')}
+          last
+          onClick={() => setSheet({ kind: 'lock' })}
+          showChevron
+        />
+      </div>
+
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
+        {t(locale, 'zenithPro')}
+      </p>
+      <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
+        <Row
+          label={t(locale, 'zenithPro')}
+          sub={zenithIsPro && zenithIsPro(store) ? t(locale, 'paid') : t(locale, 'proPrice')}
+          last
+          onClick={() => onUnlockPro && onUnlockPro()}
+          showChevron
+        />
+      </div>
+
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
+        {t(locale, 'travel')}
+      </p>
+      <div style={{ background: '#FFFFFF', marginBottom: 20 }}>
+        <Row
+          label={t(locale, 'travel')}
+          sub={zenithIsPro && zenithIsPro(store) ? t(locale, 'paid') : t(locale, 'demoTrip')}
+          last
+          onClick={() => onNavigate && onNavigate('travel')}
+          showChevron
+        />
       </div>
 
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
@@ -226,6 +280,18 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
           label={locale === 'hi' ? 'CSV निकालें' : 'Export CSV'}
           sub={locale === 'hi' ? 'इस डिवाइस पर डाउनलोड' : 'Download on this device'}
           onClick={onExport}
+          showChevron
+        />
+        <Row
+          label={t(locale, 'backupJson')}
+          sub={t(locale, 'exportJson')}
+          onClick={onExportJson}
+          showChevron
+        />
+        <Row
+          label={t(locale, 'importJson')}
+          sub={locale === 'hi' ? 'बैकअप फ़ाइल से रीस्टोर' : 'Restore from a backup file'}
+          onClick={onImportJson}
           showChevron
         />
         <Row
@@ -251,8 +317,54 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
           onSave={(draft) => { onSaveAccount && onSaveAccount(sheet.item && sheet.item.id, draft); setSheet(null); }}
         />
       )}
+      {sheet && sheet.kind === 'lock' && (
+        <LockSetupSheet
+          locale={locale}
+          lock={store.settings && store.settings.lock}
+          onCancel={() => setSheet(null)}
+          onSave={(lock) => { onSetLock && onSetLock(lock); setSheet(null); }}
+        />
+      )}
     </div>
   );
 }
 
-Object.assign(window, { ProfileScreen });
+function LockSetupSheet({ locale, lock, onSave, onCancel }) {
+  const [pin, setPin] = React.useState('');
+  const [confirm, setConfirm] = React.useState('');
+  const [err, setErr] = React.useState('');
+  const enabled = lock && lock.enabled;
+  return (
+    <MoneySheet title={t(locale, 'appLock')} onClose={onCancel} footer={(
+      <div style={{ display: 'flex', gap: 8, marginTop: 16, flexDirection: 'column' }}>
+        {err ? <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#EF4444' }}>{err}</p> : null}
+        {enabled ? (
+          <button type="button" onClick={() => onSave({ enabled: false, pinHash: '', webauthn: false })} style={{
+            padding: '14px', border: 'none', borderRadius: 14, background: '#FEE2E2', color: '#B91C1C',
+            fontFamily: 'Manrope, sans-serif', fontWeight: 800, cursor: 'pointer',
+          }}>{t(locale, 'turnOffLock')}</button>
+        ) : (
+          <button type="button" onClick={() => {
+            if (!pinLooksValid(pin) || pin !== confirm) { setErr(t(locale, 'pinMismatch')); return; }
+            onSave({ enabled: true, pinHash: hashPin(pin), webauthn: !!(typeof PublicKeyCredential !== 'undefined') });
+          }} style={{
+            padding: '14px', border: 'none', borderRadius: 14, background: '#2563EB', color: '#fff',
+            fontFamily: 'Manrope, sans-serif', fontWeight: 800, cursor: 'pointer',
+          }}>{t(locale, 'turnOnLock')}</button>
+        )}
+      </div>
+    )}>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', marginBottom: 12, lineHeight: 1.4 }}>{t(locale, 'lockHint')}</p>
+      {!enabled && (
+        <>
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', marginBottom: 6 }}>{t(locale, 'setPin')}</label>
+          <input inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="••••" style={moneyInputStyle()} />
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', margin: '14px 0 6px' }}>{t(locale, 'confirmPin')}</label>
+          <input inputMode="numeric" value={confirm} onChange={(e) => setConfirm(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="••••" style={moneyInputStyle()} />
+        </>
+      )}
+    </MoneySheet>
+  );
+}
+
+Object.assign(window, { ProfileScreen, LockSetupSheet });

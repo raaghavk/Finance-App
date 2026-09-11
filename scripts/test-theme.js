@@ -68,6 +68,7 @@ assert.match(home, /zenithNotionEnabled/);
 assert.match(home, /LocalWalletsStrip/);
 assert.match(fs.readFileSync(path.join(root, 'lib/notion/browser.js'), 'utf8'), /notionSyncOn/);
 assert.match(html, /local-ledger\.js/);
+assert.match(html, /lib\/theme\.js/);
 
 const bals = localAccountBalances({
   openingCash: 15000,

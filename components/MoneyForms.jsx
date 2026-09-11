@@ -197,5 +197,5 @@ function moneyInputStyle() {
 
 Object.assign(window, {
   AccountForm, CategoryForm, ZENITH_CAT_COLORS, ZENITH_CAT_EMOJI,
-  ZenithScreenHeader, ZenithChevron, ZenithPencil,
+  ZenithScreenHeader, ZenithChevron, ZenithPencil, moneyInputStyle,
 });

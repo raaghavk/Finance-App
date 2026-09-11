@@ -110,7 +110,8 @@ function TripHistoryScreen({ trips, onBack, onSelect }) {
 }
 
 function TripSummaryScreen({ trip, onDone }) {
-  const topCat = Object.entries(trip.byCategory).sort((a,b) => b[1]-a[1])[0];
+  const entries = Object.entries(trip.byCategory || {});
+  const topCat = entries.sort((a,b) => b[1]-a[1])[0] || ['Other', 0];
   const pctOfBudget = trip.pctOfBudget ?? Math.round((trip.spentINR / trip.budgetINR) * 100);
   const CAT_COLORS = { Food:'#FF6B6B', Transport:'#60A5FA', Stay:'#A78BFA', Shopping:'#EC4899', Groceries:'#34D399', Other:'#6E6E73' };
   return (
@@ -142,7 +143,7 @@ function TripSummaryScreen({ trip, onDone }) {
 
         <div style={{ background: '#FFFFFF', borderRadius: 20, padding: '16px 18px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E', marginBottom: 14 }}>Spend by Category</p>
-          {Object.entries(trip.byCategory).map(([cat, amt]) => {
+          {Object.entries(trip.byCategory || {}).map(([cat, amt]) => {
             const pct = amt / trip.spentForeign;
             return (
               <div key={cat} style={{ marginBottom: 10 }}>

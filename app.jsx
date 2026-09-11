@@ -80,8 +80,21 @@ function ZenithApp() {
   const [activeTab, setActiveTab] = React.useState('home');
   const [prevTab, setPrevTab] = React.useState('home');
   const [categoryArg, setCategoryArg] = React.useState(null);
+  const [paywallFeature, setPaywallFeature] = React.useState(null);
+  const [unlocked, setUnlocked] = React.useState(() => {
+    const s = loadStore();
+    return !(s.settings && s.settings.lock && s.settings.lock.enabled);
+  });
 
   React.useEffect(() => { saveStore(store); }, [store]);
+
+  React.useEffect(() => {
+    setStore((prev) => {
+      const next = typeof materializeRecurring === 'function' ? materializeRecurring(prev) : prev;
+      if (typeof applyZenithTheme === 'function') applyZenithTheme(next.settings && next.settings.theme);
+      return next;
+    });
+  }, []);
 
   React.useEffect(() => {
     const handler = (e) => {
@@ -98,7 +111,7 @@ function ZenithApp() {
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
 
-  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
+  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
 
   const patch = (fn) => setStore((prev) => {
     const next = fn({
@@ -109,6 +122,10 @@ function ZenithApp() {
       accounts: [...(prev.accounts || [])],
       categories: [...(prev.categories || [])],
       alertsRead: { ...(prev.alertsRead || {}) },
+      goals: [...(prev.goals || [])],
+      recurring: [...(prev.recurring || [])],
+      trips: (prev.trips || []).map((tr) => ({ ...tr, expenses: [...(tr.expenses || [])] })),
+      settings: { ...(prev.settings || defaultSettings()), lock: { ...((prev.settings && prev.settings.lock) || {}) } },
     });
     return next;
   });
@@ -271,6 +288,121 @@ function ZenithApp() {
     patch((s) => ({ ...s, showSubcategories: !!on }));
   };
 
+  const saveGoal = (id, draft) => {
+    patch((s) => {
+      if (id) {
+        return { ...s, goals: (s.goals || []).map((g) => (g.id === id ? { ...g, ...draft, id } : g)) };
+      }
+      const row = typeof normalizeGoal === 'function' ? normalizeGoal({ ...draft, id: typeof newMoneyId === 'function' ? newMoneyId('goal', draft.name) : ('goal-' + Date.now()) }, (s.goals || []).length) : { ...draft, id: 'goal-' + Date.now(), saved: 0 };
+      row.saved = Number(draft.saved) || 0;
+      return { ...s, goals: (s.goals || []).concat([row]) };
+    });
+  };
+
+  const deleteGoal = (id) => {
+    patch((s) => ({ ...s, goals: (s.goals || []).filter((g) => g.id !== id) }));
+  };
+
+  const contributeGoal = (id, amount) => {
+    patch((s) => ({
+      ...s,
+      goals: (s.goals || []).map((g) => (g.id === id ? { ...g, saved: Math.min((Number(g.saved) || 0) + amount, Number(g.target) || amount) } : g)),
+    }));
+  };
+
+  const saveRecurring = (id, draft) => {
+    patch((s) => {
+      if (id) {
+        return { ...s, recurring: (s.recurring || []).map((r) => (r.id === id ? { ...r, ...draft, id } : r)) };
+      }
+      const row = typeof normalizeRecurring === 'function'
+        ? normalizeRecurring({ ...draft, id: typeof newMoneyId === 'function' ? newMoneyId('rec', draft.name) : ('rec-' + Date.now()) }, (s.recurring || []).length)
+        : { ...draft, id: 'rec-' + Date.now(), active: true };
+      return { ...s, recurring: (s.recurring || []).concat([row]) };
+    });
+  };
+
+  const deleteRecurring = (id) => {
+    patch((s) => ({ ...s, recurring: (s.recurring || []).filter((r) => r.id !== id) }));
+  };
+
+  const toggleRecurring = (id) => {
+    patch((s) => ({ ...s, recurring: (s.recurring || []).map((r) => (r.id === id ? { ...r, active: !r.active } : r)) }));
+  };
+
+  const startTrip = (draft) => {
+    const id = typeof newMoneyId === 'function' ? newMoneyId('trip', draft.name) : ('trip-' + Date.now());
+    const trip = typeof normalizeTrip === 'function' ? normalizeTrip({ ...draft, id, status: 'active', expenses: [] }, 0) : { ...draft, id, status: 'active', expenses: [] };
+    patch((s) => ({ ...s, trips: (s.trips || []).concat([trip]), activeTripId: id }));
+  };
+
+  const endTrip = (id) => {
+    patch((s) => ({
+      ...s,
+      trips: (s.trips || []).map((tr) => (tr.id === id ? { ...tr, status: 'ended' } : tr)),
+      activeTripId: s.activeTripId === id ? null : s.activeTripId,
+    }));
+  };
+
+  const addTripExpense = (tripId, draft) => {
+    const exp = { ...draft, id: typeof newMoneyId === 'function' ? newMoneyId('tex', draft.merchant) : ('tex-' + Date.now()) };
+    patch((s) => ({
+      ...s,
+      trips: (s.trips || []).map((tr) => (tr.id === tripId ? { ...tr, expenses: (tr.expenses || []).concat([exp]) } : tr)),
+    }));
+  };
+
+  const setTheme = (mode) => {
+    patch((s) => {
+      const settings = { ...s.settings, theme: mode === 'dark' ? 'dark' : 'light' };
+      if (typeof applyZenithTheme === 'function') applyZenithTheme(settings.theme);
+      return { ...s, settings };
+    });
+  };
+
+  const setLock = (lock) => {
+    patch((s) => ({ ...s, settings: { ...s.settings, lock } }));
+    if (lock && lock.enabled) setUnlocked(true);
+  };
+
+  const unlockPro = () => {
+    patch((s) => ({ ...s, settings: { ...s.settings, pro: true } }));
+    setPaywallFeature(null);
+  };
+
+  const exportJson = () => {
+    const blob = new Blob([JSON.stringify(store, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'zenith-backup.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importJson = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.onchange = (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const next = parseStorePayload(String(reader.result));
+          setStore(next);
+          saveStore(next);
+          if (typeof applyZenithTheme === 'function') applyZenithTheme(next.settings && next.settings.theme);
+        } catch (err) {
+          window.alert(t(locale, 'jsonInvalid'));
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
   const exportCsv = () => {
     const header = 'id,date,type,amount,category,merchant,method,account\n';
     const rows = (store.transactions || []).map((tx) => {
@@ -363,6 +495,11 @@ function ZenithApp() {
                       onExport={exportCsv}
                       onSaveAccount={saveAccount}
                       onDeleteAccount={deleteAccount}
+                      onSetTheme={setTheme}
+                      onSetLock={setLock}
+                      onExportJson={exportJson}
+                      onImportJson={importJson}
+                      onUnlockPro={() => setPaywallFeature('pro')}
                     />
                   )}
                   {tab === 'accounts' && typeof AccountsManagerScreen === 'function' && (
@@ -385,8 +522,38 @@ function ZenithApp() {
                     />
                   )}
                   {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetAccountBudget={setAccountBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
-                  {tab === 'goals' && <SavingsGoalsScreen />}
-                  {tab === 'recurring' && <RecurringScreen />}
+                  {tab === 'goals' && (
+                    <SavingsGoalsScreen
+                      store={store}
+                      onBack={() => goTab('plan')}
+                      onSaveGoal={saveGoal}
+                      onDeleteGoal={deleteGoal}
+                      onContribute={contributeGoal}
+                    />
+                  )}
+                  {tab === 'recurring' && (
+                    <RecurringScreen
+                      store={store}
+                      onBack={() => goTab('plan')}
+                      onSaveRule={saveRecurring}
+                      onDeleteRule={deleteRecurring}
+                      onToggleRule={toggleRecurring}
+                    />
+                  )}
+                  {tab === 'insights' && typeof ReportsScreen === 'function' && (
+                    <ReportsScreen store={store} onNavigate={goTab} onBack={() => goTab('plan')} />
+                  )}
+                  {tab === 'travel' && typeof TravelScreen === 'function' && (
+                    <TravelScreen
+                      store={store}
+                      onBack={() => goTab('plan')}
+                      onStartTrip={startTrip}
+                      onEndTrip={endTrip}
+                      onAddExpense={addTripExpense}
+                      onNeedPro={(feature) => setPaywallFeature(feature || 'trip')}
+                      onUnlockPro={() => setPaywallFeature('pro')}
+                    />
+                  )}
                   {tab === 'notifications' && <NotificationsScreen store={store} onBack={goBack} onMarkRead={(id) => patch((s) => ({ ...s, alertsRead: { ...s.alertsRead, [id]: true } }))} />}
                   {tab === 'categoryDetail' && <CategoryDetailScreen store={store} category={categoryArg} onBack={goBack} onSelectTx={openDrawer} />}
                   {tab === 'notionExpenses' && <NotionExpensesScreen store={store} onNavigate={goTab} />}
@@ -489,7 +656,7 @@ function ZenithApp() {
                 position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30,
                 minHeight: 86, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-around', paddingTop: 10,
                 paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
-                background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(24px)',
+                background: (typeof ZENITH !== 'undefined' && ZENITH.navBg) ? ZENITH.navBg : 'rgba(255,255,255,0.94)', backdropFilter: 'blur(24px)',
                 borderTop: '0.5px solid rgba(15,23,42,0.08)',
               }}>
                 <NavBtn label={t(locale, 'home')} active={activeTab === 'home' || activeTab === 'notionAccounts'} accent={accent} onClick={() => goTab('home')}
@@ -499,8 +666,8 @@ function ZenithApp() {
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h13" stroke={activeTab === 'activity' || activeTab === 'notionExpenses' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
                 <div style={{ width: 58 }} />
-                <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
-                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
+                <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notionBudgets'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
+                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
                 <NavBtn label={t(locale, 'you')} active={['you', 'accounts', 'categories'].includes(activeTab)} accent={accent} onClick={() => goTab('you')}
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M5 19c1.4-3 4-4.5 7-4.5S17.6 16 19 19" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
@@ -577,6 +744,22 @@ function ZenithApp() {
               </>
             )}
 
+            {paywallFeature && typeof PaywallScreen === 'function' && (
+              <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: zenithTone('page') }}>
+                <PaywallScreen
+                  store={store}
+                  feature={paywallFeature}
+                  onUnlock={unlockPro}
+                  onClose={() => setPaywallFeature(null)}
+                />
+              </div>
+            )}
+
+            {!unlocked && store.settings && store.settings.lock && store.settings.lock.enabled && typeof LockScreen === 'function' && (
+              <div style={{ position: 'absolute', inset: 0, zIndex: 100 }}>
+                <LockScreen store={store} onUnlock={() => setUnlocked(true)} />
+              </div>
+            )}
             {confirmDelete && drawerTx && (
               <ConfirmSheet
                 title={t(locale, 'confirmDelete')}

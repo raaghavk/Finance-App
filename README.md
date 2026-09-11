@@ -46,11 +46,11 @@ Static files plus optional `/api/*` functions. `vercel.json` is in the repo so H
 
 ## Navigation
 
-- **Home** — spent this month, wallets, budgets (all local)
-- **Activity** — local ledger
-- **Plan** — local budgets and goals
+- **Home** — spent this month, health score, wallets, budgets, goals peek
+- **Activity** — local ledger with search and date range
+- **Plan** — budgets, recurring bills, savings goals, insights, travel (one free demo trip; full travel is Zenith Pro)
 - **+** — Voice, Scan, or Manual (voice/OCR only if those keys are set; you can always type)
-- **You** — **Edit** (top-right), local accounts, category tree, budgets
+- **You** — **Edit** (top-right), accounts, categories, dark mode, PIN lock, JSON backup, Zenith Pro
 
 ## Tests
 
