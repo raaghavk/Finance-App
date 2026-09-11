@@ -331,6 +331,10 @@ function ZenithApp() {
   };
 
   const startTrip = (draft) => {
+    if (typeof canStartTrip === 'function' && !canStartTrip(store)) {
+      setPaywallFeature('trip');
+      return;
+    }
     const id = typeof newMoneyId === 'function' ? newMoneyId('trip', draft.name) : ('trip-' + Date.now());
     const trip = typeof normalizeTrip === 'function' ? normalizeTrip({ ...draft, id, status: 'active', expenses: [] }, 0) : { ...draft, id, status: 'active', expenses: [] };
     patch((s) => ({ ...s, trips: (s.trips || []).concat([trip]), activeTripId: id }));
@@ -345,6 +349,11 @@ function ZenithApp() {
   };
 
   const addTripExpense = (tripId, draft) => {
+    const trip = (store.trips || []).find((tr) => tr.id === tripId);
+    if (typeof canAddTripExpense === 'function' && !canAddTripExpense(store, trip)) {
+      setPaywallFeature('expense');
+      return;
+    }
     const exp = { ...draft, id: typeof newMoneyId === 'function' ? newMoneyId('tex', draft.merchant) : ('tex-' + Date.now()) };
     patch((s) => ({
       ...s,

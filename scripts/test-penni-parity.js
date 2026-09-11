@@ -160,6 +160,12 @@ assert.match(travel, /canStartTrip/);
 assert.match(travel, /onNeedPro/);
 assert.match(travel, /demoBanner/);
 
+const extras = fs.readFileSync(path.join(root, 'components/TravelExtras.jsx'), 'utf8');
+assert.match(extras, /travelChrome/);
+assert.match(extras, /ZENITH/);
+assert.doesNotMatch(extras, /#007AFF/);
+assert.doesNotMatch(extras, /\+41 31 350 3000/);
+
 const profile = fs.readFileSync(path.join(root, 'components/Profile.jsx'), 'utf8');
 assert.match(profile, /darkMode/);
 assert.match(profile, /appLock/);
@@ -178,6 +184,8 @@ assert.match(app, /PaywallScreen/);
 assert.match(app, /TravelScreen/);
 assert.match(app, /saveGoal/);
 assert.match(app, /startTrip/);
+assert.match(app, /canStartTrip/);
+assert.match(app, /canAddTripExpense/);
 assert.match(app, /exportJson/);
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
