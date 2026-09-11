@@ -21,7 +21,7 @@ That icon opens like a normal iOS app: no Safari address bar, no nested fake iPh
 
 **The Home Screen icon only updates after this code is on production.** Until the customize PR is merged, Add to Home Screen still shows the older You tab (no Edit). After merge, delete the icon and Add to Home Screen again, or force-close the PWA.
 
-On iPhone 14 Pro Max the status bar / Dynamic Island is padded with `env(safe-area-inset-*)` plus a 59px fallback when Safari reports 0. **You** has a sticky **Edit** button in the top-right. **Manage accounts** and **Manage categories** open full editors: add, rename, delete, reorder, per-account monthly budgets, and nested subcategories.
+On iPhone 14 Pro Max the status bar / Dynamic Island is padded with `env(safe-area-inset-*)` plus a 59px fallback when Safari reports 0. **You** has a sticky **Edit** button in the top-right. **Manage accounts** and **Manage categories** open full editors: add, rename, delete, reorder, per-account monthly budgets, nested subcategories, and **any emoji** (type or paste, or use the iPhone emoji keyboard).
 
 ## Local data
 
@@ -48,7 +48,7 @@ Static files plus optional `/api/*` functions. `vercel.json` is in the repo so H
 
 - **Home** — spent this month, health score, wallets, budgets, goals peek
 - **Activity** — local ledger with search and date range
-- **Plan** — budgets, recurring bills, savings goals, insights, travel (one free demo trip; full travel is Zenith Pro)
+- **Plan** — budgets, recurring bills, savings goals, insights, travel (one free demo trip; full travel is Zenith Pro). Travel includes a custom FX rate, packing kit, tips, and optional posting into a home wallet.
 - **+** — Voice, Scan, or Manual (voice/OCR only if those keys are set; you can always type)
 - **You** — **Edit** (top-right), accounts, categories, dark mode, PIN lock, JSON backup, Zenith Pro
 

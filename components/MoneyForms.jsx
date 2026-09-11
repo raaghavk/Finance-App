@@ -1,7 +1,7 @@
 // MoneyForms.jsx — add / edit accounts and categories (local store only)
 
 const ZENITH_CAT_COLORS = ['#2563EB', '#34D399', '#F97316', '#8B5CF6', '#EC4899', '#0EA5E9', '#F59E0B', '#EF4444'];
-const ZENITH_CAT_EMOJI = ['🛒', '☕', '🚗', '🏠', '💊', '🎬', '📱', '🏦', '✦', '📦', '🍽️', '🛺', '💼', '✨'];
+const ZENITH_CAT_EMOJI = ['🛒', '☕', '🚗', '🏠', '💊', '🎬', '📱', '🏦', '✦', '📦', '🍽️', '🛺', '💼', '✨', '🍱', '🪔', '🎓', '🐶', '🏖️', '💍', '🍼', '🎸', '✈️', '🧾'];
 
 function ZenithScreenHeader({ title, leftLabel, onLeft, rightLabel, onRight, rightAria }) {
   const page = typeof ZENITH !== 'undefined' ? ZENITH.page : '#F2F5FA';
@@ -124,6 +124,59 @@ function AccountForm({ locale, account, canDelete, onSave, onCancel, onDelete })
   );
 }
 
+function EmojiPicker({ locale, value, onChange, suggestions }) {
+  const [typed, setTyped] = React.useState(value || '');
+  React.useEffect(() => { setTyped(value || ''); }, [value]);
+  const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#64748B';
+  const accent = typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB';
+  const cream = typeof ZENITH !== 'undefined' ? ZENITH.cream : '#F2F5FA';
+  const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A';
+  const list = suggestions || ZENITH_CAT_EMOJI;
+  const apply = (raw) => {
+    const next = typeof firstEmoji === 'function' ? firstEmoji(raw) : String(raw || '').trim();
+    const emoji = next || '✦';
+    setTyped(emoji);
+    onChange && onChange(emoji);
+  };
+  return (
+    <div>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, margin: '14px 0 8px' }}>{t(locale, 'pickAnyEmoji')}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <div aria-hidden="true" style={{
+          width: 56, height: 56, borderRadius: 16, background: cream, flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
+        }}>{value || '✦'}</div>
+        <input
+          type="text"
+          inputMode="text"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-label={t(locale, 'pickAnyEmoji')}
+          placeholder="🍱 🪔 🐶…"
+          value={typed}
+          onChange={(e) => {
+            setTyped(e.target.value);
+            const g = typeof firstEmoji === 'function' ? firstEmoji(e.target.value) : e.target.value;
+            if (g) onChange && onChange(g);
+          }}
+          onBlur={() => apply(typed)}
+          style={{ ...moneyInputStyle(), flex: 1, fontSize: 22, textAlign: 'center' }}
+        />
+      </div>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, lineHeight: 1.4, marginBottom: 10 }}>{t(locale, 'pickEmojiHint')}</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {list.map((em) => (
+          <button key={em} type="button" onClick={() => apply(em)} style={{
+            width: 44, height: 44, borderRadius: 12, border: value === em ? '2px solid ' + accent : 'none',
+            background: cream, fontSize: 20, cursor: 'pointer', color: ink,
+          }}>{em}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CategoryForm({ locale, category, canDelete, onSave, onCancel, onDelete, parents }) {
   const [name, setName] = React.useState(category && category.name ? category.name : '');
   const [emoji, setEmoji] = React.useState(category && category.emoji ? category.emoji : '✦');
@@ -143,7 +196,7 @@ function CategoryForm({ locale, category, canDelete, onSave, onCancel, onDelete,
         ) : null}
         <button type="button" disabled={!ok} onClick={() => onSave({
           name: name.trim(),
-          emoji,
+          emoji: (typeof firstEmoji === 'function' ? firstEmoji(emoji) : emoji) || '✦',
           color,
           type: (category && category.type) || 'expense',
           parentId: parentId || null,
@@ -167,15 +220,7 @@ function CategoryForm({ locale, category, canDelete, onSave, onCancel, onDelete,
           </select>
         </>
       )}
-      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', margin: '14px 0 8px' }}>Icon</p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {ZENITH_CAT_EMOJI.map((em) => (
-          <button key={em} type="button" onClick={() => setEmoji(em)} style={{
-            width: 44, height: 44, borderRadius: 12, border: emoji === em ? '2px solid #2563EB' : 'none',
-            background: '#F2F5FA', fontSize: 20, cursor: 'pointer',
-          }}>{em}</button>
-        ))}
-      </div>
+      <EmojiPicker locale={locale} value={emoji} onChange={setEmoji} suggestions={ZENITH_CAT_EMOJI} />
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', margin: '14px 0 8px' }}>Color</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {ZENITH_CAT_COLORS.map((c) => (
@@ -197,6 +242,6 @@ function moneyInputStyle() {
 }
 
 Object.assign(window, {
-  AccountForm, CategoryForm, ZENITH_CAT_COLORS, ZENITH_CAT_EMOJI,
+  AccountForm, CategoryForm, EmojiPicker, ZENITH_CAT_COLORS, ZENITH_CAT_EMOJI,
   ZenithScreenHeader, ZenithChevron, ZenithPencil, moneyInputStyle,
 });

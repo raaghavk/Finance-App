@@ -105,7 +105,16 @@ const demoTrip = ctx.normalizeTrip({
   expenses: Array.from({ length: 8 }, (_, i) => ({ id: 'e' + i, merchant: 'x', cat: 'Food', amount: 1, inr: 83, date: '2026-09-01' })),
 }, 0);
 assert.strictEqual(ctx.canAddTripExpense(emptyTravel, demoTrip), false);
-assert.strictEqual(ctx.canAddTripExpense({ ...emptyTravel, settings: { ...emptyTravel.settings, pro: true } }, demoTrip), true);
+assert.strictEqual(ctx.firstEmoji('🍱 Kirana'), '🍱');
+assert.strictEqual(ctx.firstEmoji('🇮🇳'), '🇮🇳');
+assert.ok(ctx.firstEmoji('🐶') === '🐶');
+
+const withCheck = ctx.normalizeTrip({ countryCode: 'SGD', name: 'Singapore' }, 0);
+assert.ok(Array.isArray(withCheck.checklist) && withCheck.checklist.length >= 6);
+assert.strictEqual(ctx.canAddChecklistItem({ settings: { pro: false } }, withCheck), false);
+assert.strictEqual(ctx.canAddChecklistItem({ settings: { pro: true } }, withCheck), true);
+assert.ok(ctx.tripSummaryText(withCheck, 'en').indexOf('Singapore') >= 0);
+assert.strictEqual(ctx.travelHomeCategoryId({ categories: [{ id: 'dining', type: 'expense' }] }, 'Food'), 'dining');
 
 const parsed = ctx.parseStorePayload(JSON.stringify({
   version: 1,
@@ -159,7 +168,10 @@ const travel = fs.readFileSync(path.join(root, 'components/TravelMode.jsx'), 'ut
 assert.match(travel, /canStartTrip/);
 assert.match(travel, /onNeedPro/);
 assert.match(travel, /demoBanner/);
-assert.match(travel, /position: 'absolute'/);
+assert.match(travel, /packingList/);
+assert.match(travel, /logToHome/);
+assert.match(travel, /customRate/);
+assert.match(travel, /kit/);
 
 const extras = fs.readFileSync(path.join(root, 'components/TravelExtras.jsx'), 'utf8');
 assert.match(extras, /travelChrome/);
@@ -187,6 +199,8 @@ assert.match(app, /saveGoal/);
 assert.match(app, /startTrip/);
 assert.match(app, /canStartTrip/);
 assert.match(app, /canAddTripExpense/);
+assert.match(app, /updateTrip/);
+assert.match(app, /firstEmoji/);
 assert.match(app, /exportJson/);
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));

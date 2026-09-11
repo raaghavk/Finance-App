@@ -11,6 +11,7 @@ function PaywallScreen({ store, feature, onUnlock, onClose }) {
     : feature === 'sos' ? t(locale, 'sosPro')
     : feature === 'expense' ? t(locale, 'expenseCap')
     : feature === 'trip' ? t(locale, 'secondTrip')
+    : feature === 'checklist' ? t(locale, 'checklistPro')
     : t(locale, 'proBlurb');
 
   return (
@@ -37,6 +38,7 @@ function PaywallScreen({ store, feature, onUnlock, onClose }) {
             { icon: '✈️', title: locale === 'hi' ? 'अनलिमिटेड ट्रिप' : 'Unlimited trips', sub: t(locale, 'travelDemo') },
             { icon: '🧾', title: t(locale, 'travelHistory'), sub: t(locale, 'perTripLedgerSub') },
             { icon: '🆘', title: t(locale, 'emergencyAssist'), sub: t(locale, 'emergencyAssistSub') },
+            { icon: '🎒', title: t(locale, 'packingList'), sub: t(locale, 'checklistPro') },
           ].map((row, i, arr) => (
             <div key={row.title} style={{ display: 'flex', gap: 12, padding: '16px 18px', borderBottom: i < arr.length - 1 ? '1px solid ' + ZENITH.cream : 'none' }}>
               <div style={{ fontSize: 22 }}>{row.icon}</div>

@@ -46,6 +46,63 @@ const TRAVEL_COUNTRIES = [
 
 const TRAVEL_CATS = ['Food', 'Transport', 'Stay', 'Shopping', 'Groceries', 'Other'];
 const TRAVEL_CAT_COLORS = { Food: '#F97316', Transport: '#3B82F6', Stay: '#8B5CF6', Shopping: '#EC4899', Groceries: '#10B981', Other: '#64748B' };
+const TRAVEL_HOME_CAT = { Food: 'dining', Transport: 'cab', Stay: 'other', Shopping: 'shopping', Groceries: 'kirana', Other: 'other' };
+const TRAVEL_CHECKLIST_DEFAULT = [
+  { id: 'ck-pass', label: 'Passport / visa' },
+  { id: 'ck-fx', label: 'Forex / travel card' },
+  { id: 'ck-sim', label: 'SIM / eSIM' },
+  { id: 'ck-ins', label: 'Insurance' },
+  { id: 'ck-stay', label: 'Stay / tickets' },
+  { id: 'ck-med', label: 'Medicines' },
+];
+
+function firstEmoji(raw) {
+  const s = String(raw == null ? '' : raw).trim();
+  if (!s) return '';
+  try {
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+      const it = new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s);
+      for (const part of it) {
+        if (part && part.segment) return part.segment;
+      }
+    }
+  } catch (e) { /* ignore */ }
+  const chars = Array.from(s);
+  return chars[0] || '';
+}
+
+function defaultTravelChecklist() {
+  return TRAVEL_CHECKLIST_DEFAULT.map((row) => ({ id: row.id, label: row.label, done: false, custom: false }));
+}
+
+function travelHomeCategoryId(store, travelCat) {
+  const mapped = TRAVEL_HOME_CAT[travelCat] || 'other';
+  const cats = (store && store.categories) || [];
+  if (cats.some((c) => c.id === mapped)) return mapped;
+  const expense = cats.find((c) => c.type === 'expense');
+  return expense ? expense.id : mapped;
+}
+
+function canAddChecklistItem(store, trip, loc) {
+  if (zenithIsPro(store, loc)) return true;
+  return false;
+}
+
+function tripSummaryText(trip, locale) {
+  const loc = locale || 'en';
+  const spent = tripSpentINR(trip);
+  const fx = tripSpentForeign(trip);
+  const lines = [
+    (trip.flag || '✈️') + ' ' + (trip.name || 'Trip'),
+    (trip.startDate || '') + ' – ' + (trip.endDate || ''),
+    (trip.currency || '') + ' ' + (Number(fx) || 0) + ' ≈ ' + fmt(spent),
+  ];
+  ((trip.expenses) || []).forEach((e) => {
+    lines.push('- ' + e.merchant + ' · ' + (trip.currency || '') + ' ' + e.amount + ' · ' + fmt(e.inr));
+  });
+  if (trip.notes) lines.push('', trip.notes);
+  return lines.join('\n');
+}
 
 function zenithTone(key) {
   const fallback = {
@@ -271,7 +328,7 @@ const COPY = {
     importJson: 'Restore JSON',
     zenithPro: 'Zenith Pro',
     travel: 'Travel',
-    travelDemo: 'Free demo: one trip, 8 expenses. Pro unlocks unlimited trips, history, and SOS.',
+    travelDemo: 'Free demo: one trip, 8 expenses. Pro unlocks unlimited trips, history, SOS, and custom packing items.',
     upgrade: 'Upgrade',
     subscribe: 'Unlock Pro',
     restore: 'Restore purchases',
@@ -358,13 +415,33 @@ const COPY = {
     travelHero: 'Track spend in local currency. Home budget stays separate.',
     whatYouGet: 'What you get',
     liveRates: 'Live exchange rates',
-    liveRatesSub: 'INR conversion for popular travel currencies.',
+    liveRatesSub: 'Edit the rate to match the board at the airport.',
     tripBudgetSep: 'Separate trip budget',
-    tripBudgetSepSub: 'Your home month stays untouched.',
+    tripBudgetSepSub: 'Optionally also post spend into a home wallet.',
     perTripLedger: 'Per-trip ledger',
-    perTripLedgerSub: 'Full expense history for every trip.',
+    perTripLedgerSub: 'Edit, delete, and group expenses by day.',
     emergencyAssist: 'Emergency assist',
     emergencyAssistSub: 'Embassy and SOS shortcuts — Pro.',
+    pickAnyEmoji: 'Any emoji',
+    pickEmojiHint: 'Type or paste any emoji. On iPhone, tap the field and open the emoji keyboard.',
+    kit: 'Kit',
+    tripNotes: 'Trip notes',
+    packingList: 'Packing list',
+    addCheckItem: 'Add item',
+    customRate: 'Your rate',
+    logToHome: 'Also log in home wallet',
+    forexCash: 'Forex cash on hand',
+    tipPct: 'Tip',
+    copySummary: 'Copy summary',
+    copied: 'Copied',
+    checklistPro: 'Custom packing items are included in Pro.',
+    ckPass: 'Passport / visa',
+    ckFx: 'Forex / travel card',
+    ckSim: 'SIM / eSIM',
+    ckIns: 'Insurance',
+    ckStay: 'Stay / tickets',
+    ckMed: 'Medicines',
+    withTip: 'With tip',
   },
   hi: {
     hi: 'नमस्ते, मैं Zenith हूँ।',
@@ -529,7 +606,7 @@ const COPY = {
     importJson: 'JSON रीस्टोर',
     zenithPro: 'Zenith Pro',
     travel: 'ट्रैवल',
-    travelDemo: 'फ्री डेमो: एक ट्रिप, 8 खर्च। Pro में अनलिमिटेड ट्रिप, इतिहास और SOS।',
+    travelDemo: 'फ्री डेमो: एक ट्रिप, 8 खर्च। Pro में अनलिमिटेड ट्रिप, इतिहास, SOS और कस्टम पैकिंग।',
     upgrade: 'अपग्रेड',
     subscribe: 'Pro खोलें',
     restore: 'खरीद वापस लाएँ',
@@ -623,6 +700,26 @@ const COPY = {
     perTripLedgerSub: 'हर ट्रिप का पूरा खर्च।',
     emergencyAssist: 'इमरजेंसी असिस्ट',
     emergencyAssistSub: 'दूतावास और SOS — Pro।',
+    pickAnyEmoji: 'कोई भी इमोजी',
+    pickEmojiHint: 'कोई भी इमोजी टाइप या पेस्ट करें। iPhone पर फ़ील्ड टैप कर इमोजी कीबोर्ड खोलें।',
+    kit: 'किट',
+    tripNotes: 'ट्रिप नोट्स',
+    packingList: 'पैकिंग लिस्ट',
+    addCheckItem: 'आइटम जोड़ें',
+    customRate: 'आपका रेट',
+    logToHome: 'घर के वॉलेट में भी लिखें',
+    forexCash: 'विदेशी नकदी हाथ में',
+    tipPct: 'टिप',
+    copySummary: 'सारांश कॉपी',
+    copied: 'कॉपी हो गया',
+    checklistPro: 'कस्टम पैकिंग आइटम Pro में हैं।',
+    ckPass: 'पासपोर्ट / वीज़ा',
+    ckFx: 'फॉरेक्स / ट्रैवल कार्ड',
+    ckSim: 'SIM / eSIM',
+    ckIns: 'इंश्योरेंस',
+    ckStay: 'स्टे / टिकट',
+    ckMed: 'दवाई',
+    withTip: 'टिप सहित',
   },
 };
 
@@ -805,6 +902,19 @@ function normalizeRecurring(row, i) {
 function normalizeTrip(row, i) {
   const t = row && typeof row === 'object' ? row : {};
   const country = (TRAVEL_COUNTRIES || []).find((c) => c.code === t.countryCode) || null;
+  const preset = defaultTravelChecklist();
+  const incoming = Array.isArray(t.checklist) && t.checklist.length ? t.checklist : preset;
+  const byId = {};
+  incoming.forEach((item, j) => {
+    const id = item.id || ('ck-custom-' + j);
+    byId[id] = {
+      id: id,
+      label: String(item.label || '').trim() || 'Item',
+      done: !!item.done,
+      custom: !!item.custom || preset.every((p) => p.id !== id),
+    };
+  });
+  preset.forEach((p) => { if (!byId[p.id]) byId[p.id] = p; });
   return {
     id: t.id || ('trip-' + i + '-' + Date.now().toString(36)),
     name: String(t.name || '').trim() || (country ? country.name + ' trip' : 'Trip'),
@@ -818,6 +928,9 @@ function normalizeTrip(row, i) {
     endDate: t.endDate || todayISO(),
     budgetINR: Math.max(0, Number(t.budgetINR) || 0),
     status: t.status === 'ended' ? 'ended' : 'active',
+    notes: String(t.notes || ''),
+    forexCash: Math.max(0, Number(t.forexCash) || 0),
+    checklist: Object.keys(byId).map((k) => byId[k]),
     expenses: Array.isArray(t.expenses) ? t.expenses.map((e, j) => ({
       id: e.id || ('tex-' + j),
       merchant: e.merchant || 'Expense',
@@ -825,6 +938,9 @@ function normalizeTrip(row, i) {
       amount: Number(e.amount) || 0,
       inr: Number(e.inr) || 0,
       date: e.date || todayISO(),
+      accountId: e.accountId || '',
+      homeTxnId: e.homeTxnId || '',
+      postHome: !!e.postHome,
     })) : [],
   };
 }
@@ -1280,6 +1396,11 @@ Object.assign(window, {
   canAddTripExpense,
   canUseTravelHistory,
   canUseTravelSos,
+  canAddChecklistItem,
+  firstEmoji,
+  defaultTravelChecklist,
+  travelHomeCategoryId,
+  tripSummaryText,
   tripSpentINR,
   tripSpentForeign,
   tripDaysLeft,

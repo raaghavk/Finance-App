@@ -219,7 +219,7 @@ function ZenithApp() {
       id: typeof newMoneyId === 'function' ? newMoneyId('cat', draft.name) : ('cat-' + Date.now()),
       name: draft.name,
       nameHi: draft.name,
-      emoji: draft.emoji || '✦',
+      emoji: (typeof firstEmoji === 'function' ? firstEmoji(draft.emoji) : draft.emoji) || '✦',
       color: draft.color || '#2563EB',
       type: draft.type || 'expense',
       group: 'custom',
@@ -233,7 +233,7 @@ function ZenithApp() {
           ...c,
           name: draft.name,
           nameHi: draft.name,
-          emoji: draft.emoji,
+          emoji: (typeof firstEmoji === 'function' ? firstEmoji(draft.emoji) : draft.emoji) || c.emoji,
           color: draft.color,
           parentId: draft.parentId !== undefined ? (draft.parentId || null) : c.parentId,
         } : c));
@@ -354,10 +354,117 @@ function ZenithApp() {
       setPaywallFeature('expense');
       return;
     }
-    const exp = { ...draft, id: typeof newMoneyId === 'function' ? newMoneyId('tex', draft.merchant) : ('tex-' + Date.now()) };
+    patch((s) => {
+      const live = (s.trips || []).find((tr) => tr.id === tripId);
+      const expId = typeof newMoneyId === 'function' ? newMoneyId('tex', draft.merchant) : ('tex-' + Date.now());
+      let transactions = s.transactions || [];
+      let homeTxnId = '';
+      if (draft.postHome) {
+        const txnId = typeof newTxnId === 'function' ? newTxnId() : ('tx-' + Date.now());
+        homeTxnId = txnId;
+        const accountId = draft.accountId || ((s.accounts || [])[0] && (s.accounts || [])[0].id) || 'cash';
+        transactions = [{
+          id: txnId,
+          type: 'expense',
+          amount: Number(draft.inr) || 0,
+          categoryId: typeof travelHomeCategoryId === 'function' ? travelHomeCategoryId(s, draft.cat) : 'other',
+          accountId: accountId,
+          date: draft.date || todayISO(),
+          note: ((live && live.name) || 'Trip') + ' · ' + (draft.merchant || ''),
+          method: typeof methodForAccount === 'function' ? methodForAccount(accountId) : 'upi',
+          travelId: tripId,
+        }].concat(transactions);
+      }
+      const exp = {
+        merchant: draft.merchant,
+        amount: draft.amount,
+        cat: draft.cat,
+        inr: draft.inr,
+        date: draft.date || todayISO(),
+        id: expId,
+        accountId: draft.accountId || '',
+        postHome: !!draft.postHome,
+        homeTxnId: homeTxnId,
+      };
+      return {
+        ...s,
+        transactions: transactions,
+        trips: (s.trips || []).map((tr) => (tr.id === tripId ? { ...tr, expenses: (tr.expenses || []).concat([exp]) } : tr)),
+      };
+    });
+  };
+
+  const saveTripExpense = (tripId, expId, draft) => {
+    patch((s) => {
+      const live = (s.trips || []).find((tr) => tr.id === tripId);
+      const prev = live && (live.expenses || []).find((e) => e.id === expId);
+      let transactions = s.transactions || [];
+      let homeTxnId = prev && prev.homeTxnId ? prev.homeTxnId : '';
+      if (draft.postHome) {
+        const accountId = draft.accountId || (prev && prev.accountId) || ((s.accounts || [])[0] && (s.accounts || [])[0].id) || 'cash';
+        const txnBody = {
+          type: 'expense',
+          amount: Number(draft.inr) || 0,
+          categoryId: typeof travelHomeCategoryId === 'function' ? travelHomeCategoryId(s, draft.cat) : 'other',
+          accountId: accountId,
+          date: draft.date || todayISO(),
+          note: ((live && live.name) || 'Trip') + ' · ' + (draft.merchant || ''),
+          method: typeof methodForAccount === 'function' ? methodForAccount(accountId) : 'upi',
+          travelId: tripId,
+        };
+        if (homeTxnId && transactions.some((tx) => tx.id === homeTxnId)) {
+          transactions = transactions.map((tx) => (tx.id === homeTxnId ? { ...tx, ...txnBody } : tx));
+        } else {
+          homeTxnId = typeof newTxnId === 'function' ? newTxnId() : ('tx-' + Date.now());
+          transactions = [{ id: homeTxnId, ...txnBody }].concat(transactions);
+        }
+      } else if (homeTxnId) {
+        transactions = transactions.filter((tx) => tx.id !== homeTxnId);
+        homeTxnId = '';
+      }
+      return {
+        ...s,
+        transactions: transactions,
+        trips: (s.trips || []).map((tr) => (tr.id === tripId ? {
+          ...tr,
+          expenses: (tr.expenses || []).map((e) => (e.id === expId ? {
+            ...e,
+            merchant: draft.merchant,
+            amount: draft.amount,
+            cat: draft.cat,
+            inr: draft.inr,
+            date: draft.date || e.date,
+            accountId: draft.accountId || e.accountId || '',
+            postHome: !!draft.postHome,
+            homeTxnId: homeTxnId,
+          } : e)),
+        } : tr)),
+      };
+    });
+  };
+
+  const deleteTripExpense = (tripId, expId) => {
+    patch((s) => {
+      const live = (s.trips || []).find((tr) => tr.id === tripId);
+      const prev = live && (live.expenses || []).find((e) => e.id === expId);
+      const transactions = prev && prev.homeTxnId
+        ? (s.transactions || []).filter((tx) => tx.id !== prev.homeTxnId)
+        : (s.transactions || []);
+      return {
+        ...s,
+        transactions: transactions,
+        trips: (s.trips || []).map((tr) => (tr.id === tripId ? {
+          ...tr,
+          expenses: (tr.expenses || []).filter((e) => e.id !== expId),
+        } : tr)),
+      };
+    });
+  };
+
+  const updateTrip = (id, fields) => {
     patch((s) => ({
       ...s,
-      trips: (s.trips || []).map((tr) => (tr.id === tripId ? { ...tr, expenses: (tr.expenses || []).concat([exp]) } : tr)),
+      trips: (s.trips || []).map((tr) => (tr.id === id ? { ...tr, ...fields } : tr)),
     }));
   };
 
@@ -559,6 +666,9 @@ function ZenithApp() {
                       onStartTrip={startTrip}
                       onEndTrip={endTrip}
                       onAddExpense={addTripExpense}
+                      onSaveExpense={saveTripExpense}
+                      onDeleteExpense={deleteTripExpense}
+                      onUpdateTrip={updateTrip}
                       onNeedPro={(feature) => setPaywallFeature(feature || 'trip')}
                       onUnlockPro={() => setPaywallFeature('pro')}
                     />
