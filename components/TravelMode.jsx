@@ -1,348 +1,367 @@
-// TravelMode.jsx — Live travel mode: activate, track, convert, per-trip ledger
+// TravelMode.jsx — persisted trips; free demo (1 trip / 8 expenses), full travel on Pro
 
-function CountryPickerScreen({ countries, selectedCountry, onSelect, onBack, onConfirm }) {
+function CountryPickerScreen({ countries, selectedCountry, onSelect, onBack, onConfirm, locale }) {
   const [search, setSearch] = React.useState('');
-  const filtered = countries.filter(c =>
+  const filtered = countries.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.code.toLowerCase().includes(search.toLowerCase())
   );
+  const ink = ZENITH.ink;
+  const muted = ZENITH.muted;
+  const page = ZENITH.page;
+  const card = ZENITH.card;
+  const accent = ZENITH.accent;
+  const cream = ZENITH.cream;
   return (
-    <div style={{ height: '100%', background: '#F2F2F7', display: 'flex', flexDirection: 'column', paddingTop: 'var(--zenith-pad-top)' }}>
+    <div style={{ height: '100%', background: page, display: 'flex', flexDirection: 'column', paddingTop: 'var(--zenith-pad-top)' }}>
       <div style={{ padding: '4px 20px 14px', flexShrink: 0 }}>
-        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 14 }}>
-          <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#007AFF', fontWeight: 500 }}>Back</span>
+        <button type="button" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 14 }}>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: accent, fontWeight: 500 }}>{t(locale, 'cancel')}</span>
         </button>
-        <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 26, fontWeight: 800, color: '#1C1C1E', letterSpacing: -0.5, marginBottom: 14 }}>Where are you going?</h1>
-        {/* Search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#FFFFFF', borderRadius: 14, padding: '11px 14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-            <circle cx="6.5" cy="6.5" r="5" stroke="#C7C7CC" strokeWidth="1.6"/>
-            <path d="M10 10l4 4" stroke="#C7C7CC" strokeWidth="1.6" strokeLinecap="round"/>
-          </svg>
+        <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 26, fontWeight: 800, color: ink, letterSpacing: -0.5, marginBottom: 14 }}>{t(locale, 'chooseCountry')}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: card, borderRadius: 14, padding: '11px 14px', boxShadow: zenithSoftShadow() }}>
           <input
             autoFocus
             type="text"
-            placeholder="Search country or currency..."
+            placeholder="USD, Thailand, AED…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#1C1C1E' }}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'Inter, sans-serif', fontSize: 14, color: ink }}
           />
-          {search && <button onClick={() => setSearch('')} style={{ background: '#C7C7CC', border: 'none', borderRadius: 10, width: 18, height: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="7" height="7" viewBox="0 0 8 8" fill="none"><path d="M1 1l6 6M7 1L1 7" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
-          </button>}
         </div>
       </div>
-
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
-        {filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#8E8E93' }}>No countries found</p>
-          </div>
-        ) : (
-          <div style={{ background: '#FFFFFF', borderRadius: 22, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            {filtered.map((c, i) => (
-              <div key={c.code} onClick={() => onSelect(c.code)} style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '13px 18px', cursor: 'pointer',
-                borderBottom: i < filtered.length - 1 ? '1px solid #F2F2F7' : 'none',
-                background: selectedCountry === c.code ? '#F0F7FF' : '#FFFFFF',
-                transition: 'background 0.12s',
-              }}>
-                <span style={{ fontSize: 24, flexShrink: 0, lineHeight: 1 }}>{c.flag}</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E', marginBottom: 1 }}>{c.name}</p>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#8E8E93' }}>{c.code} · 1 {c.code} = ₹{c.rate}</p>
-                </div>
-                <div style={{ width: 22, height: 22, borderRadius: 11, border: `2px solid ${selectedCountry === c.code ? '#007AFF' : '#E5E5EA'}`, background: selectedCountry === c.code ? '#007AFF' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
-                  {selectedCountry === c.code && <div style={{ width: 8, height: 8, borderRadius: 4, background: '#FFFFFF' }} />}
-                </div>
+        <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: zenithSoftShadow() }}>
+          {filtered.map((c, i) => (
+            <button key={c.code} type="button" onClick={() => onSelect(c.code)} style={{
+              display: 'flex', width: '100%', alignItems: 'center', gap: 12, padding: '13px 18px', cursor: 'pointer',
+              border: 'none', borderBottom: i < filtered.length - 1 ? '1px solid ' + cream : 'none',
+              background: selectedCountry === c.code ? cream : card, textAlign: 'left',
+            }}>
+              <span style={{ fontSize: 24 }}>{c.flag}</span>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{c.name}</p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>{c.code} · 1 {c.code} = ₹{c.rate}</p>
               </div>
-            ))}
-          </div>
-        )}
+            </button>
+          ))}
+        </div>
         <div style={{ height: 100 }} />
       </div>
-
-      <div style={{ padding: '12px 20px 24px', flexShrink: 0, background: 'rgba(242,242,247,0.95)', backdropFilter: 'blur(12px)', borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={onConfirm} style={{
+      <div style={{ padding: '12px 20px var(--zenith-pad-bottom)', flexShrink: 0 }}>
+        <button type="button" onClick={onConfirm} style={{
           width: '100%', padding: '17px', border: 'none', borderRadius: 18,
           cursor: selectedCountry ? 'pointer' : 'default',
-          background: selectedCountry ? '#007AFF' : '#E5E5EA',
-          color: selectedCountry ? '#FFFFFF' : '#AAAAAA',
+          background: selectedCountry ? accent : cream,
+          color: selectedCountry ? '#FFFFFF' : muted,
           fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 700,
-          boxShadow: selectedCountry ? '0 8px 24px rgba(0,122,255,0.35)' : 'none',
-          transition: 'all 0.2s',
-        }}>Activate Travel Mode →</button>
+        }}>{t(locale, 'activateTravel')}</button>
       </div>
     </div>
   );
 }
 
-function TravelScreen() {
-  const [travelActive, setTravelActive] = React.useState(false);
-  const [activatingStep, setActivatingStep] = React.useState(0); // 0=off,1=setup,2=country,3=live
-  // reset when screen becomes active again from off
-  React.useEffect(() => { if (!travelActive) setActivatingStep(0); }, [travelActive]);
-  const [selectedCountry, setSelectedCountry] = React.useState(null);
-  const [activeTab, setActiveTab] = React.useState('dashboard'); // dashboard | expenses | convert
-  const [convertAmount, setConvertAmount] = React.useState('1000');
-  const [convertDir, setConvertDir] = React.useState('home_to_foreign'); // home_to_foreign | foreign_to_home
-
-  const [tripName, setTripName] = React.useState('');
-  const [startDate, setStartDate] = React.useState('2026-05-14');
-  const [endDate, setEndDate] = React.useState('2026-05-22');
-  const [tripBudgetINR, setTripBudgetINR] = React.useState('280000');
-  const [showHistory, setShowHistory] = React.useState(false);
-  const [showSOS, setShowSOS] = React.useState(false);
-  const [showSummary, setShowSummary] = React.useState(false);
-  const [summaryTrip, setSummaryTrip] = React.useState(null);
-  const [historyDetail, setHistoryDetail] = React.useState(null);
-  const [pastTrips, setPastTrips] = React.useState([
-    { id: 1, name: 'Bangkok Getaway', flag: '🇹🇭', country: 'Thailand', code: 'THB', dates: 'Feb 3 – Feb 9', days: 6, spentINR: 68400, budgetINR: 90000, spentForeign: 2145, overBudget: false, byCategory: { Food: 620, Stay: 890, Transport: 310, Shopping: 325 } },
-    { id: 2, name: 'Dubai Weekend', flag: '🇦🇪', country: 'UAE', code: 'AED', dates: 'Dec 18 – Dec 21', days: 3, spentINR: 112300, budgetINR: 100000, spentForeign: 4945, overBudget: true, byCategory: { Stay: 2100, Food: 980, Shopping: 1500, Transport: 365 } },
-    { id: 3, name: 'Tokyo Spring', flag: '🇯🇵', country: 'Japan', code: 'JPY', dates: 'Mar 21 – Mar 29', days: 8, spentINR: 156800, budgetINR: 180000, spentForeign: 280000, overBudget: false, byCategory: { Food: 92000, Stay: 120000, Transport: 41000, Shopping: 27000 } },
-  ]);
-
-  const COUNTRIES = [
-    { name: 'Afghanistan', flag: '🇦🇫', code: 'AFN', symbol: '؋', rate: 1.13 },
-    { name: 'Australia', flag: '🇦🇺', code: 'AUD', symbol: 'A$', rate: 54.32 },
-    { name: 'Bahrain', flag: '🇧🇭', code: 'BHD', symbol: 'BD', rate: 221.45 },
-    { name: 'Bangladesh', flag: '🇧🇩', code: 'BDT', symbol: '৳', rate: 0.76 },
-    { name: 'Brazil', flag: '🇧🇷', code: 'BRL', symbol: 'R$', rate: 16.52 },
-    { name: 'Canada', flag: '🇨🇦', code: 'CAD', symbol: 'C$', rate: 61.34 },
-    { name: 'China', flag: '🇨🇳', code: 'CNY', symbol: '¥', rate: 11.52 },
-    { name: 'Denmark', flag: '🇩🇰', code: 'DKK', symbol: 'kr', rate: 12.03 },
-    { name: 'Egypt', flag: '🇪🇬', code: 'EGP', symbol: '£', rate: 1.73 },
-    { name: 'Europe', flag: '🇪🇺', code: 'EUR', symbol: '€', rate: 89.54 },
-    { name: 'Hong Kong', flag: '🇭🇰', code: 'HKD', symbol: 'HK$', rate: 10.69 },
-    { name: 'Indonesia', flag: '🇮🇩', code: 'IDR', symbol: 'Rp', rate: 0.0051 },
-    { name: 'Israel', flag: '🇮🇱', code: 'ILS', symbol: '₪', rate: 22.87 },
-    { name: 'Japan', flag: '🇯🇵', code: 'JPY', symbol: '¥', rate: 0.56 },
-    { name: 'Jordan', flag: '🇯🇴', code: 'JOD', symbol: 'JD', rate: 117.64 },
-    { name: 'Kenya', flag: '🇰🇪', code: 'KES', symbol: 'KSh', rate: 0.64 },
-    { name: 'Kuwait', flag: '🇰🇼', code: 'KWD', symbol: 'KD', rate: 272.18 },
-    { name: 'Malaysia', flag: '🇲🇾', code: 'MYR', symbol: 'RM', rate: 18.92 },
-    { name: 'Maldives', flag: '🇲🇻', code: 'MVR', symbol: 'Rf', rate: 6.48 },
-    { name: 'Mexico', flag: '🇲🇽', code: 'MXN', symbol: '$', rate: 4.22 },
-    { name: 'Nepal', flag: '🇳🇵', code: 'NPR', symbol: '₨', rate: 0.62 },
-    { name: 'New Zealand', flag: '🇳🇿', code: 'NZD', symbol: 'NZ$', rate: 49.87 },
-    { name: 'Norway', flag: '🇳🇴', code: 'NOK', symbol: 'kr', rate: 7.94 },
-    { name: 'Oman', flag: '🇴🇲', code: 'OMR', symbol: 'ر.ع.', rate: 216.89 },
-    { name: 'Pakistan', flag: '🇵🇰', code: 'PKR', symbol: '₨', rate: 0.30 },
-    { name: 'Philippines', flag: '🇵🇭', code: 'PHP', symbol: '₱', rate: 1.48 },
-    { name: 'Qatar', flag: '🇶🇦', code: 'QAR', symbol: 'ر.ق', rate: 22.92 },
-    { name: 'Russia', flag: '🇷🇺', code: 'RUB', symbol: '₽', rate: 0.97 },
-    { name: 'Saudi Arabia', flag: '🇸🇦', code: 'SAR', symbol: 'ر.س', rate: 22.25 },
-    { name: 'Singapore', flag: '🇸🇬', code: 'SGD', symbol: 'S$', rate: 62.18 },
-    { name: 'South Africa', flag: '🇿🇦', code: 'ZAR', symbol: 'R', rate: 4.56 },
-    { name: 'South Korea', flag: '🇰🇷', code: 'KRW', symbol: '₩', rate: 0.061 },
-    { name: 'Sri Lanka', flag: '🇱🇰', code: 'LKR', symbol: '₨', rate: 0.28 },
-    { name: 'Sweden', flag: '🇸🇪', code: 'SEK', symbol: 'kr', rate: 8.12 },
-    { name: 'Switzerland', flag: '🇨🇭', code: 'CHF', symbol: 'CHF', rate: 93.28 },
-    { name: 'Taiwan', flag: '🇹🇼', code: 'TWD', symbol: 'NT$', rate: 2.59 },
-    { name: 'Thailand', flag: '🇹🇭', code: 'THB', symbol: '฿', rate: 2.32 },
-    { name: 'Turkey', flag: '🇹🇷', code: 'TRY', symbol: '₺', rate: 2.46 },
-    { name: 'UAE', flag: '🇦🇪', code: 'AED', symbol: 'د.إ', rate: 22.71 },
-    { name: 'United Kingdom', flag: '🇬🇧', code: 'GBP', symbol: '£', rate: 104.72 },
-    { name: 'United States', flag: '🇺🇸', code: 'USD', symbol: '$', rate: 83.45 },
-    { name: 'Vietnam', flag: '🇻🇳', code: 'VND', symbol: '₫', rate: 0.0033 },
-  ];
-
-  const country = selectedCountry ? COUNTRIES.find(c => c.code === selectedCountry) : null;
-
-  const [expenses, setExpenses] = React.useState([
-    { id: 1, merchant: 'Airport Hotel',   cat: 'Stay',      amount: 189,  inr: 17629, date: 'Today'     },
-    { id: 2, merchant: 'Fondue Stübli',   cat: 'Food',      amount: 68.5, inr: 6390,  date: 'Today'     },
-    { id: 3, merchant: 'Swiss Rail Pass', cat: 'Transport', amount: 220,  inr: 20522, date: 'Yesterday' },
-    { id: 4, merchant: 'Lindt Shop',      cat: 'Shopping',  amount: 84,   inr: 7836,  date: 'Yesterday' },
-    { id: 5, merchant: 'Migros',          cat: 'Groceries', amount: 42.5, inr: 3964,  date: 'Apr 16'    },
-  ]);
-
-  const totalForeign = expenses.reduce((s, e) => s + e.amount, 0);
-  const totalINR     = expenses.reduce((s, e) => s + e.inr, 0);
-  const tripBudget   = { foreign: 3000, inr: 280000 };
-  const budgetPct    = totalForeign / tripBudget.foreign;
-  const daysLeft     = 8;
-
-  const CATS = ['Food','Transport','Stay','Shopping','Groceries','Other'];
-  const CAT_COLORS = { Food:'#FF6B6B', Transport:'#60A5FA', Stay:'#A78BFA', Shopping:'#EC4899', Groceries:'#34D399', Other:'#6E6E73' };
-
-  const convertedAmount = () => {
-    if (!country) return 0;
-    const n = parseFloat(convertAmount) || 0;
-    return convertDir === 'home_to_foreign'
-      ? (n / country.rate).toFixed(2)
-      : (n * country.rate).toFixed(0);
-  };
-
-  // ── TRIP SUMMARY (post-trip recap) ──
-  if (showSummary && summaryTrip) {
-    return (
-      <TripSummaryScreen trip={summaryTrip} onDone={() => {
-        setPastTrips(p => [summaryTrip, ...p]);
-        setShowSummary(false); setSummaryTrip(null);
-        setTravelActive(false); setActivatingStep(0); setSelectedCountry(null);
-        setTripName(''); setExpenses([]);
-      }} />
-    );
-  }
-
-  // ── OFF STATE ──
-  if (!travelActive) {
-    return (
-      <div style={{ height: '100%', position: 'relative' }}>
-      <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7', paddingTop: 'var(--zenith-pad-top)', paddingBottom: 'var(--zenith-pad-bottom)' }}>
-        <div style={{ padding: '4px 24px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#8E8E93', marginBottom: 3 }}>May 2026</p>
-            <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 30, fontWeight: 800, color: '#1C1C1E', letterSpacing: -0.5 }}>Travel</h1>
-          </div>
-          {pastTrips.length > 0 && (
-            <button onClick={() => setShowHistory(true)} style={{ background: '#FFFFFF', border: 'none', borderRadius: 12, padding: '8px 14px', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#007AFF', marginTop: 20 }}>History</button>
-          )}
+function TripExpenseForm({ locale, trip, store, initial, onSave, onCancel, onDelete }) {
+  const [merchant, setMerchant] = React.useState(initial && initial.merchant ? initial.merchant : '');
+  const [amount, setAmount] = React.useState(initial && initial.amount != null ? String(initial.amount) : '');
+  const [cat, setCat] = React.useState((initial && initial.cat) || 'Food');
+  const [postHome, setPostHome] = React.useState(!!(initial && initial.postHome));
+  const accounts = (store && store.accounts) || [];
+  const [accountId, setAccountId] = React.useState((initial && initial.accountId) || (accounts[0] && accounts[0].id) || 'cash');
+  const ok = merchant.trim() && (parseFloat(amount) || 0) > 0;
+  const rate = Number(trip.rate) || 1;
+  const inr = Math.round((parseFloat(amount) || 0) * rate);
+  const card = ZENITH.card;
+  const ink = ZENITH.ink;
+  const muted = ZENITH.muted;
+  const accent = ZENITH.accent;
+  const cream = ZENITH.cream;
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'flex-end' }}>
+      <div role="dialog" aria-label={t(locale, 'addTripExpense')} style={{
+        width: '100%', background: card, borderRadius: '24px 24px 0 0',
+        padding: '16px 20px var(--zenith-pad-bottom)', maxHeight: '85%',
+        display: 'flex', flexDirection: 'column', boxShadow: '0 -8px 32px rgba(15,23,42,0.18)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexShrink: 0 }}>
+          <h2 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 18, fontWeight: 800, color: ink }}>{t(locale, 'addTripExpense')}</h2>
+          <button type="button" onClick={onCancel} aria-label="Close" style={{
+            width: 36, height: 36, border: 'none', borderRadius: 12, background: cream, cursor: 'pointer', fontSize: 18, color: ink,
+          }}>×</button>
         </div>
-
-        {/* Hero card */}
-        <div style={{ padding: '0 20px', marginBottom: 24 }}>
-          <div style={{
-            background: 'linear-gradient(145deg, #1C1C2E 0%, #0D1117 100%)',
-            borderRadius: 28, padding: '32px 28px',
-            position: 'relative', overflow: 'hidden',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.28)',
-          }}>
-            <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(0,122,255,0.07)' }} />
-            <div style={{ position: 'absolute', bottom: -30, left: 20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.02)' }} />
-            <div style={{ position: 'relative' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>✈️</div>
-              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 26, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, marginBottom: 10 }}>
-                Heading somewhere?
-              </h2>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 28 }}>
-                Activate Travel Mode to track spending in local currency, get live rates, and keep your home budget separate.
-              </p>
-              <button
-                onClick={() => { setTravelActive(true); setActivatingStep(1); setTripName(''); }}
-                style={{
-                  background: '#007AFF', border: 'none', borderRadius: 16,
-                  padding: '16px 28px', cursor: 'pointer',
-                  fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: '#FFFFFF',
-                  boxShadow: '0 8px 28px rgba(0,122,255,0.45)',
-                }}
-              >Start a Trip →</button>
-            </div>
-          </div>
-        </div>
-
-        {/* Features */}
-        <div style={{ padding: '0 20px' }}>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12, paddingLeft: 4 }}>What you get</p>
-          <div style={{ background: '#FFFFFF', borderRadius: 22, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            {[
-              { icon: '💱', title: 'Live exchange rates', sub: 'Real-time INR conversion for 150+ currencies' },
-              { icon: '📊', title: 'Separate trip budget', sub: 'Your home budget stays untouched' },
-              { icon: '🧾', title: 'Per-trip ledger', sub: 'Full expense history for every trip' },
-              { icon: '📍', title: 'Auto-detect country', sub: 'Switch currency when you land' },
-            ].map((f, i, arr) => (
-              <div key={f.title} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderBottom: i < arr.length - 1 ? '1px solid #F2F2F7' : 'none' }}>
-                <div style={{ width: 42, height: 42, borderRadius: 13, background: '#F2F2F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{f.icon}</div>
-                <div>
-                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E', marginBottom: 2 }}>{f.title}</p>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8E8E93' }}>{f.sub}</p>
-                </div>
-              </div>
+        <div style={{ overflowY: 'auto', minHeight: 0, flex: 1 }}>
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginBottom: 6 }}>{t(locale, 'note')}</label>
+          <input value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="Pad Thai, Grab, hotel…" style={moneyInputStyle()} />
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, margin: '12px 0 6px' }}>{trip.currency}</label>
+          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" style={moneyInputStyle()} />
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 6 }}>≈ {fmt(inr)}</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+            {(TRAVEL_CATS || ['Food', 'Other']).map((c) => (
+              <button key={c} type="button" onClick={() => setCat(c)} style={{
+                padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer',
+                background: cat === c ? accent : cream, color: cat === c ? '#fff' : ink,
+                fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
+              }}>{c}</button>
             ))}
           </div>
+          <button type="button" onClick={() => setPostHome((v) => !v)} style={{
+            marginTop: 16, width: '100%', textAlign: 'left', border: 'none', borderRadius: 14, padding: '12px 14px',
+            background: cream, cursor: 'pointer',
+          }}>
+            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{t(locale, 'logToHome')}</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 3 }}>{postHome ? (locale === 'hi' ? 'घर के वॉलेट में भी लिखा जाएगा' : 'Also posts to your home wallet') : (locale === 'hi' ? 'केवल ट्रिप बही' : 'Trip ledger only')}</p>
+          </button>
+          {postHome && accounts.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+              {accounts.map((a) => (
+                <button key={a.id} type="button" onClick={() => setAccountId(a.id)} style={{
+                  padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer',
+                  background: accountId === a.id ? accent : cream, color: accountId === a.id ? '#fff' : ink,
+                  fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
+                }}>{acctLabel(a, locale) || a.name}</button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexShrink: 0 }}>
+          {initial && initial.id && onDelete ? (
+            <button type="button" onClick={onDelete} style={{
+              padding: '14px 16px', border: 'none', borderRadius: 14, background: '#FEE2E2', color: '#B91C1C',
+              fontFamily: 'Manrope, sans-serif', fontWeight: 800, cursor: 'pointer',
+            }}>{t(locale, 'delete')}</button>
+          ) : null}
+          <button type="button" disabled={!ok} onClick={() => onSave({
+            merchant: merchant.trim(), amount: parseFloat(amount) || 0, cat, inr, date: (initial && initial.date) || todayISO(),
+            postHome, accountId,
+          })} style={{
+            flex: 1, padding: '14px', border: 'none', borderRadius: 14,
+            background: ok ? accent : cream, color: ok ? '#fff' : muted, fontFamily: 'Manrope, sans-serif', fontWeight: 800, cursor: ok ? 'pointer' : 'default',
+          }}>{t(locale, 'save')}</button>
         </div>
       </div>
-      {showHistory && (
-        <TripHistoryScreen trips={pastTrips} onBack={() => { setShowHistory(false); setHistoryDetail(null); }} onSelect={t => setHistoryDetail(t)} />
-      )}
-      {historyDetail && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 20 }}>
-          <TripSummaryScreen trip={historyDetail} onDone={() => setHistoryDetail(null)} />
-        </div>
-      )}
-      </div>
+    </div>
+  );
+}
+
+function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpense, onDeleteExpense, onUpdateTrip, onNeedPro, onBack, onUnlockPro }) {
+  const locale = store.user.locale || 'en';
+  const live = typeof activeTrip === 'function' ? activeTrip(store) : null;
+  const past = (store.trips || []).filter((t) => t.status === 'ended');
+  const isPro = typeof zenithIsPro === 'function' && zenithIsPro(store);
+  const [step, setStep] = React.useState(0);
+  const [tripName, setTripName] = React.useState('');
+  const [startDate, setStartDate] = React.useState(todayISO());
+  const [endDate, setEndDate] = React.useState(typeof addDaysISO === 'function' ? addDaysISO(todayISO(), 7) : todayISO());
+  const [tripBudgetINR, setTripBudgetINR] = React.useState('50000');
+  const [selectedCountry, setSelectedCountry] = React.useState(null);
+  const [tab, setTab] = React.useState('dashboard');
+  const [convertAmount, setConvertAmount] = React.useState('1000');
+  const [convertDir, setConvertDir] = React.useState('home_to_foreign');
+  const [showHistory, setShowHistory] = React.useState(false);
+  const [historyDetail, setHistoryDetail] = React.useState(null);
+  const [showSOS, setShowSOS] = React.useState(false);
+  const [showSummary, setShowSummary] = React.useState(false);
+  const [expenseSheet, setExpenseSheet] = React.useState(false);
+  const [editExp, setEditExp] = React.useState(null);
+  const [tipPct, setTipPct] = React.useState(0);
+  const [copied, setCopied] = React.useState(false);
+  const [newCheck, setNewCheck] = React.useState('');
+  const [rateDraft, setRateDraft] = React.useState('');
+  const [forexDraft, setForexDraft] = React.useState(null);
+  const countries = TRAVEL_COUNTRIES || [];
+  const ink = ZENITH.ink;
+  const muted = ZENITH.muted;
+  const page = ZENITH.page;
+  const card = ZENITH.card;
+  const accent = ZENITH.accent;
+  const cream = ZENITH.cream;
+
+  const beginTrip = () => {
+    if (!canStartTrip(store)) { onNeedPro && onNeedPro('trip'); return; }
+    setStep(1);
+  };
+
+  const confirmCountry = () => {
+    const country = findTravelCountry(selectedCountry);
+    if (!country) return;
+    onStartTrip && onStartTrip({
+      name: tripName || country.name,
+      countryCode: country.code,
+      countryName: country.name,
+      flag: country.flag,
+      currency: country.code,
+      symbol: country.symbol,
+      rate: country.rate,
+      startDate, endDate,
+      budgetINR: parseFloat(tripBudgetINR) || 0,
+    });
+    setStep(0);
+  };
+
+  if (showSummary && live) {
+    const spentINR = tripSpentINR(live);
+    const spentForeign = tripSpentForeign(live);
+    const byCategory = {};
+    (live.expenses || []).forEach((e) => { byCategory[e.cat] = (byCategory[e.cat] || 0) + e.amount; });
+    return (
+      <TripSummaryScreen
+        trip={{
+          ...live,
+          spentINR, spentForeign, overBudget: spentINR > (live.budgetINR || 0),
+          days: tripDaysLeft(live),
+          dates: live.startDate + ' – ' + live.endDate,
+          code: live.currency,
+          byCategory,
+        }}
+        onDone={() => { onEndTrip && onEndTrip(live.id); setShowSummary(false); }}
+      />
     );
   }
 
-  // ── SETUP: Trip Details ──
-  if (activatingStep === 1) {
+  if (step === 1) {
     return (
       <TripSetupScreen
         tripName={tripName} setTripName={setTripName}
         startDate={startDate} setStartDate={setStartDate}
         endDate={endDate} setEndDate={setEndDate}
         budget={tripBudgetINR} setBudget={setTripBudgetINR}
-        onBack={() => { setTravelActive(false); }}
-        onNext={() => setActivatingStep(2)}
+        onBack={() => setStep(0)}
+        onNext={() => setStep(2)}
       />
     );
   }
 
-  // ── SETUP: Country Selection ──
-  if (activatingStep === 2) {
+  if (step === 2) {
     return (
       <CountryPickerScreen
-        countries={COUNTRIES}
+        locale={locale}
+        countries={countries}
         selectedCountry={selectedCountry}
         onSelect={setSelectedCountry}
-        onBack={() => setActivatingStep(1)}
-        onConfirm={() => { if (selectedCountry) setActivatingStep(3); }}
+        onBack={() => setStep(1)}
+        onConfirm={() => { if (selectedCountry) confirmCountry(); }}
       />
     );
   }
 
-  // ── LIVE TRAVEL MODE ──
-  const TabBar = () => (
-    <div style={{ display: 'flex', background: 'rgba(120,120,128,0.12)', borderRadius: 12, padding: 3, margin: '0 20px 16px' }}>
-      {[['dashboard','Dashboard'],['expenses','Expenses'],['convert','Convert']].map(([val, label]) => (
-        <button key={val} onClick={() => setActiveTab(val)} style={{
-          flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer', borderRadius: 10,
-          fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600,
-          background: activeTab === val ? '#FFFFFF' : 'transparent',
-          color: activeTab === val ? '#1C1C1E' : '#8E8E93',
-          boxShadow: activeTab === val ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
-          transition: 'all 0.2s',
-        }}>{label}</button>
-      ))}
-    </div>
-  );
+  if (!live) {
+    return (
+      <div style={{ height: '100%', position: 'relative', background: page }}>
+        <div style={{ height: '100%', overflowY: 'auto', paddingBottom: 'var(--zenith-pad-bottom)' }}>
+          {typeof ZenithScreenHeader === 'function' ? (
+            <ZenithScreenHeader
+              title={t(locale, 'travel')}
+              leftLabel="‹"
+              onLeft={onBack}
+              rightLabel={past.length ? t(locale, 'travelHistory') : (isPro ? t(locale, 'paid') : t(locale, 'upgrade'))}
+              onRight={() => {
+                if (past.length && !canUseTravelHistory(store)) { onNeedPro && onNeedPro('history'); return; }
+                if (past.length) setShowHistory(true);
+                else onUnlockPro && onUnlockPro();
+              }}
+            />
+          ) : null}
+          <div style={{ padding: '0 20px', marginBottom: 20 }}>
+            <div style={{
+              background: zenithHeroGradient(), borderRadius: 28, padding: '32px 28px',
+              boxShadow: zenithHeroShadow(), position: 'relative', overflow: 'hidden',
+            }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>✈️</div>
+              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 26, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2, marginBottom: 10 }}>{t(locale, 'headingSomewhere')}</h2>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, marginBottom: 20 }}>{t(locale, 'travelHero')}</p>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 18 }}>{isPro ? t(locale, 'paid') : t(locale, 'travelDemo')}</p>
+              <button type="button" onClick={beginTrip} style={{
+                background: '#FFFFFF', border: 'none', borderRadius: 16, padding: '16px 28px', cursor: 'pointer',
+                fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: accent,
+              }}>{t(locale, 'startTrip')}</button>
+            </div>
+          </div>
+          <div style={{ padding: '0 20px' }}>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>{t(locale, 'whatYouGet')}</p>
+            <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: zenithSoftShadow() }}>
+              {[
+                { icon: '💱', title: t(locale, 'liveRates'), sub: t(locale, 'liveRatesSub') },
+                { icon: '📊', title: t(locale, 'tripBudgetSep'), sub: t(locale, 'tripBudgetSepSub') },
+                { icon: '🧾', title: t(locale, 'perTripLedger'), sub: t(locale, 'perTripLedgerSub') },
+                { icon: '🎒', title: t(locale, 'packingList'), sub: t(locale, 'checklistPro') },
+                { icon: '🆘', title: t(locale, 'emergencyAssist'), sub: t(locale, 'emergencyAssistSub') },
+              ].map((f, i, arr) => (
+                <div key={f.title} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderBottom: i < arr.length - 1 ? '1px solid ' + cream : 'none' }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 13, background: cream, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{f.icon}</div>
+                  <div>
+                    <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{f.title}</p>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted }}>{f.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {showHistory && (
+          <TripHistoryScreen trips={past.map((tr) => ({
+            ...tr,
+            spentINR: tripSpentINR(tr),
+            spentForeign: tripSpentForeign(tr),
+            dates: tr.startDate + ' – ' + tr.endDate,
+            country: tr.countryName,
+            overBudget: tripSpentINR(tr) > (tr.budgetINR || 0),
+          }))} onBack={() => { setShowHistory(false); setHistoryDetail(null); }} onSelect={(tr) => setHistoryDetail(tr)} />
+        )}
+        {historyDetail && (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 20 }}>
+            <TripSummaryScreen trip={{
+              ...historyDetail,
+              code: historyDetail.currency,
+              byCategory: (historyDetail.expenses || []).reduce((acc, e) => { acc[e.cat] = (acc[e.cat] || 0) + e.amount; return acc; }, { Other: 0 }),
+              days: historyDetail.days || 1,
+            }} onDone={() => setHistoryDetail(null)} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const country = { flag: live.flag, name: live.countryName, code: live.currency, symbol: live.symbol, rate: live.rate };
+  const expenses = live.expenses || [];
+  const totalForeign = tripSpentForeign(live);
+  const totalINR = tripSpentINR(live);
+  const budgetINR = live.budgetINR || 0;
+  const budgetPct = budgetINR > 0 ? totalINR / budgetINR : 0;
+  const daysLeft = tripDaysLeft(live);
+  const convertedAmount = () => {
+    const n = parseFloat(convertAmount) || 0;
+    return convertDir === 'home_to_foreign' ? (n / country.rate).toFixed(2) : (n * country.rate).toFixed(0);
+  };
+  const catColors = TRAVEL_CAT_COLORS || {};
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F2F2F7', position: 'relative' }}>
-      {/* Header */}
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: page, position: 'relative' }}>
       <div style={{ paddingTop: 'var(--zenith-pad-top)', padding: 'var(--zenith-pad-top) 20px 12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+        {!isPro && (
+          <button type="button" onClick={() => onUnlockPro && onUnlockPro()} style={{
+            width: '100%', marginBottom: 10, border: 'none', borderRadius: 12, padding: '8px 12px', cursor: 'pointer',
+            background: cream, color: accent, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700, textAlign: 'left',
+          }}>{t(locale, 'demoBanner')}</button>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <span style={{ fontSize: 18 }}>{country.flag}</span>
-              <div style={{ background: '#007AFF', borderRadius: 8, padding: '3px 8px', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 5, height: 5, borderRadius: 3, background: 'white' }} />
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 700, color: 'white', letterSpacing: 0.5 }}>TRAVEL MODE</span>
+              <div style={{ background: accent, borderRadius: 8, padding: '3px 8px' }}>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 700, color: 'white', letterSpacing: 0.5 }}>TRAVEL</span>
               </div>
             </div>
-            <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 26, fontWeight: 800, color: '#1C1C1E', letterSpacing: -0.5 }}>{country.name}</h1>
+            <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 26, fontWeight: 800, color: ink }}>{live.name}</h1>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => setShowSOS(true)} style={{
-              background: '#FFFFFF', border: 'none', borderRadius: 12, padding: '8px 12px', cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif', fontSize: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-            }}>🆘</button>
-            <button onClick={() => {
-              const days = daysLeft;
-              const byCategory = expenses.reduce((acc, e) => { acc[e.cat] = (acc[e.cat]||0) + e.amount; return acc; }, {});
-              setSummaryTrip({
-                id: Date.now(), name: tripName || `${country.name} Trip`, flag: country.flag, country: country.name, code: country.code,
-                dates: `${startDate} – ${endDate}`, days: 8, spentINR: totalINR, budgetINR: parseFloat(tripBudgetINR) || tripBudget.inr,
-                spentForeign: totalForeign, overBudget: totalINR > (parseFloat(tripBudgetINR) || tripBudget.inr), pctOfBudget: Math.round(budgetPct*100), byCategory,
-              });
-              setShowSummary(true);
-            }} style={{
-              background: '#FFFFFF', border: 'none', borderRadius: 12, padding: '8px 14px', cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#FF3B30',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-            }}>End Trip</button>
+            <button type="button" onClick={() => {
+              if (!canUseTravelSos(store)) { onNeedPro && onNeedPro('sos'); return; }
+              setShowSOS(true);
+            }} style={{ background: card, border: 'none', borderRadius: 12, padding: '8px 12px', cursor: 'pointer' }}>🆘</button>
+            <button type="button" onClick={() => setShowSummary(true)} style={{
+              background: card, border: 'none', borderRadius: 12, padding: '8px 14px', cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#EF4444',
+            }}>{t(locale, 'endTrip')}</button>
           </div>
         </div>
       </div>
@@ -351,218 +370,244 @@ function TravelScreen() {
           <EmergencyScreen country={country} onBack={() => setShowSOS(false)} />
         </div>
       )}
-
-      <TabBar />
-
+      <div style={{ display: 'flex', background: cream, borderRadius: 12, padding: 3, margin: '0 20px 16px' }}>
+        {[['dashboard', t(locale, 'home')], ['expenses', t(locale, 'activity')], ['convert', t(locale, 'convert')], ['kit', t(locale, 'kit')]].map(([val, label]) => (
+          <button key={val} type="button" onClick={() => setTab(val)} style={{
+            flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer', borderRadius: 10,
+            fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600,
+            background: tab === val ? card : 'transparent', color: tab === val ? ink : muted,
+          }}>{label}</button>
+        ))}
+      </div>
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'var(--zenith-pad-bottom)' }}>
-
-        {/* ── DASHBOARD TAB ── */}
-        {activeTab === 'dashboard' && (
+        {tab === 'dashboard' && (
           <div style={{ padding: '0 20px' }}>
-            {/* Balance card */}
-            <div style={{
-              background: 'linear-gradient(145deg, #1C1C2E 0%, #0D1117 100%)',
-              borderRadius: 24, padding: '22px 22px', marginBottom: 14,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.22)', position: 'relative', overflow: 'hidden',
-            }}>
-              <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(0,122,255,0.07)' }} />
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.4)', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>Trip Spent</p>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>{country.code}</span>
-                <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 44, fontWeight: 800, color: '#FFFFFF', letterSpacing: -1, lineHeight: 1 }}>{totalForeign.toFixed(2)}</span>
+            <div style={{ background: zenithHeroGradient(), borderRadius: 24, padding: '22px', marginBottom: 14, boxShadow: zenithHeroShadow() }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>{t(locale, 'tripSpent')}</p>
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 40, fontWeight: 800, color: '#fff', letterSpacing: -1 }}>{country.code} {totalForeign.toFixed(2)}</p>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 16 }}>≈ {fmt(totalINR)}</p>
+              <div style={{ height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 12 }}>
+                <div style={{ height: '100%', width: (Math.min(budgetPct, 1) * 100) + '%', borderRadius: 2, background: '#fff' }} />
               </div>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 20 }}>≈ ₹{totalINR.toLocaleString('en-IN')}</p>
-
-              {/* Budget bar */}
-              <div style={{ height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, marginBottom: 12 }}>
-                <div style={{ height: '100%', width: `${Math.min(budgetPct, 1) * 100}%`, borderRadius: 2, background: budgetPct > 0.8 ? '#FF6B6B' : 'linear-gradient(90deg,#007AFF,#34D399)', transition: 'width 0.6s ease' }} />
-              </div>
-
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>Daily Left</p>
-                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#007AFF' }}>{country.code} {((tripBudget.foreign - totalForeign) / daysLeft).toFixed(0)}</p>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>Days Left</p>
-                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#FFFFFF' }}>{daysLeft}</p>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{t(locale, 'dailyLeft')}</p>
+                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#fff' }}>{fmt(Math.max(budgetINR - totalINR, 0) / daysLeft)}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>Budget</p>
-                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#FFFFFF' }}>{country.code} {tripBudget.foreign}</p>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{t(locale, 'daysLeft')}</p>
+                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#fff' }}>{daysLeft}</p>
                 </div>
               </div>
             </div>
-
-            {/* Rate pill */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#FFFFFF', borderRadius: 16, padding: '12px 16px', marginBottom: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              <span style={{ fontSize: 20 }}>{country.flag}</span>
-              <span style={{ fontSize: 20 }}>🇮🇳</span>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1C1E' }}>1 {country.code} = ₹{country.rate}</p>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#8E8E93' }}>Rate updated just now</p>
+            <div style={{ background: card, borderRadius: 16, padding: '12px 16px', marginBottom: 14, boxShadow: zenithSoftShadow() }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginBottom: 6 }}>{t(locale, 'customRate')}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink, flex: 1 }}>1 {country.code} = ₹</p>
+                <input
+                  inputMode="decimal"
+                  value={rateDraft !== '' ? rateDraft : String(live.rate)}
+                  onChange={(e) => setRateDraft(e.target.value)}
+                  onBlur={() => {
+                    const n = parseFloat(rateDraft !== '' ? rateDraft : live.rate);
+                    if (n > 0) onUpdateTrip && onUpdateTrip(live.id, { rate: n });
+                    setRateDraft('');
+                  }}
+                  style={{ width: 96, border: 'none', outline: 'none', background: cream, borderRadius: 10, padding: '8px 10px', fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: ink, textAlign: 'right' }}
+                />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#EDFDF5', borderRadius: 10, padding: '4px 10px' }}>
-                <div style={{ width: 6, height: 6, borderRadius: 3, background: '#34D399' }} />
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 600, color: '#34D399' }}>Live</span>
-              </div>
-            </div>
-
-            {/* Category mini breakdown */}
-            <div style={{ background: '#FFFFFF', borderRadius: 20, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E', marginBottom: 14 }}>By Category</p>
-              {Object.entries(
-                expenses.reduce((acc, e) => { acc[e.cat] = (acc[e.cat] || 0) + e.amount; return acc; }, {})
-              ).map(([cat, amt]) => {
-                const pct = amt / totalForeign;
-                return (
-                  <div key={cat} style={{ marginBottom: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 500, color: '#3C3C43' }}>{cat}</span>
-                      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: 700, color: '#1C1C1E' }}>{country.code} {amt.toFixed(2)}</span>
-                    </div>
-                    <div style={{ height: 4, background: '#F2F2F7', borderRadius: 2 }}>
-                      <div style={{ height: '100%', width: `${pct * 100}%`, background: CAT_COLORS[cat] || '#8E8E93', borderRadius: 2 }} />
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         )}
-
-        {/* ── EXPENSES TAB ── */}
-        {activeTab === 'expenses' && (
+        {tab === 'expenses' && (
           <div style={{ padding: '0 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1C1E' }}>Trip Expenses</p>
-              <div style={{ background: '#F0F7FF', borderRadius: 10, padding: '5px 10px' }}>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#007AFF' }}>{expenses.length} items</span>
-              </div>
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: ink }}>{expenses.length} · {t(locale, 'activity')}</p>
+              <button type="button" onClick={() => {
+                if (!canAddTripExpense(store, live)) { onNeedPro && onNeedPro('expense'); return; }
+                setEditExp(null);
+                setExpenseSheet(true);
+              }} style={{
+                border: 'none', borderRadius: 12, padding: '8px 12px', cursor: 'pointer', background: accent, color: '#fff',
+                fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 800,
+              }}>{t(locale, 'addTripExpense')}</button>
             </div>
-            {Object.entries(
-              expenses.reduce((acc, e) => { const d = e.date; if (!acc[d]) acc[d] = []; acc[d].push(e); return acc; }, {})
-            ).map(([date, exps]) => (
-              <div key={date} style={{ marginBottom: 16 }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>{date}</p>
-                <div style={{ background: '#FFFFFF', borderRadius: 20, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  {exps.map((exp, i) => (
-                    <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 18px', borderBottom: i < exps.length - 1 ? '1px solid #F2F2F7' : 'none' }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 13, background: (CAT_COLORS[exp.cat] || '#8E8E93') + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: 800, color: CAT_COLORS[exp.cat] || '#8E8E93' }}>
-                          {exp.merchant.split(' ').map(w => w[0]).slice(0, 2).join('')}
-                        </span>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E', marginBottom: 2 }}>{exp.merchant}</p>
-                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#8E8E93' }}>{exp.cat}</p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1C1E', marginBottom: 2 }}>{country.code} {exp.amount}</p>
-                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#8E8E93' }}>₹{exp.inr.toLocaleString('en-IN')}</p>
-                      </div>
+            {expenses.length === 0 ? (
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: muted }}>{t(locale, 'noTxns')}</p>
+            ) : Object.keys(expenses.reduce((acc, e) => { acc[e.date || ''] = true; return acc; }, {})).sort().reverse().map((day) => (
+              <div key={day} style={{ marginBottom: 16 }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 700, color: muted, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 }}>{relDate(day, locale)}</p>
+                {expenses.filter((e) => e.date === day).map((exp) => (
+                  <button key={exp.id} type="button" onClick={() => { setEditExp(exp); setExpenseSheet(true); }} style={{
+                    display: 'flex', width: '100%', alignItems: 'center', gap: 12, padding: '12px 0', border: 'none',
+                    borderBottom: '1px solid ' + cream, background: 'none', cursor: 'pointer', textAlign: 'left',
+                  }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: (catColors[exp.cat] || accent) + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: catColors[exp.cat] || accent }}>
+                      {(exp.merchant || '?').slice(0, 2).toUpperCase()}
                     </div>
-                  ))}
-                </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{exp.merchant}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>{exp.cat}{exp.postHome ? ' · ' + t(locale, 'logToHome') : ''}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{country.code} {exp.amount}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>{fmt(exp.inr)}</p>
+                    </div>
+                  </button>
+                ))}
               </div>
             ))}
           </div>
         )}
-
-        {/* ── CONVERTER TAB ── */}
-        {activeTab === 'convert' && (
+        {tab === 'convert' && (
           <div style={{ padding: '0 20px' }}>
-            <div style={{ background: '#FFFFFF', borderRadius: 22, padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: 16 }}>
-              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1C1E', marginBottom: 18 }}>Currency Converter</p>
-
-              {/* Direction toggle */}
-              <div style={{ display: 'flex', background: '#F2F2F7', borderRadius: 14, padding: 3, marginBottom: 20 }}>
-                <button onClick={() => setConvertDir('home_to_foreign')} style={{
+            <div style={{ background: card, borderRadius: 22, padding: '20px', boxShadow: zenithSoftShadow() }}>
+              <div style={{ display: 'flex', background: cream, borderRadius: 14, padding: 3, marginBottom: 20 }}>
+                <button type="button" onClick={() => setConvertDir('home_to_foreign')} style={{
                   flex: 1, padding: '10px', border: 'none', cursor: 'pointer', borderRadius: 11,
-                  background: convertDir === 'home_to_foreign' ? '#FFFFFF' : 'transparent',
-                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600,
-                  color: convertDir === 'home_to_foreign' ? '#1C1C1E' : '#8E8E93',
-                  boxShadow: convertDir === 'home_to_foreign' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.2s',
-                }}>🇮🇳 ₹ → {country.flag} {country.code}</button>
-                <button onClick={() => setConvertDir('foreign_to_home')} style={{
+                  background: convertDir === 'home_to_foreign' ? card : 'transparent',
+                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600, color: ink,
+                }}>₹ → {country.code}</button>
+                <button type="button" onClick={() => setConvertDir('foreign_to_home')} style={{
                   flex: 1, padding: '10px', border: 'none', cursor: 'pointer', borderRadius: 11,
-                  background: convertDir === 'foreign_to_home' ? '#FFFFFF' : 'transparent',
-                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600,
-                  color: convertDir === 'foreign_to_home' ? '#1C1C1E' : '#8E8E93',
-                  boxShadow: convertDir === 'foreign_to_home' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.2s',
-                }}>{country.flag} {country.code} → 🇮🇳 ₹</button>
+                  background: convertDir === 'foreign_to_home' ? card : 'transparent',
+                  fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600, color: ink,
+                }}>{country.code} → ₹</button>
               </div>
-
-              {/* Input */}
-              <div style={{ background: '#F2F2F7', borderRadius: 18, padding: '20px', marginBottom: 12, textAlign: 'center' }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#8E8E93', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>
-                  {convertDir === 'home_to_foreign' ? 'Indian Rupees (₹)' : `${country.name} (${country.code})`}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                  <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 36, fontWeight: 800, color: '#007AFF' }}>
-                    {convertDir === 'home_to_foreign' ? '₹' : country.symbol}
-                  </span>
-                  <input
-                    type="number"
-                    value={convertAmount}
-                    onChange={e => setConvertAmount(e.target.value)}
-                    style={{
-                      border: 'none', outline: 'none', background: 'transparent',
-                      fontFamily: 'Manrope, sans-serif', fontSize: 44, fontWeight: 800, color: '#1C1C1E',
-                      width: 160, textAlign: 'center',
-                    }}
-                  />
-                </div>
+              <input type="number" value={convertAmount} onChange={(e) => setConvertAmount(e.target.value)} style={{
+                width: '100%', border: 'none', outline: 'none', background: cream, borderRadius: 16, padding: '16px',
+                fontFamily: 'Manrope, sans-serif', fontSize: 32, fontWeight: 800, color: ink, textAlign: 'center',
+              }} />
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 28, fontWeight: 800, color: accent, textAlign: 'center', marginTop: 16 }}>
+                {convertDir === 'home_to_foreign' ? country.symbol + ' ' + convertedAmount() : '₹' + convertedAmount()}
+              </p>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, textAlign: 'center', marginTop: 12, marginBottom: 8 }}>{t(locale, 'tipPct')}</p>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                {[0, 10, 12, 15, 20].map((pct) => (
+                  <button key={pct} type="button" onClick={() => setTipPct(pct)} style={{
+                    padding: '8px 10px', border: 'none', borderRadius: 10, cursor: 'pointer',
+                    background: tipPct === pct ? accent : cream, color: tipPct === pct ? '#fff' : ink,
+                    fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
+                  }}>{pct}%</button>
+                ))}
               </div>
-
-              {/* Arrow */}
-              <div style={{ textAlign: 'center', marginBottom: 12 }}>
-                <div style={{ display: 'inline-flex', width: 36, height: 36, borderRadius: 18, background: '#007AFF', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M7 1v12M2 8l5 5 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              </div>
-
-              {/* Result */}
-              <div style={{ background: '#007AFF', borderRadius: 18, padding: '20px', textAlign: 'center' }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
-                  {convertDir === 'foreign_to_home' ? 'Indian Rupees (₹)' : `${country.name} (${country.code})`}
+              {tipPct > 0 && (
+                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: ink, textAlign: 'center', marginTop: 12 }}>
+                  {t(locale, 'withTip')} · {convertDir === 'home_to_foreign'
+                    ? country.symbol + ' ' + (parseFloat(convertedAmount()) * (1 + tipPct / 100)).toFixed(2)
+                    : '₹' + Math.round(parseFloat(convertedAmount()) * (1 + tipPct / 100))}
                 </p>
-                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 44, fontWeight: 800, color: '#FFFFFF', letterSpacing: -1 }}>
-                  {convertDir === 'home_to_foreign' ? country.symbol : '₹'} {convertedAmount()}
-                </p>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 6 }}>
-                  Rate: 1 {country.code} = ₹{country.rate}
-                </p>
-              </div>
-            </div>
-
-            {/* Quick amounts */}
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>Quick Convert</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {(convertDir === 'home_to_foreign' ? [500, 1000, 2000, 5000] : [10, 50, 100, 500]).map(amt => (
-                <button key={amt} onClick={() => setConvertAmount(String(amt))} style={{
-                  background: '#FFFFFF', border: 'none', borderRadius: 16, padding: '14px', cursor: 'pointer',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                  textAlign: 'left',
-                }}>
-                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#1C1C1E', marginBottom: 3 }}>
-                    {convertDir === 'home_to_foreign' ? `₹${amt}` : `${country.symbol}${amt}`}
-                  </p>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8E8E93' }}>
-                    ≈ {convertDir === 'home_to_foreign' ? `${country.symbol}${(amt / country.rate).toFixed(2)}` : `₹${(amt * country.rate).toFixed(0)}`}
-                  </p>
-                </button>
-              ))}
+              )}
             </div>
           </div>
         )}
+        {tab === 'kit' && (
+          <div style={{ padding: '0 20px' }}>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>{t(locale, 'forexCash')}</p>
+            <div style={{ background: card, borderRadius: 16, padding: '12px 16px', marginBottom: 16, boxShadow: zenithSoftShadow(), display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: accent }}>{country.symbol}</span>
+              <input
+                inputMode="decimal"
+                value={forexDraft != null ? forexDraft : String(live.forexCash || 0)}
+                onChange={(e) => setForexDraft(e.target.value)}
+                onBlur={() => {
+                  const n = parseFloat(forexDraft != null ? forexDraft : live.forexCash);
+                  onUpdateTrip && onUpdateTrip(live.id, { forexCash: isNaN(n) ? 0 : Math.max(0, n) });
+                  setForexDraft(null);
+                }}
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'Manrope, sans-serif', fontSize: 22, fontWeight: 800, color: ink }}
+              />
+            </div>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>{t(locale, 'tripNotes')}</p>
+            <textarea
+              value={live.notes || ''}
+              onChange={(e) => onUpdateTrip && onUpdateTrip(live.id, { notes: e.target.value })}
+              placeholder={locale === 'hi' ? 'होटल, फ्लाइट, SIM…' : 'Hotel, flights, SIM…'}
+              rows={3}
+              style={{ width: '100%', boxSizing: 'border-box', border: 'none', borderRadius: 16, padding: '12px 14px', marginBottom: 16, fontFamily: 'Inter, sans-serif', fontSize: 14, color: ink, background: card, boxShadow: zenithSoftShadow(), resize: 'none' }}
+            />
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>{t(locale, 'packingList')}</p>
+            <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: zenithSoftShadow(), marginBottom: 12 }}>
+              {(live.checklist || []).map((item, i, arr) => {
+                const label = item.id === 'ck-pass' ? t(locale, 'ckPass')
+                  : item.id === 'ck-fx' ? t(locale, 'ckFx')
+                  : item.id === 'ck-sim' ? t(locale, 'ckSim')
+                  : item.id === 'ck-ins' ? t(locale, 'ckIns')
+                  : item.id === 'ck-stay' ? t(locale, 'ckStay')
+                  : item.id === 'ck-med' ? t(locale, 'ckMed')
+                  : item.label;
+                return (
+                  <button key={item.id} type="button" onClick={() => {
+                    const next = (live.checklist || []).map((row) => (row.id === item.id ? { ...row, done: !row.done } : row));
+                    onUpdateTrip && onUpdateTrip(live.id, { checklist: next });
+                  }} style={{
+                    display: 'flex', width: '100%', alignItems: 'center', gap: 12, padding: '14px 16px', border: 'none',
+                    borderBottom: i < arr.length - 1 ? '1px solid ' + cream : 'none', background: card, cursor: 'pointer', textAlign: 'left',
+                  }}>
+                    <div style={{
+                      width: 22, height: 22, borderRadius: 7, border: item.done ? 'none' : '1.5px solid ' + muted,
+                      background: item.done ? accent : 'transparent', flexShrink: 0,
+                    }} />
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 600, color: item.done ? muted : ink, textDecoration: item.done ? 'line-through' : 'none' }}>{label}</p>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <input
+                value={newCheck}
+                onChange={(e) => setNewCheck(e.target.value)}
+                placeholder={t(locale, 'addCheckItem')}
+                style={{ flex: 1, ...moneyInputStyle() }}
+              />
+              <button type="button" onClick={() => {
+                if (!newCheck.trim()) return;
+                if (typeof canAddChecklistItem === 'function' && !canAddChecklistItem(store, live)) {
+                  onNeedPro && onNeedPro('checklist');
+                  return;
+                }
+                const row = { id: 'ck-' + Date.now(), label: newCheck.trim(), done: false, custom: true };
+                onUpdateTrip && onUpdateTrip(live.id, { checklist: (live.checklist || []).concat([row]) });
+                setNewCheck('');
+              }} style={{
+                border: 'none', borderRadius: 12, padding: '0 14px', background: accent, color: '#fff',
+                fontFamily: 'Manrope, sans-serif', fontWeight: 800, cursor: 'pointer',
+              }}>+</button>
+            </div>
+            <button type="button" onClick={() => {
+              const text = typeof tripSummaryText === 'function' ? tripSummaryText(live, locale) : live.name;
+              if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1600);
+            }} style={{
+              width: '100%', padding: '14px', border: 'none', borderRadius: 14, cursor: 'pointer',
+              background: cream, color: accent, fontFamily: 'Manrope, sans-serif', fontWeight: 800,
+            }}>{copied ? t(locale, 'copied') : t(locale, 'copySummary')}</button>
+          </div>
+        )}
       </div>
+      {(expenseSheet || editExp) && (
+        <TripExpenseForm
+          locale={locale}
+          trip={live}
+          store={store}
+          initial={editExp}
+          onCancel={() => { setExpenseSheet(false); setEditExp(null); }}
+          onDelete={editExp && editExp.id ? () => {
+            onDeleteExpense && onDeleteExpense(live.id, editExp.id);
+            setExpenseSheet(false);
+            setEditExp(null);
+          } : null}
+          onSave={(draft) => {
+            if (editExp && editExp.id) onSaveExpense && onSaveExpense(live.id, editExp.id, draft);
+            else onAddExpense && onAddExpense(live.id, draft);
+            setExpenseSheet(false);
+            setEditExp(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-Object.assign(window, { TravelScreen });
+Object.assign(window, { TravelScreen, CountryPickerScreen, TripExpenseForm });
