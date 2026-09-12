@@ -145,6 +145,8 @@ const home = fs.readFileSync(path.join(root, 'components/Home.jsx'), 'utf8');
 assert.match(home, /HealthScoreCard/);
 assert.match(home, /GoalsPeek/);
 assert.match(home, /spentOnAccount/);
+assert.match(home, /TravelHomeCard/);
+assert.match(home, /onNavigate\('travel'\)/);
 
 const search = fs.readFileSync(path.join(root, 'components/Search.jsx'), 'utf8');
 assert.match(search, /fromDate/);
@@ -189,6 +191,7 @@ assert.doesNotMatch(profile, /travelLater/);
 const plan = fs.readFileSync(path.join(root, 'components/Plan.jsx'), 'utf8');
 assert.match(plan, /insights/);
 assert.match(plan, /travel/);
+assert.ok(plan.indexOf("id: 'travel'") < plan.indexOf("id: 'budget'"));
 
 const app = fs.readFileSync(path.join(root, 'app.jsx'), 'utf8');
 assert.match(app, /materializeRecurring/);

@@ -194,6 +194,47 @@ function LocalBudgetsPreview({ store, locale, onOpen }) {
   );
 }
 
+function TravelHomeCard({ store, locale, onOpen }) {
+  const trip = typeof activeTrip === 'function' ? activeTrip(store) : null;
+  const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A';
+  const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#64748B';
+  const card = typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF';
+  const accent = typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB';
+  const country = trip && typeof findTravelCountry === 'function' ? findTravelCountry(trip.currency) : null;
+  const spent = trip && typeof tripSpentINR === 'function' ? tripSpentINR(trip) : 0;
+  return (
+    <div style={{ padding: '0 20px', marginBottom: 18 }}>
+      <button
+        type="button"
+        aria-label={t(locale, 'travel')}
+        onClick={() => onOpen && onOpen()}
+        style={{
+          width: '100%', background: card, border: 'none', borderRadius: 22, padding: '16px 18px',
+          boxShadow: typeof zenithSoftShadow === 'function' ? zenithSoftShadow() : '0 2px 14px rgba(15,23,42,0.06)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left',
+        }}
+      >
+        <div style={{
+          width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+          background: accent + '18',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+        }} aria-hidden="true">{(country && country.flag) || '✈️'}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: ink }}>
+            {trip ? trip.name : t(locale, 'travel')}
+          </p>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginTop: 4 }}>
+            {trip ? (fmt(spent) + (trip.currency ? ' · ' + trip.currency : '')) : t(locale, 'headingSomewhere')}
+          </p>
+        </div>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: accent, fontWeight: 600, flexShrink: 0 }}>
+          {trip ? t(locale, 'seeAll') : t(locale, 'startTrip')}
+        </span>
+      </button>
+    </div>
+  );
+}
+
 function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
   const locale = store.user.locale || 'en';
   const mk = monthKey();
@@ -320,6 +361,8 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
           </div>
         </div>
       </div>
+
+      <TravelHomeCard store={store} locale={locale} onOpen={() => onNavigate && onNavigate('travel')} />
 
       {typeof zenithNotionEnabled === 'function' && zenithNotionEnabled() ? (
         <>
@@ -463,4 +506,4 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
   );
 }
 
-Object.assign(window, { HomeScreen, MerchantIcon, LocalWalletsStrip, LocalBudgetsPreview, HealthScoreCard, GoalsPeek, InsightsDigest });
+Object.assign(window, { HomeScreen, MerchantIcon, LocalWalletsStrip, LocalBudgetsPreview, HealthScoreCard, GoalsPeek, InsightsDigest, TravelHomeCard });

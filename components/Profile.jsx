@@ -115,6 +115,19 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
         }}>{t(locale, 'installHome')}</p>
       )}
 
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
+        {t(locale, 'travel')}
+      </p>
+      <div style={{ background: card, marginBottom: 20 }}>
+        <Row
+          label={t(locale, 'travel')}
+          sub={zenithIsPro && zenithIsPro(store) ? t(locale, 'paid') : t(locale, 'headingSomewhere')}
+          last
+          onClick={() => onNavigate && onNavigate('travel')}
+          showChevron
+        />
+      </div>
+
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>{t(locale, 'language')}</p>
       <div style={{ background: card, marginBottom: 20 }}>
         <Row label={t(locale, 'language')} last>
@@ -260,19 +273,6 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
           sub={zenithIsPro && zenithIsPro(store) ? t(locale, 'paid') : t(locale, 'proPrice')}
           last
           onClick={() => onUnlockPro && onUnlockPro()}
-          showChevron
-        />
-      </div>
-
-      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
-        {t(locale, 'travel')}
-      </p>
-      <div style={{ background: card, marginBottom: 20 }}>
-        <Row
-          label={t(locale, 'travel')}
-          sub={zenithIsPro && zenithIsPro(store) ? t(locale, 'paid') : t(locale, 'demoTrip')}
-          last
-          onClick={() => onNavigate && onNavigate('travel')}
           showChevron
         />
       </div>
