@@ -106,24 +106,35 @@ function PersonForm({ locale, person, onSave, onCancel }) {
 function SplitEqualForm({ locale, people, onSave, onCancel }) {
   const [amount, setAmount] = React.useState('');
   const [note, setNote] = React.useState('');
-  const [picked, setPicked] = React.useState({});
-  const ids = people.filter((p) => picked[p.id]).map((p) => p.id);
-  const ok = (parseFloat(amount) || 0) > 0 && ids.length > 0;
-  const share = ok && typeof equalSplitShares === 'function' ? (equalSplitShares(parseFloat(amount), ids.length + 1)[0] || 0) : 0;
+  const [picked, setPicked] = React.useState(() => {
+    const start = {};
+    (people || []).forEach((p) => { start[p.id] = true; });
+    return start;
+  });
+  const ids = (people || []).filter((p) => picked[p.id]).map((p) => p.id);
+  const total = parseFloat(String(amount).replace(/,/g, '')) || 0;
+  const parts = typeof equalSplitShares === 'function'
+    ? equalSplitShares(total, ids.length + 1)
+    : [];
+  const share = parts.length ? parts[0] : (ids.length + 1 > 0 && total > 0 ? Math.round((total / (ids.length + 1)) * 100) / 100 : 0);
+  const ok = total > 0 && ids.length > 0;
   return (
     <MoneySheet title={t(locale, 'equalSplit')} onClose={onCancel} footer={(
-      <button type="button" disabled={!ok} onClick={() => onSave({ amount: parseFloat(amount) || 0, note: note.trim(), personIds: ids })} style={{
+      <button type="button" disabled={!ok} onClick={() => onSave({ amount: total, note: note.trim(), personIds: ids })} style={{
         width: '100%', marginTop: 16, padding: '14px', border: 'none', borderRadius: 14, cursor: ok ? 'pointer' : 'default',
         background: ok ? ZENITH.accent : ZENITH.cream, color: ok ? '#fff' : ZENITH.muted,
         fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800,
-      }}>{t(locale, 'youPaid')} · {fmt(share)} {locale === 'hi' ? 'प्रति' : 'each'}</button>
+      }}>{ok ? (t(locale, 'youPaid') + ' · ' + fmt(share) + (locale === 'hi' ? ' प्रति' : ' each')) : t(locale, 'equalSplit')}</button>
     )}>
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: ZENITH.muted, marginBottom: 12 }}>{t(locale, 'youPaid')}</p>
-      <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="2400" style={moneyInputStyle()} />
+      <input type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="2400" style={moneyInputStyle()} />
+      {ok ? <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: ZENITH.accent, marginTop: 8 }}>{fmt(share)} {locale === 'hi' ? 'प्रति व्यक्ति (आप सहित)' : 'each including you'}</p> : null}
       <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: ZENITH.muted, margin: '14px 0 6px' }}>{t(locale, 'note')}</label>
       <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Dinner, cab, Airbnb…" style={moneyInputStyle()} />
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: ZENITH.muted, letterSpacing: 0.6, textTransform: 'uppercase', margin: '16px 0 8px' }}>{t(locale, 'people')}</p>
-      {(people || []).map((p) => (
+      {(people || []).length === 0 ? (
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: ZENITH.muted }}>{t(locale, 'noPeopleYet')}</p>
+      ) : (people || []).map((p) => (
         <button key={p.id} type="button" onClick={() => setPicked((prev) => ({ ...prev, [p.id]: !prev[p.id] }))} style={{
           display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between',
           padding: '10px 0', border: 'none', background: 'none', cursor: 'pointer',
