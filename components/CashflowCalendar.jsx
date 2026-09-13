@@ -25,15 +25,6 @@ function CashflowCalendarScreen({ store, onBack, onSelectTx }) {
     setMk(monthKey(d));
   };
 
-  const intensity = (amt) => {
-    if (!amt) return cream;
-    const t = amt / maxSpend;
-    if (t > 0.7) return '#EF4444';
-    if (t > 0.4) return '#F59E0B';
-    if (t > 0.1) return accent;
-    return '#60A5FA';
-  };
-
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: page }}>
       {typeof ZenithScreenHeader === 'function' ? (
@@ -79,11 +70,11 @@ function CashflowCalendarScreen({ store, onBack, onSelectTx }) {
               const isSelected = selectedDay === day;
               return (
                 <button key={day} type="button" onClick={() => setSelectedDay(day)} style={{
-                  aspectRatio: '1', borderRadius: 10, border: isSelected ? '2px solid ' + accent : '2px solid transparent',
-                  background: isSelected ? accent : intensity(spend),
+                  height: 40, borderRadius: 10, border: isSelected ? '2px solid ' + accent : '2px solid transparent',
+                  background: isSelected ? accent : (spend ? ('rgba(37,99,235,' + (0.18 + 0.35 * (spend / maxSpend)) + ')') : cream),
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                 }}>
-                  <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: spend || isSelected ? 700 : 400, color: isSelected || spend ? '#FFFFFF' : muted }}>{day}</span>
+                  <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: spend || isSelected ? 700 : 400, color: isSelected ? '#FFFFFF' : (spend ? accent : muted) }}>{day}</span>
                   {due > 0 && !isSelected && <div style={{ width: 4, height: 4, borderRadius: 2, background: '#F59E0B', marginTop: 1 }} />}
                 </button>
               );
