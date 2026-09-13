@@ -168,7 +168,7 @@ function ZenithApp() {
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
 
-  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'insights', 'calendar', 'networth', 'travel', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
+  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'people', 'insights', 'calendar', 'networth', 'travel', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
 
   const patch = (fn) => setStore((prev) => {
     const next = fn({
@@ -183,6 +183,8 @@ function ZenithApp() {
       recurring: [...(prev.recurring || [])],
       trips: (prev.trips || []).map((tr) => ({ ...tr, expenses: [...(tr.expenses || [])] })),
       holdings: [...(prev.holdings || [])],
+      people: [...(prev.people || [])],
+      ious: [...(prev.ious || [])],
       settings: { ...(prev.settings || defaultSettings()), lock: { ...((prev.settings && prev.settings.lock) || {}) } },
     });
     return { ...next, updatedAt: new Date().toISOString() };
@@ -406,6 +408,49 @@ function ZenithApp() {
 
   const toggleRecurring = (id) => {
     patch((s) => ({ ...s, recurring: (s.recurring || []).map((r) => (r.id === id ? { ...r, active: !r.active } : r)) }));
+  };
+
+  const settlePerson = (id) => {
+    patch((s) => ({ ...s, ious: (s.ious || []).map((row) => (row.personId === id ? { ...row, settled: true } : row)) }));
+  };
+
+  const savePerson = (id, draft) => {
+    patch((s) => {
+      if (id) return { ...s, people: (s.people || []).map((p) => (p.id === id ? { ...p, ...draft, id } : p)) };
+      const row = typeof normalizePerson === 'function'
+        ? normalizePerson({ ...draft, id: typeof newMoneyId === 'function' ? newMoneyId('ppl', draft.name) : ('ppl-' + Date.now()) }, (s.people || []).length)
+        : { ...draft, id: 'ppl-' + Date.now() };
+      return { ...s, people: (s.people || []).concat([row]) };
+    });
+  };
+
+  const deletePerson = (id) => {
+    patch((s) => ({
+      ...s,
+      people: (s.people || []).filter((p) => p.id !== id),
+      ious: (s.ious || []).filter((row) => row.personId !== id),
+    }));
+  };
+
+  const addIou = (personId, draft) => {
+    patch((s) => {
+      const row = typeof normalizeIou === 'function'
+        ? normalizeIou({ ...draft, personId, id: typeof newMoneyId === 'function' ? newMoneyId('iou', draft.note) : ('iou-' + Date.now()) }, (s.ious || []).length)
+        : { ...draft, personId, id: 'iou-' + Date.now(), settled: false };
+      return { ...s, ious: (s.ious || []).concat([row]) };
+    });
+  };
+
+  const splitEqual = (payload) => {
+    patch((s) => {
+      const drafts = typeof buildEqualSplitIous === 'function'
+        ? buildEqualSplitIous(payload.personIds, payload.amount, payload.note, typeof todayISO === 'function' ? todayISO() : undefined)
+        : [];
+      const rows = drafts.map((row, i) => (typeof normalizeIou === 'function'
+        ? normalizeIou({ ...row, id: typeof newMoneyId === 'function' ? newMoneyId('iou', (payload.note || '') + i) : ('iou-' + i + Date.now()) }, i)
+        : row));
+      return { ...s, ious: (s.ious || []).concat(rows) };
+    });
   };
 
   const startTrip = (draft) => {
@@ -689,9 +734,10 @@ function ZenithApp() {
   };
 
   const burstItems = [
-    { label: 'Voice', angle: -55, action: () => { setFabOpen(false); setTimeout(() => setScreen('voiceEntry'), 80); } },
-    { label: 'Scan', angle: 0, action: () => { setFabOpen(false); setTimeout(() => setScreen('cameraScan'), 80); } },
-    { label: 'Manual', angle: 55, action: () => { setFabOpen(false); setEditTx(null); setTimeout(() => setScreen('addExpense'), 80); } },
+    { label: 'Voice', angle: -70, action: () => { setFabOpen(false); setTimeout(() => setScreen('voiceEntry'), 80); } },
+    { label: 'Scan', angle: -25, action: () => { setFabOpen(false); setTimeout(() => setScreen('cameraScan'), 80); } },
+    { label: 'Manual', angle: 25, action: () => { setFabOpen(false); setEditTx(null); setTimeout(() => setScreen('addExpense'), 80); } },
+    { label: t(locale, 'splitBill'), angle: 70, action: () => { setFabOpen(false); goTab('people'); } },
   ];
 
   const drawerCat = drawerTx ? findCat(store, drawerTx.categoryId) : null;
@@ -743,7 +789,7 @@ function ZenithApp() {
                   transition: 'transform 0.38s cubic-bezier(0.4,0,0.2,1)',
                   zIndex: activeTab === tab ? 2 : 1,
                 }}>
-                  {tab === 'home' && <HomeScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} onAdd={() => { setEditTx(null); setScreen('addExpense'); }} />}
+                  {tab === 'home' && <HomeScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} onAdd={() => { setEditTx(null); setScreen('addExpense'); }} onAddIncome={() => { setEditTx({ type: 'income' }); setScreen('addExpense'); }} />}
                   {tab === 'activity' && <ActivityScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} />}
                   {tab === 'plan' && <PlanScreen store={store} onNavigate={goTab} />}
                   {tab === 'you' && (
@@ -802,6 +848,17 @@ function ZenithApp() {
                       onSaveRule={saveRecurring}
                       onDeleteRule={deleteRecurring}
                       onToggleRule={toggleRecurring}
+                    />
+                  )}
+                  {tab === 'people' && typeof PeopleScreen === 'function' && (
+                    <PeopleScreen
+                      store={store}
+                      onBack={() => goTab('plan')}
+                      onSavePerson={savePerson}
+                      onDeletePerson={deletePerson}
+                      onAddIou={addIou}
+                      onSettlePerson={settlePerson}
+                      onSplitEqual={splitEqual}
                     />
                   )}
                   {tab === 'insights' && typeof ReportsScreen === 'function' && (

@@ -498,6 +498,27 @@ const COPY = {
     signOut: 'Sign out',
     cloudError: 'Could not reach the cloud. Your ledger is still on this phone.',
     cloudConfirmEmail: 'Check your email to confirm, then sign in.',
+    people: 'People',
+    theyOweYou: 'They owe you',
+    youOweThem: 'You owe',
+    addPerson: 'Add person',
+    personName: 'Name',
+    theyOwe: 'They owe me',
+    iOwe: 'I owe them',
+    settleUp: 'Settle',
+    equalSplit: 'Split equally',
+    youPaid: 'You paid',
+    thisWeek: 'This week',
+    vsLastWeek: 'vs last week',
+    repeatLast: 'Repeat last',
+    splitBill: 'Split',
+    noPeopleYet: 'Add a friend to track who owes whom.',
+    settledOk: 'Settled',
+    openIous: 'Open',
+    subscriptionsBurn: 'Subscriptions / mo',
+    incomeIn: 'In this month',
+    quickExpense: 'Expense',
+    quickIncome: 'Income',
   },
   hi: {
     hi: 'नमस्ते, मैं Zenith हूँ।',
@@ -831,6 +852,27 @@ const COPY = {
     signOut: 'साइन आउट',
     cloudError: 'क्लाउड नहीं मिला। बही इसी फ़ोन पर है।',
     cloudConfirmEmail: 'ईमेल में कन्फर्म करें, फिर साइन इन करें।',
+    people: 'लोग',
+    theyOweYou: 'वे आपको देते हैं',
+    youOweThem: 'आप देते हैं',
+    addPerson: 'व्यक्ति जोड़ें',
+    personName: 'नाम',
+    theyOwe: 'वे मुझे देते हैं',
+    iOwe: 'मैं उन्हें देता हूँ',
+    settleUp: 'क्लियर',
+    equalSplit: 'बराबर बाँटें',
+    youPaid: 'आपने दिया',
+    thisWeek: 'इस हफ्ते',
+    vsLastWeek: 'पिछले हफ्ते से',
+    repeatLast: 'पिछला दोहराएँ',
+    splitBill: 'स्प्लिट',
+    noPeopleYet: 'किसका कितना बाकी है, इसके लिए दोस्त जोड़ें।',
+    settledOk: 'क्लियर',
+    openIous: 'खुला',
+    subscriptionsBurn: 'सब्सक्रिप्शन / महीना',
+    incomeIn: 'इस महीने आया',
+    quickExpense: 'खर्च',
+    quickIncome: 'आय',
   },
 };
 
@@ -993,6 +1035,28 @@ function normalizeHolding(row, i) {
   };
 }
 
+function normalizePerson(row, i) {
+  const p = row && typeof row === 'object' ? row : {};
+  const name = String(p.name || '').trim() || ('Friend ' + (i + 1));
+  return {
+    id: p.id || ('ppl-' + i + '-' + Date.now().toString(36)),
+    name: name,
+    color: p.color || GOAL_COLORS[i % GOAL_COLORS.length],
+  };
+}
+
+function normalizeIou(row, i) {
+  const x = row && typeof row === 'object' ? row : {};
+  return {
+    id: x.id || ('iou-' + i + '-' + Date.now().toString(36)),
+    personId: x.personId || '',
+    amount: Number(x.amount) || 0,
+    note: String(x.note || ''),
+    date: x.date || todayISO(),
+    settled: !!x.settled,
+  };
+}
+
 function normalizeGoal(row, i) {
   const g = row && typeof row === 'object' ? row : {};
   return {
@@ -1088,6 +1152,8 @@ function createInitialStore() {
     trips: [],
     activeTripId: null,
     holdings: [],
+    people: [],
+    ious: [],
     settings: defaultSettings(),
     updatedAt: new Date().toISOString(),
   };
@@ -1118,6 +1184,8 @@ function normalizeState(parsed) {
     trips: trips,
     activeTripId: activeTripId,
     holdings: Array.isArray(src.holdings) ? src.holdings.map(normalizeHolding) : [],
+    people: Array.isArray(src.people) ? src.people.map(normalizePerson) : [],
+    ious: Array.isArray(src.ious) ? src.ious.map(normalizeIou) : [],
     settings: normalizeSettings(src.settings),
     updatedAt: typeof src.updatedAt === 'string' && src.updatedAt ? src.updatedAt : (base.updatedAt || new Date().toISOString()),
   };
@@ -1560,6 +1628,107 @@ function canStartTrip(store, loc) {
   return liveTrips(store).length < TRAVEL_FREE_MAX_LIVE_TRIPS;
 }
 
+function startOfWeekISO(iso) {
+  const day = iso || todayISO();
+  const d = new Date(day + 'T12:00:00');
+  const wd = d.getDay();
+  const back = wd === 0 ? 6 : wd - 1;
+  return addDaysISO(day, -back);
+}
+
+function rangeExpenseTotal(store, startISO, endISO) {
+  return ((store && store.transactions) || []).filter((tx) => (
+    tx.type === 'expense' && tx.date >= startISO && tx.date <= endISO
+  )).reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+}
+
+function weekRecap(store, today) {
+  const end = today || todayISO();
+  const start = startOfWeekISO(end);
+  const prevEnd = addDaysISO(start, -1);
+  const prevStart = startOfWeekISO(prevEnd);
+  const spent = rangeExpenseTotal(store, start, end);
+  const prev = rangeExpenseTotal(store, prevStart, prevEnd);
+  return {
+    start: start,
+    end: end,
+    spent: spent,
+    prev: prev,
+    delta: prev > 0 ? (spent - prev) / prev : null,
+  };
+}
+
+function monthlyRecurringBurn(store) {
+  return Math.round(((store && store.recurring) || []).filter((r) => r.active && r.type !== 'income').reduce((s, r) => {
+    const amt = Number(r.amount) || 0;
+    if (r.cadence === 'weekly') return s + amt * 4.33;
+    if (r.cadence === 'yearly') return s + amt / 12;
+    return s + amt;
+  }, 0));
+}
+
+function recentMerchants(store, limit) {
+  const cap = limit || 5;
+  const seen = {};
+  const out = [];
+  const txns = ((store && store.transactions) || []).slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  for (let i = 0; i < txns.length; i++) {
+    const tx = txns[i];
+    if (tx.type !== 'expense') continue;
+    const label = String(tx.merchant || tx.note || '').trim();
+    if (!label) continue;
+    const key = label.toLowerCase();
+    if (seen[key]) continue;
+    seen[key] = true;
+    out.push({
+      merchant: label,
+      amount: Number(tx.amount) || 0,
+      categoryId: tx.categoryId,
+      accountId: tx.accountId,
+    });
+    if (out.length >= cap) break;
+  }
+  return out;
+}
+
+function personBalance(store, personId) {
+  return ((store && store.ious) || []).filter((row) => row.personId === personId && !row.settled)
+    .reduce((s, row) => s + (Number(row.amount) || 0), 0);
+}
+
+function peopleSnapshot(store) {
+  const people = (store && store.people) || [];
+  const rows = people.map((p) => ({ ...p, balance: personBalance(store, p.id) }));
+  const owedToYou = rows.filter((r) => r.balance > 0).reduce((s, r) => s + r.balance, 0);
+  const youOwe = rows.filter((r) => r.balance < 0).reduce((s, r) => s + (-r.balance), 0);
+  return { rows: rows, owedToYou: owedToYou, youOwe: youOwe, net: owedToYou - youOwe };
+}
+
+function equalSplitShares(total, count) {
+  const n = Math.max(0, Number(count) || 0);
+  if (n < 1) return [];
+  const cents = Math.round((Number(total) || 0) * 100);
+  const base = Math.floor(cents / n);
+  const shares = [];
+  let rem = cents - base * n;
+  for (let i = 0; i < n; i++) {
+    shares.push((base + (i < rem ? 1 : 0)) / 100);
+  }
+  return shares;
+}
+
+function buildEqualSplitIous(personIds, total, note, date) {
+  const ids = (personIds || []).filter(Boolean);
+  const shares = equalSplitShares(total, ids.length + 1);
+  return ids.map((personId, i) => ({
+    personId: personId,
+    amount: shares[i] || 0,
+    note: note || '',
+    date: date || todayISO(),
+    settled: false,
+  }));
+}
+
 function tripPhase(trip, today) {
   if (!trip || trip.status === 'ended') return 'ended';
   const day = today || todayISO();
@@ -1651,6 +1820,8 @@ Object.assign(window, {
   netWorthSnapshot,
   cashflowMonth,
   normalizeHolding,
+  normalizePerson,
+  normalizeIou,
   liveTrips,
   tripPhase,
   tripBudgetLeft,
@@ -1710,4 +1881,11 @@ Object.assign(window, {
   ZENITH_PRO_PRICE_YR,
   GOAL_COLORS,
   GOAL_EMOJI,
+  weekRecap,
+  monthlyRecurringBurn,
+  recentMerchants,
+  personBalance,
+  peopleSnapshot,
+  equalSplitShares,
+  buildEqualSplitIous,
 });

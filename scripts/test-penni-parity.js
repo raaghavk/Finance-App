@@ -162,6 +162,26 @@ const cal = ctx.cashflowMonth({
 assert.strictEqual(cal.byDay[11].spend, 500);
 assert.strictEqual(cal.byDay[12].dues[0].name, 'Netflix');
 
+const withPeople = ctx.normalizeState({
+  ...emptyTravel,
+  people: [{ id: 'p-arjun', name: 'Arjun' }],
+  ious: [{ id: 'i1', personId: 'p-arjun', amount: 800, note: 'Dinner', date: '2026-09-10', settled: false }],
+  transactions: [
+    { type: 'expense', amount: 1200, date: '2026-09-08', accountId: 'cash', categoryId: 'kirana', merchant: 'DMart' },
+    { type: 'expense', amount: 400, date: '2026-09-01', accountId: 'cash', categoryId: 'kirana', merchant: 'DMart' },
+  ],
+  recurring: [ctx.normalizeRecurring({ name: 'Netflix', amount: 649, cadence: 'monthly', type: 'expense', active: true }, 0)],
+});
+assert.strictEqual(ctx.personBalance(withPeople, 'p-arjun'), 800);
+assert.strictEqual(ctx.peopleSnapshot(withPeople).owedToYou, 800);
+const shares = ctx.equalSplitShares(100, 3);
+assert.strictEqual(shares.length, 3);
+assert.strictEqual(Math.round(shares.reduce((s, n) => s + n, 0) * 100), 10000);
+assert.strictEqual(ctx.buildEqualSplitIous(['p-arjun', 'p-priya'], 2400, 'Dinner', '2026-09-13').length, 2);
+assert.ok(ctx.weekRecap(withPeople, '2026-09-13').spent >= 1200);
+assert.strictEqual(ctx.monthlyRecurringBurn(withPeople), 649);
+assert.strictEqual(ctx.recentMerchants(withPeople, 3)[0].merchant, 'DMart');
+
 const demoTrip = ctx.normalizeTrip({
   id: 't2', countryCode: 'USD', status: 'active',
   expenses: Array.from({ length: 8 }, (_, i) => ({ id: 'e' + i, merchant: 'x', cat: 'Food', amount: 1, inr: 83, date: '2026-09-01' })),
@@ -266,6 +286,7 @@ assert.match(plan, /insights/);
 assert.match(plan, /travel/);
 assert.match(plan, /networth/);
 assert.match(plan, /calendar/);
+assert.match(plan, /people/);
 
 const app = fs.readFileSync(path.join(root, 'app.jsx'), 'utf8');
 assert.match(app, /materializeRecurring/);
@@ -285,6 +306,8 @@ assert.match(app, /firstEmoji/);
 assert.match(app, /exportJson/);
 assert.match(app, /zenithCloudBoot/);
 assert.match(app, /onCloudSignIn/);
+assert.match(app, /PeopleScreen/);
+assert.match(app, /savePerson/);
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 assert.match(pkg.scripts.test, /test-penni-parity/);
@@ -293,5 +316,16 @@ assert.doesNotMatch(fs.readFileSync(path.join(root, 'components/NetWorth.jsx'), 
 assert.doesNotMatch(fs.readFileSync(path.join(root, 'components/CashflowCalendar.jsx'), 'utf8'), /April 2026/);
 assert.match(fs.readFileSync(path.join(root, 'components/CashflowCalendar.jsx'), 'utf8'), /cashflowMonth/);
 assert.match(fs.readFileSync(path.join(root, 'components/NetWorth.jsx'), 'utf8'), /netWorthSnapshot/);
+
+const splitUi = fs.readFileSync(path.join(root, 'components/SplitExpense.jsx'), 'utf8');
+assert.match(splitUi, /PeopleScreen/);
+assert.match(splitUi, /onSplitEqual/);
+assert.doesNotMatch(splitUi, /Fatty Bao/);
+assert.doesNotMatch(splitUi, /May 2026/);
+assert.doesNotMatch(splitUi, /#007AFF/);
+
+assert.match(fs.readFileSync(path.join(root, 'components/Home.jsx'), 'utf8'), /WeekRecapCard/);
+assert.match(fs.readFileSync(path.join(root, 'components/Home.jsx'), 'utf8'), /PeoplePeek/);
+assert.match(fs.readFileSync(path.join(root, 'components/AddExpense.jsx'), 'utf8'), /repeatLast/);
 
 console.log('penni parity: leftover after bills, concurrent trips, calendar, net worth ok');

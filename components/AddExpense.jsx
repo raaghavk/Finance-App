@@ -156,6 +156,29 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
           ) : null}
         </div>
 
+        {!initial && type === 'expense' && typeof recentMerchants === 'function' && recentMerchants(store, 5).length > 0 && (
+          <>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '14px 0 8px' }}>{t(locale, 'repeatLast')}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {recentMerchants(store, 5).map((row) => (
+                <button
+                  key={row.merchant}
+                  type="button"
+                  onClick={() => {
+                    setNote(row.merchant);
+                    setAmount(String(row.amount || 0));
+                    if (row.categoryId) setSelectedCat(row.categoryId);
+                    if (row.accountId) setAccountId(row.accountId);
+                  }}
+                  style={chip(note === row.merchant, undefined)}
+                >
+                  <span style={{ whiteSpace: 'nowrap' }}>{row.merchant} · {fmt(row.amount)}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '14px 0 8px' }}>{t(locale, 'category')}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {parentChips.map((c) => (
