@@ -1,4 +1,5 @@
 {
+  "cleanUrls": false,
   "rewrites": [
     { "source": "/api/expenses", "destination": "/api/expenses" },
     { "source": "/api/accounts", "destination": "/api/accounts" },

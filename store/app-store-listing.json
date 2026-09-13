@@ -14,6 +14,7 @@
   "bundleId": "app.liora.finance",
   "privacyUrl": "https://zenith-raaghavks-projects.vercel.app/privacy.html",
   "supportUrl": "https://zenith-raaghavks-projects.vercel.app/support.html",
+  "termsUrl": "https://zenith-raaghavks-projects.vercel.app/terms.html",
   "marketingUrl": "https://zenith-raaghavks-projects.vercel.app/invite.html",
   "description": "Personal finance that stays on this device. See what is left to spend this month, log cash and card spends, set category budgets, track recurring bills, savings goals, people you owe, and a travel trip in local currency.\n\nNo bank login. No SMS scrape. Export CSV or a JSON backup anytime.\n\nTravel Mode tracks a trip budget separately from home spend. One live trip is free.\n\nHindi and English.",
   "keywords": "budget,expense,leftover,travel,Hindi,cash,UPI,INR",

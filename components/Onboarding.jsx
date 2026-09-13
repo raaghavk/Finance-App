@@ -115,14 +115,15 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
           placeholder={t(L, 'yourName')}
           autoFocus
           aria-label={t(L, 'yourName')}
+          aria-invalid={focused === 'err' && !nameOk ? 'true' : 'false'}
           value={val}
-          onChange={(e) => setVal(e.target.value)}
+          onChange={(e) => { setVal(e.target.value); if (focused === 'err') setFocused(true); }}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && nameOk) {
-              onSetName(val.trim());
-              onNext();
+            if (e.key === 'Enter') {
+              if (nameOk) { onSetName(val.trim()); onNext(); }
+              else setFocused('err');
             }
           }}
           style={{
@@ -130,11 +131,18 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
             width: '100%',
             fontSize: 28, fontWeight: 700,
             padding: '16px 0',
-            borderBottom: `2.5px solid ${focused ? '#2563EB' : '#E5E5EA'}`,
+            borderBottom: `2.5px solid ${(!nameOk && focused === 'err') ? '#B91C1C' : (focused ? '#2563EB' : '#E5E5EA')}`,
           }}
         />
+        {focused === 'err' && !nameOk ? (
+          <p role="alert" style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#B91C1C', marginTop: 8 }}>{t(L, 'enterName')}</p>
+        ) : null}
       </div>
-      {continueBtn(t(L, 'continue') + ' →', () => { onSetName(val.trim()); onNext(); }, !nameOk)}
+      {continueBtn(t(L, 'continue') + ' →', () => {
+        if (!nameOk) { setFocused('err'); return; }
+        onSetName(val.trim());
+        onNext();
+      }, false)}
     </>);
   }
 

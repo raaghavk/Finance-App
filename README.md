@@ -8,7 +8,7 @@ The public name is **Liora**. Internal file names (`Zenith.html`) and the store 
 
 Use this link only: **https://zenith-raaghavks-projects.vercel.app**
 
-Share with testers: **https://zenith-raaghavks-projects.vercel.app/invite.html** (install steps + feedback). Privacy: `/privacy.html`. Support: `/support.html`.
+Share with testers: **https://zenith-raaghavks-projects.vercel.app/invite.html**. Privacy: `/privacy.html`. Terms: `/terms.html`. Support: `/support.html`.
 
 Safari will not install from `http://localhost`. After it opens:
 

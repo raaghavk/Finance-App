@@ -12,6 +12,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
   const [accountId, setAccountId] = React.useState(initial && initial.accountId ? initial.accountId : (accounts[0] && accounts[0].id) || 'cash');
   const [date, setDate] = React.useState(initial && initial.date ? initial.date : todayISO());
   const [saved, setSaved] = React.useState(false);
+  const [saveErr, setSaveErr] = React.useState(false);
   const [receiptPhoto, setReceiptPhoto] = React.useState(initial && initial.receiptPhoto ? initial.receiptPhoto : '');
   const [quick, setQuick] = React.useState(null);
   const photoRef = React.useRef(null);
@@ -49,7 +50,10 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
   const selectedAccount = accounts.find((a) => a.id === accountId);
 
   const handleSave = () => {
-    if (!canSave || saved) return;
+    if (!canSave || saved) {
+      setSaveErr(true);
+      return;
+    }
     setSaved(true);
     const cat = findCat({ categories: cats }, selectedCat);
     const merchant = note.trim() || (cat ? catLabel(cat, locale) : t(locale, 'addTxn'));
@@ -304,17 +308,20 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
       </div>
 
       <div style={{ flexShrink: 0, padding: '6px 16px calc(12px + env(safe-area-inset-bottom, 0px))' }}>
-        {!selectedCat && type !== 'transfer' && amt > 0 && (
-          <p style={{ textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#FF3B30', marginBottom: 8 }}>{t(locale, 'pickCategory')}</p>
+        {saveErr && !selectedCat && type !== 'transfer' && amt > 0 && (
+          <p role="alert" style={{ textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#FF3B30', marginBottom: 8 }}>{t(locale, 'pickCategory')}</p>
+        )}
+        {saveErr && amt <= 0 && (
+          <p role="alert" style={{ textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#FF3B30', marginBottom: 8 }}>{t(locale, 'enterAmount')}</p>
         )}
         <button
           type="button"
           aria-label={t(locale, 'addAmount', { n: fmt(amt) })}
-          disabled={!canSave}
+          disabled={saved}
           onClick={handleSave}
           style={{
             width: '100%', padding: '14px', borderRadius: 16, border: 'none',
-            cursor: canSave ? 'pointer' : 'default',
+            cursor: saved ? 'default' : 'pointer',
             background: saved ? '#34D399' : (canSave ? (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB') : '#E5E5EA'),
             color: '#fff',
             fontFamily: 'Manrope, sans-serif', fontSize: 17, fontWeight: 800,

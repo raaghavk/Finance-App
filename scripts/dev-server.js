@@ -52,6 +52,9 @@ const TYPES = {
   '.jpg': 'image/jpeg',
   '.webp': 'image/webp',
   '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
+  '.ico': 'image/x-icon',
   '.ts': 'text/plain; charset=utf-8',
 };
 
@@ -91,7 +94,10 @@ const server = http.createServer(async (req, res) => {
   }
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) {
+      const notFound = path.join(ROOT, '404.html');
       res.statusCode = 404;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      if (fs.existsSync(notFound)) return fs.createReadStream(notFound).pipe(res);
       res.end('not found');
       return;
     }

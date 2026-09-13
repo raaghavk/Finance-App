@@ -417,17 +417,18 @@ function CloudBackupCard({ locale, cloud, onSignIn, onSignUp, onSignOut }) {
       ) : (
         <>
           <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, margin: '12px 0 6px' }}>{t(locale, 'cloudEmail')}</label>
-          <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" style={typeof moneyInputStyle === 'function' ? moneyInputStyle() : { width: '100%', padding: 12, borderRadius: 12, border: 'none', background: cream }} />
+          <input type="email" autoComplete="email" aria-invalid={msg ? 'true' : 'false'} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" style={typeof moneyInputStyle === 'function' ? moneyInputStyle() : { width: '100%', padding: 12, borderRadius: 12, border: 'none', background: cream }} />
           <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, margin: '12px 0 6px' }}>{t(locale, 'cloudPassword')}</label>
-          <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" style={typeof moneyInputStyle === 'function' ? moneyInputStyle() : { width: '100%', padding: 12, borderRadius: 12, border: 'none', background: cream }} />
+          <input type="password" autoComplete="current-password" aria-invalid={msg ? 'true' : 'false'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" style={typeof moneyInputStyle === 'function' ? moneyInputStyle() : { width: '100%', padding: 12, borderRadius: 12, border: 'none', background: cream }} />
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, margin: '8px 0 12px', lineHeight: 1.4 }}>{t(locale, 'cloudPasswordHint')}</p>
-          {msg ? <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#B91C1C', marginBottom: 10 }}>{msg}</p> : null}
+          {msg ? <p role="alert" style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#B91C1C', marginBottom: 10 }}>{msg}</p> : null}
+          {busy ? <p role="status" style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: accent, marginBottom: 10 }}>{t(locale, 'cloudSyncing')}</p> : null}
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" disabled={busy || !enabled} onClick={() => submit('in')} style={{
               flex: 1, padding: '12px', border: 'none', borderRadius: 14, cursor: enabled ? 'pointer' : 'default',
               background: enabled ? accent : cream, color: enabled ? '#fff' : muted,
               fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800,
-            }}>{t(locale, 'cloudSignIn')}</button>
+            }}>{busy ? t(locale, 'cloudSyncing') : t(locale, 'cloudSignIn')}</button>
             <button type="button" disabled={busy || !enabled} onClick={() => submit('up')} style={{
               flex: 1, padding: '12px', border: 'none', borderRadius: 14, cursor: enabled ? 'pointer' : 'default',
               background: cream, color: enabled ? accent : muted,
