@@ -1,6 +1,6 @@
 // TravelMode.jsx — persisted trips; free demo (1 trip / 8 expenses), full travel on Pro
 
-function CountryPickerScreen({ countries, selectedCountry, onSelect, onBack, onConfirm, locale }) {
+function CountryPickerScreen({ countries, selectedCountry, onSelect, onBack, onConfirm, locale, confirmLabelKey }) {
   const [search, setSearch] = React.useState('');
   const filtered = countries.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -55,7 +55,7 @@ function CountryPickerScreen({ countries, selectedCountry, onSelect, onBack, onC
           background: selectedCountry ? accent : cream,
           color: selectedCountry ? '#FFFFFF' : muted,
           fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 700,
-        }}>{t(locale, 'activateTravel')}</button>
+        }}>{t(locale, confirmLabelKey || 'activateTravel')}</button>
       </div>
     </div>
   );
@@ -143,12 +143,15 @@ function TripExpenseForm({ locale, trip, store, initial, onSave, onCancel, onDel
   );
 }
 
-function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpense, onDeleteExpense, onUpdateTrip, onNeedPro, onBack, onUnlockPro }) {
+function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpense, onDeleteExpense, onUpdateTrip, onSwitchTrip, onNeedPro, onBack, onUnlockPro }) {
   const locale = store.user.locale || 'en';
   const live = typeof activeTrip === 'function' ? activeTrip(store) : null;
+  const lives = typeof liveTrips === 'function' ? liveTrips(store) : (live ? [live] : []);
   const past = (store.trips || []).filter((t) => t.status === 'ended');
   const isPro = typeof zenithIsPro === 'function' && zenithIsPro(store);
+  const phase = live && typeof tripPhase === 'function' ? tripPhase(live) : 'live';
   const [step, setStep] = React.useState(0);
+  const [editing, setEditing] = React.useState(false);
   const [tripName, setTripName] = React.useState('');
   const [startDate, setStartDate] = React.useState(todayISO());
   const [endDate, setEndDate] = React.useState(typeof addDaysISO === 'function' ? addDaysISO(todayISO(), 7) : todayISO());
@@ -178,12 +181,52 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
 
   const beginTrip = () => {
     if (!canStartTrip(store)) { onNeedPro && onNeedPro('trip'); return; }
+    setEditing(false);
+    setTripName('');
+    setStartDate(todayISO());
+    setEndDate(typeof addDaysISO === 'function' ? addDaysISO(todayISO(), 7) : todayISO());
+    setTripBudgetINR('50000');
+    setSelectedCountry(null);
     setStep(1);
+  };
+
+  const beginEdit = () => {
+    if (!live) return;
+    setEditing(true);
+    setTripName(live.name || '');
+    setStartDate(live.startDate || todayISO());
+    setEndDate(live.endDate || todayISO());
+    setTripBudgetINR(String(live.budgetINR || 0));
+    setSelectedCountry(live.countryCode || null);
+    setStep(1);
+  };
+
+  const saveEditFields = (country) => {
+    if (!live) return;
+    const dest = country || (selectedCountry ? findTravelCountry(selectedCountry) : null);
+    const fields = {
+      name: tripName || live.name,
+      startDate,
+      endDate,
+      budgetINR: parseFloat(tripBudgetINR) || 0,
+    };
+    if (dest) {
+      fields.countryCode = dest.code;
+      fields.countryName = dest.name;
+      fields.flag = dest.flag;
+      fields.currency = dest.code;
+      fields.symbol = dest.symbol;
+      if (dest.code !== live.currency) fields.rate = dest.rate;
+    }
+    onUpdateTrip && onUpdateTrip(live.id, fields);
+    setEditing(false);
+    setStep(0);
   };
 
   const confirmCountry = () => {
     const country = findTravelCountry(selectedCountry);
     if (!country) return;
+    if (editing) { saveEditFields(country); return; }
     onStartTrip && onStartTrip({
       name: tripName || country.name,
       countryCode: country.code,
@@ -221,12 +264,16 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
   if (step === 1) {
     return (
       <TripSetupScreen
+        locale={locale}
         tripName={tripName} setTripName={setTripName}
         startDate={startDate} setStartDate={setStartDate}
         endDate={endDate} setEndDate={setEndDate}
         budget={tripBudgetINR} setBudget={setTripBudgetINR}
-        onBack={() => setStep(0)}
-        onNext={() => setStep(2)}
+        onBack={() => { setStep(0); setEditing(false); }}
+        onNext={() => editing ? saveEditFields() : setStep(2)}
+        nextLabel={editing ? t(locale, 'saveTrip') : t(locale, 'chooseDestination')}
+        extraLabel={editing ? t(locale, 'changeDestination') : null}
+        onExtra={editing ? () => setStep(2) : null}
       />
     );
   }
@@ -239,6 +286,7 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
         selectedCountry={selectedCountry}
         onSelect={setSelectedCountry}
         onBack={() => setStep(1)}
+        confirmLabelKey={editing ? 'saveTrip' : 'activateTravel'}
         onConfirm={() => { if (selectedCountry) confirmCountry(); }}
       />
     );
@@ -280,6 +328,7 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>{t(locale, 'whatYouGet')}</p>
             <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: zenithSoftShadow() }}>
               {[
+                { icon: '🧭', title: t(locale, 'concurrentTrips'), sub: t(locale, 'concurrentTripsSub') },
                 { icon: '💱', title: t(locale, 'liveRates'), sub: t(locale, 'liveRatesSub') },
                 { icon: '📊', title: t(locale, 'tripBudgetSep'), sub: t(locale, 'tripBudgetSepSub') },
                 { icon: '🧾', title: t(locale, 'perTripLedger'), sub: t(locale, 'perTripLedgerSub') },
@@ -328,6 +377,9 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
   const budgetINR = live.budgetINR || 0;
   const budgetPct = budgetINR > 0 ? totalINR / budgetINR : 0;
   const daysLeft = tripDaysLeft(live);
+  const leftINR = typeof tripBudgetLeft === 'function' ? tripBudgetLeft(live) : (budgetINR - totalINR);
+  const leftoverDay = typeof tripLeftoverPerDay === 'function' ? tripLeftoverPerDay(live) : (leftINR / daysLeft);
+  const over = leftINR < 0;
   const convertedAmount = () => {
     const n = parseFloat(convertAmount) || 0;
     return convertDir === 'home_to_foreign' ? (n / country.rate).toFixed(2) : (n * country.rate).toFixed(0);
@@ -348,12 +400,18 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <span style={{ fontSize: 18 }}>{country.flag}</span>
               <div style={{ background: accent, borderRadius: 8, padding: '3px 8px' }}>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 700, color: 'white', letterSpacing: 0.5 }}>TRAVEL</span>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 700, color: 'white', letterSpacing: 0.5 }}>
+                  {t(locale, phase === 'planned' ? 'plannedChip' : 'liveChip')}
+                </span>
               </div>
             </div>
             <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 26, fontWeight: 800, color: ink }}>{live.name}</h1>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <button type="button" aria-label={t(locale, 'editTrip')} onClick={beginEdit} style={{
+              background: card, border: 'none', borderRadius: 12, padding: '8px 12px', cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: ink,
+            }}>{t(locale, 'edit')}</button>
             <button type="button" onClick={() => {
               if (!canUseTravelSos(store)) { onNeedPro && onNeedPro('sos'); return; }
               setShowSOS(true);
@@ -364,6 +422,32 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
             }}>{t(locale, 'endTrip')}</button>
           </div>
         </div>
+        {lives.length > 1 && (
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginTop: 12 }}>
+            {lives.map((tr) => (
+              <button key={tr.id} type="button" onClick={() => onSwitchTrip && onSwitchTrip(tr.id)} style={{
+                flexShrink: 0, border: 'none', borderRadius: 12, padding: '8px 12px', cursor: 'pointer',
+                background: tr.id === live.id ? accent : cream, color: tr.id === live.id ? '#fff' : ink,
+                fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
+              }}>{tr.flag} {tr.name}</button>
+            ))}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <button type="button" onClick={beginTrip} style={{
+            border: 'none', borderRadius: 12, padding: '8px 12px', cursor: 'pointer',
+            background: cream, color: accent, fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: 800,
+          }}>{t(locale, 'anotherTrip')}</button>
+          {past.length > 0 && (
+            <button type="button" onClick={() => {
+              if (!canUseTravelHistory(store)) { onNeedPro && onNeedPro('history'); return; }
+              setShowHistory(true);
+            }} style={{
+              border: 'none', borderRadius: 12, padding: '8px 12px', cursor: 'pointer',
+              background: cream, color: ink, fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: 800,
+            }}>{t(locale, 'travelHistory')}</button>
+          )}
+        </div>
       </div>
       {showSOS && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 25 }}>
@@ -371,7 +455,7 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
         </div>
       )}
       <div style={{ display: 'flex', background: cream, borderRadius: 12, padding: 3, margin: '0 20px 16px' }}>
-        {[['dashboard', t(locale, 'home')], ['expenses', t(locale, 'activity')], ['convert', t(locale, 'convert')], ['kit', t(locale, 'kit')]].map(([val, label]) => (
+        {[['dashboard', t(locale, 'tripTab')], ['expenses', t(locale, 'spendTab')], ['convert', t(locale, 'convert')], ['kit', t(locale, 'kit')]].map(([val, label]) => (
           <button key={val} type="button" onClick={() => setTab(val)} style={{
             flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer', borderRadius: 10,
             fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600,
@@ -391,8 +475,12 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{t(locale, 'dailyLeft')}</p>
-                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#fff' }}>{fmt(Math.max(budgetINR - totalINR, 0) / daysLeft)}</p>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{over ? t(locale, 'overBudget') : t(locale, 'remaining')}</p>
+                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#fff' }}>{fmt(leftINR)}</p>
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{t(locale, 'leftoverDay')}</p>
+                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#fff' }}>{fmt(leftoverDay)}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{t(locale, 'daysLeft')}</p>
@@ -605,6 +693,26 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
             setEditExp(null);
           }}
         />
+      )}
+      {showHistory && (
+        <TripHistoryScreen trips={past.map((tr) => ({
+          ...tr,
+          spentINR: tripSpentINR(tr),
+          spentForeign: tripSpentForeign(tr),
+          dates: tr.startDate + ' – ' + tr.endDate,
+          country: tr.countryName,
+          overBudget: tripSpentINR(tr) > (tr.budgetINR || 0),
+        }))} onBack={() => { setShowHistory(false); setHistoryDetail(null); }} onSelect={(tr) => setHistoryDetail(tr)} />
+      )}
+      {historyDetail && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 20 }}>
+          <TripSummaryScreen trip={{
+            ...historyDetail,
+            code: historyDetail.currency,
+            byCategory: (historyDetail.expenses || []).reduce((acc, e) => { acc[e.cat] = (acc[e.cat] || 0) + e.amount; return acc; }, { Other: 0 }),
+            days: historyDetail.days || 1,
+          }} onDone={() => setHistoryDetail(null)} />
+        </div>
       )}
     </div>
   );

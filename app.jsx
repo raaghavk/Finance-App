@@ -111,7 +111,7 @@ function ZenithApp() {
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
 
-  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
+  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'insights', 'calendar', 'networth', 'travel', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
 
   const patch = (fn) => setStore((prev) => {
     const next = fn({
@@ -125,6 +125,7 @@ function ZenithApp() {
       goals: [...(prev.goals || [])],
       recurring: [...(prev.recurring || [])],
       trips: (prev.trips || []).map((tr) => ({ ...tr, expenses: [...(tr.expenses || [])] })),
+      holdings: [...(prev.holdings || [])],
       settings: { ...(prev.settings || defaultSettings()), lock: { ...((prev.settings && prev.settings.lock) || {}) } },
     });
     return next;
@@ -177,6 +178,26 @@ function ZenithApp() {
       if (limit > 0) next.push({ accountId, monthKey: mk, limit });
       return { ...s, budgets: next };
     });
+  };
+
+  const moveBudget = (fromId, toId, amount) => {
+    patch((s) => (typeof applyBudgetMove === 'function' ? applyBudgetMove(s, fromId, toId, amount) : s));
+  };
+
+  const saveHolding = (id, draft) => {
+    patch((s) => {
+      if (id) {
+        return { ...s, holdings: (s.holdings || []).map((h) => (h.id === id ? { ...h, ...draft, id } : h)) };
+      }
+      const row = typeof normalizeHolding === 'function'
+        ? normalizeHolding({ ...draft, id: typeof newMoneyId === 'function' ? newMoneyId('hold', draft.name) : ('hold-' + Date.now()) }, (s.holdings || []).length)
+        : { ...draft, id: 'hold-' + Date.now() };
+      return { ...s, holdings: (s.holdings || []).concat([row]) };
+    });
+  };
+
+  const deleteHolding = (id) => {
+    patch((s) => ({ ...s, holdings: (s.holdings || []).filter((h) => h.id !== id) }));
   };
 
   const saveAccount = (id, draft) => {
@@ -341,11 +362,22 @@ function ZenithApp() {
   };
 
   const endTrip = (id) => {
-    patch((s) => ({
-      ...s,
-      trips: (s.trips || []).map((tr) => (tr.id === id ? { ...tr, status: 'ended' } : tr)),
-      activeTripId: s.activeTripId === id ? null : s.activeTripId,
-    }));
+    patch((s) => {
+      const trips = (s.trips || []).map((tr) => (tr.id === id ? { ...tr, status: 'ended' } : tr));
+      const other = trips.find((tr) => tr.status === 'active');
+      return {
+        ...s,
+        trips: trips,
+        activeTripId: s.activeTripId === id ? (other ? other.id : null) : s.activeTripId,
+      };
+    });
+  };
+
+  const switchTrip = (id) => {
+    patch((s) => {
+      const found = (s.trips || []).find((tr) => tr.id === id && tr.status === 'active');
+      return found ? { ...s, activeTripId: id } : s;
+    });
   };
 
   const addTripExpense = (tripId, draft) => {
@@ -637,7 +669,7 @@ function ZenithApp() {
                       onToggleSubcategories={toggleSubcategories}
                     />
                   )}
-                  {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetAccountBudget={setAccountBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
+                  {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetAccountBudget={setAccountBudget} onMoveBudget={moveBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
                   {tab === 'goals' && (
                     <SavingsGoalsScreen
                       store={store}
@@ -659,12 +691,19 @@ function ZenithApp() {
                   {tab === 'insights' && typeof ReportsScreen === 'function' && (
                     <ReportsScreen store={store} onNavigate={goTab} onBack={() => goTab('plan')} />
                   )}
+                  {tab === 'calendar' && typeof CashflowCalendarScreen === 'function' && (
+                    <CashflowCalendarScreen store={store} onBack={() => goTab('insights')} onSelectTx={openDrawer} />
+                  )}
+                  {tab === 'networth' && typeof NetWorthScreen === 'function' && (
+                    <NetWorthScreen store={store} onBack={() => goTab('you')} onSaveHolding={saveHolding} onDeleteHolding={deleteHolding} />
+                  )}
                   {tab === 'travel' && typeof TravelScreen === 'function' && (
                     <TravelScreen
                       store={store}
                       onBack={() => goTab('plan')}
                       onStartTrip={startTrip}
                       onEndTrip={endTrip}
+                      onSwitchTrip={switchTrip}
                       onAddExpense={addTripExpense}
                       onSaveExpense={saveTripExpense}
                       onDeleteExpense={deleteTripExpense}

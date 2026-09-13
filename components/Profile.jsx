@@ -201,7 +201,14 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
           onClick={() => onNavigate && onNavigate('accounts')}
           showChevron
         />
-        <Row label={t(locale, 'budgets')} sub={budget > 0 ? fmt(budget) : t(locale, 'noBudgetYet')} onClick={() => onNavigate && onNavigate('budget')} last showChevron />
+        <Row label={t(locale, 'budgets')} sub={budget > 0 ? fmt(budget) : t(locale, 'noBudgetYet')} onClick={() => onNavigate && onNavigate('budget')} showChevron />
+        <Row
+          label={t(locale, 'netWorth')}
+          sub={typeof netWorthSnapshot === 'function' ? fmt(netWorthSnapshot(store).net) : t(locale, 'walletsInNet')}
+          last
+          onClick={() => onNavigate && onNavigate('networth')}
+          showChevron
+        />
       </div>
 
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>{t(locale, 'categories')}</p>

@@ -16,6 +16,8 @@ function PlanScreen({ store, onNavigate }) {
       ? String((store.goals || []).length)
       : (locale === 'hi' ? 'बचत लक्ष्य' : 'Savings targets'), emoji: '🏆' },
     { id: 'insights', title: t(locale, 'insights'), sub: locale === 'hi' ? 'इस vs पिछले महीने' : 'This vs last month', emoji: '📊' },
+    { id: 'calendar', title: t(locale, 'calendar'), sub: locale === 'hi' ? 'रोज़ का खर्च और देय बिल' : 'Day spend and bills due', emoji: '📅' },
+    { id: 'networth', title: t(locale, 'netWorth'), sub: locale === 'hi' ? 'वॉलेट + संपत्ति − देनदारी' : 'Wallets + assets − dues', emoji: '💎' },
   ];
   if (typeof zenithNotionEnabled === 'function' && zenithNotionEnabled()) {
     cards.unshift({ id: 'notionBudgets', title: t(locale, 'notionBudgets'), sub: t(locale, 'notionLeftMonth'), emoji: '📒' });

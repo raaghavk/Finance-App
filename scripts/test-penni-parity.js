@@ -18,6 +18,7 @@ const store = ctx.createInitialStore();
 assert.ok(Array.isArray(store.goals));
 assert.ok(Array.isArray(store.recurring));
 assert.ok(Array.isArray(store.trips));
+assert.ok(Array.isArray(store.holdings));
 assert.strictEqual(store.activeTripId, null);
 assert.strictEqual(store.settings.theme, 'light');
 assert.strictEqual(store.settings.lock.enabled, false);
@@ -100,6 +101,61 @@ const afterDemo = {
 assert.strictEqual(ctx.canStartTrip(afterDemo), false);
 assert.strictEqual(ctx.canStartTrip({ ...afterDemo, settings: { ...afterDemo.settings, pro: true } }), true);
 
+const tripA = ctx.normalizeTrip({ id: 'live-a', countryCode: 'THB', status: 'active', name: 'Bangkok', budgetINR: 50000, startDate: '2026-09-01', endDate: '2026-09-20', expenses: [{ id: 'e1', merchant: 'Pad', cat: 'Food', amount: 100, inr: 2500, date: '2026-09-02' }] }, 0);
+const tripB = ctx.normalizeTrip({ id: 'live-b', countryCode: 'USD', status: 'active', name: 'NYC', budgetINR: 80000, startDate: '2026-10-01', endDate: '2026-10-10', expenses: [] }, 1);
+const twoLive = { ...emptyTravel, settings: { ...emptyTravel.settings, pro: true }, trips: [tripA, tripB], activeTripId: 'live-a' };
+assert.strictEqual(ctx.liveTrips(twoLive).length, 2);
+assert.strictEqual(ctx.activeTrip(twoLive).id, 'live-a');
+assert.strictEqual(ctx.canStartTrip(twoLive), true);
+assert.strictEqual(ctx.canStartTrip({ ...twoLive, settings: { ...emptyTravel.settings, pro: false } }), false);
+assert.strictEqual(ctx.tripPhase(tripA, '2026-09-11'), 'live');
+assert.strictEqual(ctx.tripPhase(tripB, '2026-09-11'), 'planned');
+assert.strictEqual(ctx.tripBudgetLeft(tripA), 47500);
+assert.ok(ctx.tripLeftoverPerDay(tripA, '2026-09-11') > 0);
+
+const withBills = {
+  ...emptyTravel,
+  monthlyIncome: 100000,
+  openingCash: 0,
+  recurring: [ctx.normalizeRecurring({ name: 'Rent', amount: 25000, nextOn: '2026-09-20', type: 'expense', active: true }, 0)],
+  goals: [ctx.normalizeGoal({ name: 'Fund', target: 30000, saved: 0, due: '2026-12-11' }, 0)],
+};
+assert.strictEqual(ctx.upcomingBillsThisMonth(withBills, '2026-09', '2026-09-11'), 25000);
+assert.strictEqual(ctx.leftoverAfterBills(withBills, '2026-09', '2026-09-11'), 75000);
+assert.ok(ctx.monthlyGoalNeed(withBills, '2026-09-11') > 0);
+assert.ok(ctx.leftoverAfterCommitments(withBills, '2026-09', '2026-09-11') < 75000);
+assert.strictEqual(ctx.dueSoonRecurring(withBills, '2026-09-18', 7).length, 1);
+
+const envelope = {
+  ...emptyTravel,
+  budgets: [
+    { categoryId: 'grp-food', monthKey: '2026-09', limit: 10000 },
+    { categoryId: 'grp-move', monthKey: '2026-09', limit: 2000 },
+  ],
+  transactions: [{ type: 'expense', categoryId: 'kirana', amount: 2000, date: '2026-09-02', accountId: 'cash' }],
+};
+const moved = ctx.applyBudgetMove(envelope, 'grp-food', 'grp-move', 3000, '2026-09');
+assert.strictEqual(ctx.budgetLimit(moved, 'grp-food', '2026-09'), 7000);
+assert.strictEqual(ctx.budgetLimit(moved, 'grp-move', '2026-09'), 5000);
+
+const withHold = ctx.normalizeState({
+  ...emptyTravel,
+  accounts: [{ id: 'cash', name: 'Cash', opening: 10000 }],
+  holdings: [{ name: 'Gold', kind: 'asset', amount: 50000 }, { name: 'CC due', kind: 'liability', amount: 4000 }],
+  transactions: [],
+});
+const nw = ctx.netWorthSnapshot(withHold);
+assert.strictEqual(nw.liabTotal, 4000);
+assert.ok(nw.net >= 56000);
+
+const cal = ctx.cashflowMonth({
+  ...emptyTravel,
+  transactions: [{ type: 'expense', amount: 500, date: '2026-09-11', accountId: 'cash', categoryId: 'kirana' }],
+  recurring: [ctx.normalizeRecurring({ name: 'Netflix', amount: 649, nextOn: '2026-09-12', type: 'expense' }, 0)],
+}, '2026-09');
+assert.strictEqual(cal.byDay[11].spend, 500);
+assert.strictEqual(cal.byDay[12].dues[0].name, 'Netflix');
+
 const demoTrip = ctx.normalizeTrip({
   id: 't2', countryCode: 'USD', status: 'active',
   expenses: Array.from({ length: 8 }, (_, i) => ({ id: 'e' + i, merchant: 'x', cat: 'Food', amount: 1, inr: 83, date: '2026-09-01' })),
@@ -146,7 +202,8 @@ assert.match(home, /HealthScoreCard/);
 assert.match(home, /GoalsPeek/);
 assert.match(home, /spentOnAccount/);
 assert.match(home, /TravelHomeCard/);
-assert.match(home, /onNavigate\('travel'\)/);
+assert.match(home, /safeAfterBills/);
+assert.match(home, /dueSoon/);
 
 const search = fs.readFileSync(path.join(root, 'components/Search.jsx'), 'utf8');
 assert.match(search, /fromDate/);
@@ -173,7 +230,10 @@ assert.match(travel, /demoBanner/);
 assert.match(travel, /packingList/);
 assert.match(travel, /logToHome/);
 assert.match(travel, /customRate/);
-assert.match(travel, /kit/);
+assert.match(travel, /leftoverDay/);
+assert.match(travel, /anotherTrip/);
+assert.match(travel, /editTrip/);
+assert.match(travel, /onSwitchTrip/);
 
 const extras = fs.readFileSync(path.join(root, 'components/TravelExtras.jsx'), 'utf8');
 assert.match(extras, /travelChrome/);
@@ -193,7 +253,8 @@ assert.match(profile, /privacy\.html/);
 const plan = fs.readFileSync(path.join(root, 'components/Plan.jsx'), 'utf8');
 assert.match(plan, /insights/);
 assert.match(plan, /travel/);
-assert.ok(plan.indexOf("id: 'travel'") < plan.indexOf("id: 'budget'"));
+assert.match(plan, /networth/);
+assert.match(plan, /calendar/);
 
 const app = fs.readFileSync(path.join(root, 'app.jsx'), 'utf8');
 assert.match(app, /materializeRecurring/);
@@ -204,11 +265,20 @@ assert.match(app, /saveGoal/);
 assert.match(app, /startTrip/);
 assert.match(app, /canStartTrip/);
 assert.match(app, /canAddTripExpense/);
-assert.match(app, /updateTrip/);
+assert.match(app, /switchTrip/);
+assert.match(app, /moveBudget/);
+assert.match(app, /saveHolding/);
+assert.match(app, /CashflowCalendarScreen/);
+assert.match(app, /NetWorthScreen/);
 assert.match(app, /firstEmoji/);
 assert.match(app, /exportJson/);
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 assert.match(pkg.scripts.test, /test-penni-parity/);
 
-console.log('penni parity: goals, recurring, health, insights, lock, theme, travel demo/pro ok');
+assert.doesNotMatch(fs.readFileSync(path.join(root, 'components/NetWorth.jsx'), 'utf8'), /April 2026/);
+assert.doesNotMatch(fs.readFileSync(path.join(root, 'components/CashflowCalendar.jsx'), 'utf8'), /April 2026/);
+assert.match(fs.readFileSync(path.join(root, 'components/CashflowCalendar.jsx'), 'utf8'), /cashflowMonth/);
+assert.match(fs.readFileSync(path.join(root, 'components/NetWorth.jsx'), 'utf8'), /netWorthSnapshot/);
+
+console.log('penni parity: leftover after bills, concurrent trips, calendar, net worth ok');

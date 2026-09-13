@@ -132,6 +132,16 @@ function ReportsScreen({ store, onNavigate, onBack }) {
           ))}
         </div>
       </div>
+
+      <div style={{ padding: '0 20px 20px' }}>
+        <button type="button" onClick={() => onNavigate && onNavigate('calendar')} style={{
+          width: '100%', textAlign: 'left', border: 'none', borderRadius: 22, padding: '16px 18px', cursor: 'pointer',
+          background: card, boxShadow: zenithSoftShadow(),
+        }}>
+          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color: ink }}>{t(locale, 'calendar')}</p>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginTop: 4 }}>{t(locale, 'dueThisMonth')}</p>
+        </button>
+      </div>
     </div>
   );
 }

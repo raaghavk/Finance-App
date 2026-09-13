@@ -328,7 +328,7 @@ const COPY = {
     importJson: 'Restore JSON',
     zenithPro: 'Zenith Pro',
     travel: 'Travel',
-    travelDemo: 'Free demo: one trip, 8 expenses. Pro unlocks unlimited trips, history, SOS, and custom packing items.',
+    travelDemo: 'Free demo: one trip, 8 expenses. Pro unlocks overlapping live trips, history, SOS, and custom packing.',
     upgrade: 'Upgrade',
     subscribe: 'Unlock Pro',
     restore: 'Restore purchases',
@@ -375,13 +375,13 @@ const COPY = {
     tight: 'Tight',
     startTracking: 'Add a few expenses to score your month.',
     lockHint: 'PIN stays on this device. Optional passkey if the phone supports it.',
-    proBlurb: 'Unlimited trips, full history, and emergency assist. Home ledger stays free.',
+    proBlurb: 'Overlapping live trips, full history, and emergency assist. Home ledger stays free.',
     proPrice: '₹149 / month or ₹999 / year',
     demoBanner: 'Demo trip — upgrade for unlimited travel.',
     historyPro: 'Trip history is a Pro feature. Your demo trip still saves.',
     sosPro: 'Emergency assist is included in Pro.',
     expenseCap: 'Demo includes 8 trip expenses. Unlock Pro to keep logging.',
-    secondTrip: 'The free demo is one trip. Unlock Pro for the next one.',
+    secondTrip: 'The free demo is one trip. Unlock Pro to run two at once.',
     appearance: 'Appearance',
     security: 'Security',
     backup: 'Backup',
@@ -444,6 +444,41 @@ const COPY = {
     withTip: 'With tip',
     sendFeedback: 'Send feedback',
     privacyPolicy: 'Privacy policy',
+    tripTab: 'Trip',
+    spendTab: 'Spend',
+    switchTrip: 'Switch trip',
+    anotherTrip: 'Another trip',
+    editTrip: 'Edit trip',
+    saveTrip: 'Save trip',
+    changeDestination: 'Change destination',
+    chooseDestination: 'Choose destination',
+    liveChip: 'Live',
+    plannedChip: 'Planned',
+    endedChip: 'Ended',
+    afterBills: 'After bills',
+    billsDueMonth: '{n} still due this month',
+    safeAfterBills: 'Safe after bills',
+    goalSetAside: 'Goals this month',
+    dueThisMonth: 'Due this month',
+    moveLeftover: 'Move leftover',
+    fromBudget: 'From',
+    toBudget: 'To',
+    netWorth: 'Net worth',
+    calendar: 'Calendar',
+    assets: 'Assets',
+    liabilities: 'Liabilities',
+    addAsset: 'Add asset',
+    addLiability: 'Add liability',
+    holdingName: 'Name',
+    noSpendDay: 'Nothing logged this day',
+    dueOnDay: 'Due',
+    leftoverDay: 'Leftover / day',
+    overBudget: 'Over budget',
+    concurrentTrips: 'Two trips at once',
+    concurrentTripsSub: 'Keep both live and switch. Pro.',
+    walletsInNet: 'Wallets',
+    extraHoldings: 'Other',
+    nLiveTrips: '{n} live trips',
   },
   hi: {
     hi: 'नमस्ते, मैं Zenith हूँ।',
@@ -608,7 +643,7 @@ const COPY = {
     importJson: 'JSON रीस्टोर',
     zenithPro: 'Zenith Pro',
     travel: 'ट्रैवल',
-    travelDemo: 'फ्री डेमो: एक ट्रिप, 8 खर्च। Pro में अनलिमिटेड ट्रिप, इतिहास, SOS और कस्टम पैकिंग।',
+    travelDemo: 'फ्री डेमो: एक ट्रिप, 8 खर्च। Pro में दो लाइव ट्रिप, इतिहास, SOS और कस्टम पैकिंग।',
     upgrade: 'अपग्रेड',
     subscribe: 'Pro खोलें',
     restore: 'खरीद वापस लाएँ',
@@ -655,13 +690,13 @@ const COPY = {
     tight: 'तंग',
     startTracking: 'स्कोर के लिए कुछ खर्च जोड़ें।',
     lockHint: 'PIN इसी डिवाइस पर रहता है। फ़ोन हो तो पासकी भी।',
-    proBlurb: 'अनलिमिटेड ट्रिप, पूरा इतिहास, SOS। घर की बही फ्री रहती है।',
+    proBlurb: 'दो लाइव ट्रिप साथ-साथ, पूरा इतिहास, SOS। घर की बही फ्री रहती है।',
     proPrice: '₹149 / महीना या ₹999 / साल',
     demoBanner: 'डेमो ट्रिप — अनलिमिटेड ट्रैवल के लिए अपग्रेड करें।',
     historyPro: 'ट्रिप इतिहास Pro में है। डेमो ट्रिप फिर भी सेव होती है।',
     sosPro: 'इमरजेंसी असिस्ट Pro में है।',
     expenseCap: 'डेमो में 8 ट्रिप खर्च। आगे के लिए Pro खोलें।',
-    secondTrip: 'फ्री डेमो एक ट्रिप है। अगली के लिए Pro खोलें।',
+    secondTrip: 'फ्री डेमो एक ट्रिप है। दो साथ चलाने के लिए Pro खोलें।',
     appearance: 'दिखावट',
     security: 'सुरक्षा',
     backup: 'बैकअप',
@@ -724,6 +759,41 @@ const COPY = {
     withTip: 'टिप सहित',
     sendFeedback: 'फ़ीडबैक भेजें',
     privacyPolicy: 'गोपनीयता नीति',
+    tripTab: 'ट्रिप',
+    spendTab: 'खर्च',
+    switchTrip: 'ट्रिप बदलें',
+    anotherTrip: 'दूसरी ट्रिप',
+    editTrip: 'ट्रिप बदलें',
+    saveTrip: 'ट्रिप सेव',
+    changeDestination: 'देश बदलें',
+    chooseDestination: 'देश चुनें',
+    liveChip: 'लाइव',
+    plannedChip: 'प्लान',
+    endedChip: 'खत्म',
+    afterBills: 'बिल के बाद',
+    billsDueMonth: 'इस महीने अभी {n} बाकी',
+    safeAfterBills: 'बिल के बाद सुरक्षित',
+    goalSetAside: 'इस महीने लक्ष्य',
+    dueThisMonth: 'इस महीने देय',
+    moveLeftover: 'बाकी शिफ्ट करें',
+    fromBudget: 'से',
+    toBudget: 'में',
+    netWorth: 'नेट वर्थ',
+    calendar: 'कैलेंडर',
+    assets: 'संपत्ति',
+    liabilities: 'देनदारी',
+    addAsset: 'संपत्ति जोड़ें',
+    addLiability: 'देनदारी जोड़ें',
+    holdingName: 'नाम',
+    noSpendDay: 'इस दिन कुछ नहीं',
+    dueOnDay: 'देय',
+    leftoverDay: 'रोज़ बचा',
+    overBudget: 'बजट से ज़्यादा',
+    concurrentTrips: 'दो ट्रिप साथ',
+    concurrentTripsSub: 'दोनों लाइव रखें और स्विच करें। Pro।',
+    walletsInNet: 'वॉलेट',
+    extraHoldings: 'और',
+    nLiveTrips: '{n} लाइव ट्रिप',
   },
 };
 
@@ -873,6 +943,19 @@ function normalizeSettings(raw) {
   };
 }
 
+function normalizeHolding(row, i) {
+  const h = row && typeof row === 'object' ? row : {};
+  const kind = h.kind === 'liability' ? 'liability' : 'asset';
+  return {
+    id: h.id || ('hold-' + i + '-' + Date.now().toString(36)),
+    name: String(h.name || '').trim() || (kind === 'liability' ? 'Liability' : 'Asset'),
+    kind: kind,
+    amount: Math.max(0, Number(h.amount) || 0),
+    icon: h.icon || (kind === 'liability' ? '💳' : '🏦'),
+    color: h.color || (kind === 'liability' ? '#EF4444' : GOAL_COLORS[i % GOAL_COLORS.length]),
+  };
+}
+
 function normalizeGoal(row, i) {
   const g = row && typeof row === 'object' ? row : {};
   return {
@@ -967,6 +1050,7 @@ function createInitialStore() {
     recurring: [],
     trips: [],
     activeTripId: null,
+    holdings: [],
     settings: defaultSettings(),
   };
 }
@@ -995,6 +1079,7 @@ function normalizeState(parsed) {
     recurring: Array.isArray(src.recurring) ? src.recurring.map(normalizeRecurring) : [],
     trips: trips,
     activeTripId: activeTripId,
+    holdings: Array.isArray(src.holdings) ? src.holdings.map(normalizeHolding) : [],
     settings: normalizeSettings(src.settings),
   };
 }
@@ -1107,6 +1192,139 @@ function leftToSpend(store, mk) {
   if (budget > 0) return budget - spent;
   const income = (Number(store.monthlyIncome) || 0) + monthIncomeTotal(store, mk);
   return (Number(store.openingCash) || 0) + income - spent;
+}
+
+function upcomingBillsThisMonth(store, mk, today) {
+  const key = mk || monthKey();
+  const day = today || todayISO();
+  return (store.recurring || [])
+    .filter((r) => r.active !== false && r.type !== 'income')
+    .filter((r) => r.nextOn && monthKey(r.nextOn + 'T12:00:00') === key && r.nextOn >= day)
+    .reduce((s, r) => s + (Number(r.amount) || 0), 0);
+}
+
+function dueSoonRecurring(store, today, withinDays) {
+  const day = today || todayISO();
+  const end = addDaysISO(day, withinDays == null ? 7 : withinDays);
+  return (store.recurring || [])
+    .filter((r) => r.active !== false && r.type !== 'income')
+    .filter((r) => r.nextOn && r.nextOn >= day && r.nextOn <= end)
+    .sort((a, b) => String(a.nextOn).localeCompare(String(b.nextOn)));
+}
+
+function monthsUntilISO(fromISO, toISO) {
+  if (!toISO) return 0;
+  const a = new Date((fromISO || todayISO()) + 'T12:00:00');
+  const b = new Date(toISO + 'T12:00:00');
+  if (isNaN(a.getTime()) || isNaN(b.getTime()) || b <= a) return 1;
+  const months = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+  return Math.max(1, months || 1);
+}
+
+function monthlyGoalNeed(store, today) {
+  const day = today || todayISO();
+  return (store.goals || []).reduce((sum, g) => {
+    const remaining = Math.max(0, (Number(g.target) || 0) - (Number(g.saved) || 0));
+    if (remaining <= 0 || !g.due) return sum;
+    return sum + remaining / monthsUntilISO(day, g.due);
+  }, 0);
+}
+
+function leftoverAfterBills(store, mk, today) {
+  return leftToSpend(store, mk) - upcomingBillsThisMonth(store, mk, today);
+}
+
+function leftoverAfterCommitments(store, mk, today) {
+  return leftoverAfterBills(store, mk, today) - monthlyGoalNeed(store, today);
+}
+
+function applyBudgetMove(store, fromId, toId, amount, mk) {
+  const key = mk || monthKey();
+  const fromLeft = Math.max(0, budgetLimit(store, fromId, key) - spentInCategory(store, fromId, key));
+  const move = Math.min(Math.max(0, Number(amount) || 0), fromLeft);
+  if (!fromId || !toId || fromId === toId || move <= 0) return store;
+  const upsert = (budgets, catId, delta) => {
+    const next = (budgets || []).slice();
+    const i = next.findIndex((b) => b.categoryId === catId && !b.accountId && b.monthKey === key);
+    if (i >= 0) next[i] = { ...next[i], limit: Math.max(0, (Number(next[i].limit) || 0) + delta) };
+    else next.push({ categoryId: catId, monthKey: key, limit: Math.max(0, delta) });
+    return next;
+  };
+  let budgets = store.budgets || [];
+  budgets = upsert(budgets, fromId, -move);
+  budgets = upsert(budgets, toId, move);
+  return { ...store, budgets: budgets };
+}
+
+function accountRunningBalance(store, account) {
+  if (!account) return 0;
+  let opening = Number(account.opening);
+  if (!Number.isFinite(opening) || (opening === 0 && account.id === 'cash')) {
+    opening = account.id === 'cash' ? (Number(store.openingCash) || 0) : (Number(account.opening) || 0);
+  }
+  let spent = 0;
+  let income = 0;
+  (store.transactions || []).forEach((tx) => {
+    if (tx.accountId !== account.id) return;
+    const amt = Number(tx.amount) || 0;
+    if (tx.type === 'income') income += amt;
+    else spent += amt;
+  });
+  return opening + income - spent;
+}
+
+function netWorthSnapshot(store) {
+  const wallets = (store.accounts || []).map((a) => ({
+    id: a.id,
+    name: a.name,
+    nameHi: a.nameHi,
+    kind: 'asset',
+    source: 'wallet',
+    amount: accountRunningBalance(store, a),
+    icon: a.id === 'cash' ? '💵' : a.id === 'card' ? '💳' : '🏦',
+    color: a.id === 'card' ? '#0F766E' : (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB'),
+  }));
+  const extras = (store.holdings || []).map((h) => ({ ...h, source: 'holding' }));
+  const assets = wallets.concat(extras.filter((h) => h.kind !== 'liability'));
+  const liabilities = extras.filter((h) => h.kind === 'liability');
+  const assetTotal = assets.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+  const liabTotal = liabilities.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+  return {
+    wallets: wallets,
+    extras: extras,
+    assets: assets,
+    liabilities: liabilities,
+    assetTotal: assetTotal,
+    liabTotal: liabTotal,
+    net: assetTotal - liabTotal,
+  };
+}
+
+function cashflowMonth(store, mk) {
+  const key = mk || monthKey();
+  const parts = key.split('-').map(Number);
+  const year = parts[0];
+  const month = parts[1];
+  const daysIn = new Date(year, month, 0).getDate();
+  const firstDow = new Date(year, month - 1, 1).getDay();
+  const byDay = {};
+  monthTxns(store, key).forEach((tx) => {
+    const d = Number(String(tx.date || '').slice(8, 10));
+    if (!d) return;
+    if (!byDay[d]) byDay[d] = { spend: 0, income: 0, txns: [], dues: [] };
+    if (tx.type === 'income') byDay[d].income += Number(tx.amount) || 0;
+    else byDay[d].spend += Number(tx.amount) || 0;
+    byDay[d].txns.push(tx);
+  });
+  (store.recurring || []).filter((r) => r.active !== false && r.nextOn && monthKey(r.nextOn + 'T12:00:00') === key).forEach((r) => {
+    const d = Number(String(r.nextOn).slice(8, 10));
+    if (!d) return;
+    if (!byDay[d]) byDay[d] = { spend: 0, income: 0, txns: [], dues: [] };
+    byDay[d].dues.push(r);
+  });
+  let spendTotal = 0;
+  Object.keys(byDay).forEach((k) => { spendTotal += byDay[k].spend; });
+  return { key: key, year: year, month: month, daysIn: daysIn, firstDow: firstDow, byDay: byDay, spendTotal: spendTotal };
 }
 
 function buildAlerts(store) {
@@ -1286,16 +1504,37 @@ function travelTripCount(store) {
   return (store.trips || []).length;
 }
 
+function liveTrips(store) {
+  return (store.trips || []).filter((t) => t.status === 'active');
+}
+
 function activeTrip(store) {
   const id = store && store.activeTripId;
   if (!id) return null;
-  return (store.trips || []).find((t) => t.id === id && t.status === 'active') || null;
+  const pointed = (store.trips || []).find((t) => t.id === id && t.status === 'active');
+  if (pointed) return pointed;
+  return liveTrips(store)[0] || null;
 }
 
 function canStartTrip(store, loc) {
   if (zenithIsPro(store, loc)) return true;
-  if (activeTrip(store)) return false;
+  if (liveTrips(store).length > 0) return false;
   return travelTripCount(store) < TRAVEL_FREE_MAX_TRIPS;
+}
+
+function tripPhase(trip, today) {
+  if (!trip || trip.status === 'ended') return 'ended';
+  const day = today || todayISO();
+  if (trip.startDate && trip.startDate > day) return 'planned';
+  return 'live';
+}
+
+function tripBudgetLeft(trip) {
+  return (Number(trip && trip.budgetINR) || 0) - tripSpentINR(trip);
+}
+
+function tripLeftoverPerDay(trip, today) {
+  return tripBudgetLeft(trip) / tripDaysLeft(trip, today);
 }
 
 function canAddTripExpense(store, trip, loc) {
@@ -1364,6 +1603,20 @@ Object.assign(window, {
   spentInCategory,
   categorySpendRows,
   leftToSpend,
+  leftoverAfterBills,
+  leftoverAfterCommitments,
+  upcomingBillsThisMonth,
+  dueSoonRecurring,
+  monthlyGoalNeed,
+  applyBudgetMove,
+  accountRunningBalance,
+  netWorthSnapshot,
+  cashflowMonth,
+  normalizeHolding,
+  liveTrips,
+  tripPhase,
+  tripBudgetLeft,
+  tripLeftoverPerDay,
   buildAlerts,
   newTxnId,
   accountBudgetLimit,
