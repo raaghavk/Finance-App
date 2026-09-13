@@ -1,0 +1,20 @@
+{
+  "note": "Do not submit under the exact name Zenith or Zenit. Those collide with live Finance apps. Pick a unique public name first, then paste this into App Store Connect.",
+  "avoidNames": ["Zenith", "Zenit"],
+  "suggestedPublicNames": [
+    { "name": "Baakhi", "subtitle": "INR left to spend", "domain": "baakhi.app" },
+    { "name": "Left to Spend", "subtitle": "INR budget on this phone", "domain": "lefttospend.app" },
+    { "name": "Rupee Book", "subtitle": "Local expense tracker", "domain": "rupeebook.app" }
+  ],
+  "category": "Finance",
+  "ageRating": "4+",
+  "bundleId": "app.zenith.finance",
+  "privacyUrl": "https://zenith-raaghavks-projects.vercel.app/privacy.html",
+  "supportUrl": "https://zenith-raaghavks-projects.vercel.app/support.html",
+  "marketingUrl": "https://zenith-raaghavks-projects.vercel.app/invite.html",
+  "description": "INR personal finance that stays on this device. See what is left to spend this month, log cash and UPI-style spends, set category budgets, track recurring bills, savings goals, and a travel trip in local currency.\n\nNo bank login. No SMS scrape. Export CSV or a JSON backup anytime.\n\nTravel Mode tracks a trip budget separately from home spend. One demo trip is free.\n\nHindi and English.",
+  "keywords": "INR,rupee,budget,expense,travel,India,Hindi,cash,UPI",
+  "promotionalText": "Your leftover rupees, on this phone.",
+  "whatsNew": "First TestFlight: local ledger, travel demo, Hindi + English.",
+  "reviewNotes": "All data is localStorage on device. Create an expense with + then Manual. Travel is on Home (Travel card) or Plan. Unlock Pro is a local flag until IAP ships; it is not required to review the free demo trip."
+}

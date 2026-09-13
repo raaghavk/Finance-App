@@ -300,6 +300,18 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
           showChevron
         />
         <Row
+          label={t(locale, 'sendFeedback')}
+          sub={locale === 'hi' ? 'ईमेल से बताएँ क्या टूटा' : 'Email what broke or what to add'}
+          onClick={() => { window.location.href = 'support.html'; }}
+          showChevron
+        />
+        <Row
+          label={t(locale, 'privacyPolicy')}
+          sub={locale === 'hi' ? 'डेटा इस फ़ोन पर रहता है' : 'Ledger stays on this device'}
+          onClick={() => { window.location.href = 'privacy.html'; }}
+          showChevron
+        />
+        <Row
           label={locale === 'hi' ? 'सारा डेटा मिटाएँ' : 'Clear all data'}
           danger
           sub={locale === 'hi' ? 'ऑनबोर्डिंग फिर से शुरू होगी' : 'Starts onboarding again'}

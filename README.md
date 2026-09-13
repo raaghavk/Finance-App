@@ -6,6 +6,8 @@ Personal finance app. INR. Cool blue. Your expenses and account balances are sav
 
 Use this link only: **https://zenith-raaghavks-projects.vercel.app**
 
+Share with testers: **https://zenith-raaghavks-projects.vercel.app/invite.html** (install steps + feedback). Privacy: `/privacy.html`. Support: `/support.html`.
+
 Safari will not install from `http://localhost`. After it opens:
 
 1. Tap **Share**

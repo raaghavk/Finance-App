@@ -83,4 +83,16 @@ assert.strictEqual(bals.find((r) => r.id === 'bank').balance, 500);
 
 assert.ok(fs.existsSync(path.join(root, 'vercel.json')));
 
+const privacy = fs.readFileSync(path.join(root, 'privacy.html'), 'utf8');
+assert.match(privacy, /zenith_v1_store/);
+assert.match(privacy, /localStorage/);
+assert.match(privacy, /No bank login/);
+const invite = fs.readFileSync(path.join(root, 'invite.html'), 'utf8');
+assert.match(invite, /Add to Home Screen/);
+assert.match(invite, /mailto:raaghavkanodia@gmail.com/);
+assert.match(fs.readFileSync(path.join(root, 'support.html'), 'utf8'), /mailto:raaghavkanodia@gmail.com/);
+const listing = JSON.parse(fs.readFileSync(path.join(root, 'store/app-store-listing.json'), 'utf8'));
+assert.ok(listing.avoidNames.includes('Zenith'));
+assert.ok(listing.privacyUrl.includes('privacy.html'));
+
 console.log('theme + PWA + no fake phone + local store ok');

@@ -442,6 +442,8 @@ const COPY = {
     ckStay: 'Stay / tickets',
     ckMed: 'Medicines',
     withTip: 'With tip',
+    sendFeedback: 'Send feedback',
+    privacyPolicy: 'Privacy policy',
   },
   hi: {
     hi: 'नमस्ते, मैं Zenith हूँ।',
@@ -720,6 +722,8 @@ const COPY = {
     ckStay: 'स्टे / टिकट',
     ckMed: 'दवाई',
     withTip: 'टिप सहित',
+    sendFeedback: 'फ़ीडबैक भेजें',
+    privacyPolicy: 'गोपनीयता नीति',
   },
 };
 

@@ -187,6 +187,8 @@ assert.match(profile, /appLock/);
 assert.match(profile, /backupJson/);
 assert.match(profile, /zenithPro/);
 assert.doesNotMatch(profile, /travelLater/);
+assert.match(profile, /sendFeedback/);
+assert.match(profile, /privacy\.html/);
 
 const plan = fs.readFileSync(path.join(root, 'components/Plan.jsx'), 'utf8');
 assert.match(plan, /insights/);

@@ -54,7 +54,9 @@ assert.match(app, /reorderAccounts/);
 
 assert.match(readme, /zenith-raaghavks-projects\.vercel\.app/);
 assert.doesNotMatch(readme, /ivory-one/);
-assert.strictEqual((readme.match(/https:\/\/zenith[^\s)]+/g) || []).length, 1);
+const zenithUrls = readme.match(/https:\/\/zenith[^\s)]+/g) || [];
+assert.ok(zenithUrls.length >= 1);
+zenithUrls.forEach((u) => assert.match(u, /zenith-raaghavks-projects\.vercel\.app/));
 
 const ctx = {
   Date, JSON, Math, Number, String, Object, Array, parseFloat, parseInt, isNaN,
