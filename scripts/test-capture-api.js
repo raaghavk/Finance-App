@@ -25,11 +25,15 @@ async function call(handler, req) {
 }
 
 async function main() {
+  delete process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_ANON_KEY;
+  delete process.env.SUPABASE_PUBLISHABLE_KEY;
   const status = await call(handleStatus, { method: 'GET' });
   assert.strictEqual(status.res.statusCode, 200);
   assert.strictEqual(status.json.notion, false);
   assert.strictEqual(status.json.sarvam, false);
   assert.strictEqual(status.json.vision, false);
+  assert.strictEqual(status.json.supabase, false);
 
   const voice = await call(handleVoice, { method: 'POST' });
   assert.strictEqual(voice.res.statusCode, 501);

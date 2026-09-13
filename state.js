@@ -1,5 +1,6 @@
 // state.js — Zenith v1 local-first store, categories, formatters, copy
 
+const APP_NAME = 'Liora';
 const ZENITH_STORE_KEY = 'zenith_v1_store';
 
 const ZENITH = {
@@ -18,7 +19,8 @@ const ZENITH = {
 
 const ZENITH_PRO_PRICE_MO = 149;
 const ZENITH_PRO_PRICE_YR = 999;
-const TRAVEL_FREE_MAX_TRIPS = 1;
+const TRAVEL_FREE_MAX_LIVE_TRIPS = 1;
+const TRAVEL_FREE_MAX_TRIPS = TRAVEL_FREE_MAX_LIVE_TRIPS;
 const TRAVEL_FREE_MAX_EXPENSES = 8;
 
 const GOAL_COLORS = ['#2563EB', '#7C3AED', '#0F766E', '#C2410C', '#BE185D', '#0369A1'];
@@ -166,7 +168,7 @@ const DEFAULT_ACCOUNTS = [
 
 const COPY = {
   en: {
-    hi: "Hi, I'm Zenith.",
+    hi: "Hi, I'm " + APP_NAME + ".",
     callYou: 'What should I call you?',
     yourName: 'Your name',
     continue: 'Continue',
@@ -178,10 +180,10 @@ const COPY = {
     skipCash: 'Skip with ₹0',
     setBalance: 'Set opening cash',
     privacyTitle: 'Your data stays with you.',
-    noCloud: 'No Cloud Sync',
-    noCloudDesc: 'The ledger lives on this device. Optional voice and receipt OCR use Sarvam and Cloud Vision when those keys are set.',
+    noCloud: 'Local first',
+    noCloudDesc: 'The ledger lives on this device. Optional account backup uses our database when you sign in on You.',
     encrypt: 'Local storage',
-    encryptDesc: 'Your ledger stays in this browser. We never see it.',
+    encryptDesc: 'This phone keeps a copy. Sign in on You to back it up to your account.',
     noHarvest: 'Zero Data Harvest',
     noHarvestDesc: "We don't collect your name, spend, or contacts.",
     begin: "I understand — let's begin",
@@ -239,7 +241,7 @@ const COPY = {
     later: 'Later',
     travelLater: 'Travel Mode is coming later.',
     language: 'Language',
-    localOnly: 'Ledger stays in this browser and the Home Screen app. Notion sync is optional and off by default.',
+    localOnly: 'Ledger stays on this device. Sign in on You to back it up to the cloud for other phones.',
     alerts: 'Alerts',
     allCaughtUp: 'All caught up',
     allCaughtUpSub: 'Budget warnings will show here when a category hits 90%.',
@@ -326,9 +328,9 @@ const COPY = {
     unlock: 'Unlock',
     backupJson: 'Backup JSON',
     importJson: 'Restore JSON',
-    zenithPro: 'Zenith Pro',
+    zenithPro: APP_NAME + ' Pro',
     travel: 'Travel',
-    travelDemo: 'Free demo: one trip, 8 expenses. Pro unlocks unlimited trips, history, SOS, and custom packing items.',
+    travelDemo: 'Free: one live trip at a time, 8 expenses. End it and start the next. Pro unlocks overlapping trips, history, SOS, and custom packing.',
     upgrade: 'Upgrade',
     subscribe: 'Unlock Pro',
     restore: 'Restore purchases',
@@ -353,7 +355,7 @@ const COPY = {
     exportJson: 'Download a full copy of this ledger.',
     importOk: 'Ledger restored.',
     demoTrip: 'Demo trip',
-    proUnlock: 'Zenith Pro',
+    proUnlock: APP_NAME + ' Pro',
     travelHistory: 'Trip history',
     addTripExpense: 'Add trip expense',
     startTrip: 'Start a trip',
@@ -375,13 +377,13 @@ const COPY = {
     tight: 'Tight',
     startTracking: 'Add a few expenses to score your month.',
     lockHint: 'PIN stays on this device. Optional passkey if the phone supports it.',
-    proBlurb: 'Unlimited trips, full history, and emergency assist. Home ledger stays free.',
+    proBlurb: 'Overlapping live trips, full history, and emergency assist. Home ledger stays free.',
     proPrice: '₹149 / month or ₹999 / year',
-    demoBanner: 'Demo trip — upgrade for unlimited travel.',
-    historyPro: 'Trip history is a Pro feature. Your demo trip still saves.',
+    demoBanner: 'One live trip on the free plan — end it to start another, or upgrade to run two at once.',
+    historyPro: 'Trip history is a Pro feature. Your trips still save, and you can start the next one after you end this one.',
     sosPro: 'Emergency assist is included in Pro.',
     expenseCap: 'Demo includes 8 trip expenses. Unlock Pro to keep logging.',
-    secondTrip: 'The free demo is one trip. Unlock Pro for the next one.',
+    secondTrip: 'Free includes one live trip at a time. End this one to start the next, or unlock Pro to run two at once.',
     appearance: 'Appearance',
     security: 'Security',
     backup: 'Backup',
@@ -389,7 +391,10 @@ const COPY = {
     turnOffLock: 'Turn off lock',
     enterPin: 'Enter PIN',
     pinDigits: '4–8 digits',
-    jsonInvalid: 'That file is not a Zenith backup.',
+    jsonInvalid: 'That file is not a ' + APP_NAME + ' backup.',
+    enterName: 'Enter your name.',
+    enterAmount: 'Enter an amount.',
+    sending: 'Sending…',
     recurringName: 'Bill name',
     nextOn: 'Next on',
     cadence: 'Cadence',
@@ -444,9 +449,83 @@ const COPY = {
     withTip: 'With tip',
     sendFeedback: 'Send feedback',
     privacyPolicy: 'Privacy policy',
+    tripTab: 'Trip',
+    spendTab: 'Spend',
+    switchTrip: 'Switch trip',
+    anotherTrip: 'Another trip',
+    editTrip: 'Edit trip',
+    saveTrip: 'Save trip',
+    changeDestination: 'Change destination',
+    chooseDestination: 'Choose destination',
+    liveChip: 'Live',
+    plannedChip: 'Planned',
+    endedChip: 'Ended',
+    afterBills: 'After bills',
+    billsDueMonth: '{n} still due this month',
+    safeAfterBills: 'Safe after bills',
+    goalSetAside: 'Goals this month',
+    dueThisMonth: 'Due this month',
+    moveLeftover: 'Move leftover',
+    fromBudget: 'From',
+    toBudget: 'To',
+    netWorth: 'Net worth',
+    calendar: 'Calendar',
+    assets: 'Assets',
+    liabilities: 'Liabilities',
+    addAsset: 'Add asset',
+    addLiability: 'Add liability',
+    holdingName: 'Name',
+    noSpendDay: 'Nothing logged this day',
+    dueOnDay: 'Due',
+    leftoverDay: 'Leftover / day',
+    overBudget: 'Over budget',
+    concurrentTrips: 'Two trips at once',
+    concurrentTripsSub: 'Keep both live and switch. Pro.',
+    walletsInNet: 'Wallets',
+    extraHoldings: 'Other',
+    nLiveTrips: '{n} live trips',
+    yourTrips: 'Your trips',
+    pastTrips: 'Past trips',
+    allTrips: 'All trips',
+    openTrip: 'Open',
+    cloudAccount: 'Cloud backup',
+    cloudSignIn: 'Sign in',
+    cloudSignUp: 'Create account',
+    cloudEmail: 'Email',
+    cloudPassword: 'Password',
+    cloudPasswordHint: 'At least 6 characters. Same login on every device.',
+    cloudSynced: 'Saved in the cloud',
+    cloudSyncing: 'Saving…',
+    cloudSignedOut: 'Sign in to keep this ledger if you switch phones.',
+    cloudOff: 'Cloud backup is off until the ' + APP_NAME + ' database is connected.',
+    cloudNeedEmail: 'Enter email and password.',
+    signOut: 'Sign out',
+    cloudError: 'Could not reach the cloud. Your ledger is still on this phone.',
+    cloudConfirmEmail: 'Check your email to confirm, then sign in.',
+    people: 'People',
+    theyOweYou: 'They owe you',
+    youOweThem: 'You owe',
+    addPerson: 'Add person',
+    personName: 'Name',
+    theyOwe: 'They owe me',
+    iOwe: 'I owe them',
+    settleUp: 'Settle',
+    equalSplit: 'Split equally',
+    youPaid: 'You paid',
+    thisWeek: 'This week',
+    vsLastWeek: 'vs last week',
+    repeatLast: 'Repeat last',
+    splitBill: 'Split',
+    noPeopleYet: 'Add a friend to track who owes whom.',
+    settledOk: 'Settled',
+    openIous: 'Open',
+    subscriptionsBurn: 'Subscriptions / mo',
+    incomeIn: 'In this month',
+    quickExpense: 'Expense',
+    quickIncome: 'Income',
   },
   hi: {
-    hi: 'नमस्ते, मैं Zenith हूँ।',
+    hi: 'नमस्ते, मैं ' + APP_NAME + ' हूँ।',
     callYou: 'आपको क्या कहूँ?',
     yourName: 'आपका नाम',
     continue: 'आगे बढ़ें',
@@ -458,10 +537,10 @@ const COPY = {
     skipCash: '₹0 से छोड़ें',
     setBalance: 'नकदी सेट करें',
     privacyTitle: 'आपका डेटा आपके पास रहता है।',
-    noCloud: 'कोई क्लाउड सिंक नहीं',
-    noCloudDesc: 'बही इस डिवाइस पर है। Voice और रसीद OCR तभी Sarvam/Vision पर जाते हैं जब कुंजी सेट हो।',
+    noCloud: 'पहले इस फ़ोन पर',
+    noCloudDesc: 'बही इस डिवाइस पर है। You में साइन इन करें तो वैकल्पिक क्लाउड बैकअप।',
     encrypt: 'लोकल स्टोरेज',
-    encryptDesc: 'आपकी बही इसी ब्राउज़र में रहती है।',
+    encryptDesc: 'कॉपी इसी फ़ोन पर रहती है। You में साइन इन कर खाते में बैकअप लें।',
     noHarvest: 'कोई डेटा कलेक्ट नहीं',
     noHarvestDesc: 'हम आपका नाम या खर्च नहीं देखते।',
     begin: 'समझ गया — शुरू करें',
@@ -519,7 +598,7 @@ const COPY = {
     later: 'बाद में',
     travelLater: 'ट्रैवल मोड बाद में आएगा।',
     language: 'भाषा',
-    localOnly: 'बही इस ब्राउज़र और होम स्क्रीन ऐप में रहती है। Notion सिंक वैकल्पिक है और डिफ़ॉल्ट बंद है।',
+    localOnly: 'बही इस डिवाइस पर रहती है। दूसरे फ़ोन के लिए You में साइन इन कर क्लाउड बैकअप लें।',
     alerts: 'अलर्ट',
     allCaughtUp: 'सब ठीक है',
     allCaughtUpSub: 'कोई श्रेणी 90% पर पहुँचे तो चेतावनी यहाँ दिखेगी।',
@@ -606,9 +685,9 @@ const COPY = {
     unlock: 'अनलॉक',
     backupJson: 'JSON बैकअप',
     importJson: 'JSON रीस्टोर',
-    zenithPro: 'Zenith Pro',
+    zenithPro: APP_NAME + ' Pro',
     travel: 'ट्रैवल',
-    travelDemo: 'फ्री डेमो: एक ट्रिप, 8 खर्च। Pro में अनलिमिटेड ट्रिप, इतिहास, SOS और कस्टम पैकिंग।',
+    travelDemo: 'फ्री: एक समय पर एक लाइव ट्रिप, 8 खर्च। खत्म कर अगली शुरू करें। Pro में दो साथ, इतिहास, SOS और कस्टम पैकिंग।',
     upgrade: 'अपग्रेड',
     subscribe: 'Pro खोलें',
     restore: 'खरीद वापस लाएँ',
@@ -633,7 +712,7 @@ const COPY = {
     exportJson: 'पूरी बही की कॉपी डाउनलोड करें।',
     importOk: 'बही रीस्टोर हो गई।',
     demoTrip: 'डेमो ट्रिप',
-    proUnlock: 'Zenith Pro',
+    proUnlock: APP_NAME + ' Pro',
     travelHistory: 'ट्रिप इतिहास',
     addTripExpense: 'ट्रिप खर्च जोड़ें',
     startTrip: 'ट्रिप शुरू करें',
@@ -655,13 +734,13 @@ const COPY = {
     tight: 'तंग',
     startTracking: 'स्कोर के लिए कुछ खर्च जोड़ें।',
     lockHint: 'PIN इसी डिवाइस पर रहता है। फ़ोन हो तो पासकी भी।',
-    proBlurb: 'अनलिमिटेड ट्रिप, पूरा इतिहास, SOS। घर की बही फ्री रहती है।',
+    proBlurb: 'दो लाइव ट्रिप साथ-साथ, पूरा इतिहास, SOS। घर की बही फ्री रहती है।',
     proPrice: '₹149 / महीना या ₹999 / साल',
-    demoBanner: 'डेमो ट्रिप — अनलिमिटेड ट्रैवल के लिए अपग्रेड करें।',
-    historyPro: 'ट्रिप इतिहास Pro में है। डेमो ट्रिप फिर भी सेव होती है।',
+    demoBanner: 'फ्री में एक लाइव ट्रिप — खत्म कर अगली शुरू करें, या दो साथ के लिए अपग्रेड करें।',
+    historyPro: 'ट्रिप इतिहास Pro में है। ट्रिप सेव रहती है, और इसे खत्म कर अगली शुरू कर सकते हैं।',
     sosPro: 'इमरजेंसी असिस्ट Pro में है।',
     expenseCap: 'डेमो में 8 ट्रिप खर्च। आगे के लिए Pro खोलें।',
-    secondTrip: 'फ्री डेमो एक ट्रिप है। अगली के लिए Pro खोलें।',
+    secondTrip: 'फ्री में एक समय पर एक लाइव ट्रिप। इसे खत्म कर अगली शुरू करें, या दो साथ के लिए Pro खोलें।',
     appearance: 'दिखावट',
     security: 'सुरक्षा',
     backup: 'बैकअप',
@@ -669,7 +748,10 @@ const COPY = {
     turnOffLock: 'लॉक बंद करें',
     enterPin: 'PIN डालें',
     pinDigits: '4–8 अंक',
-    jsonInvalid: 'यह Zenith बैकअप नहीं है।',
+    jsonInvalid: 'यह ' + APP_NAME + ' बैकअप नहीं है।',
+    enterName: 'अपना नाम लिखें।',
+    enterAmount: 'राशि लिखें।',
+    sending: 'भेजा जा रहा है…',
     recurringName: 'बिल का नाम',
     nextOn: 'अगली तारीख',
     cadence: 'चक्र',
@@ -724,6 +806,80 @@ const COPY = {
     withTip: 'टिप सहित',
     sendFeedback: 'फ़ीडबैक भेजें',
     privacyPolicy: 'गोपनीयता नीति',
+    tripTab: 'ट्रिप',
+    spendTab: 'खर्च',
+    switchTrip: 'ट्रिप बदलें',
+    anotherTrip: 'दूसरी ट्रिप',
+    editTrip: 'ट्रिप बदलें',
+    saveTrip: 'ट्रिप सेव',
+    changeDestination: 'देश बदलें',
+    chooseDestination: 'देश चुनें',
+    liveChip: 'लाइव',
+    plannedChip: 'प्लान',
+    endedChip: 'खत्म',
+    afterBills: 'बिल के बाद',
+    billsDueMonth: 'इस महीने अभी {n} बाकी',
+    safeAfterBills: 'बिल के बाद सुरक्षित',
+    goalSetAside: 'इस महीने लक्ष्य',
+    dueThisMonth: 'इस महीने देय',
+    moveLeftover: 'बाकी शिफ्ट करें',
+    fromBudget: 'से',
+    toBudget: 'में',
+    netWorth: 'नेट वर्थ',
+    calendar: 'कैलेंडर',
+    assets: 'संपत्ति',
+    liabilities: 'देनदारी',
+    addAsset: 'संपत्ति जोड़ें',
+    addLiability: 'देनदारी जोड़ें',
+    holdingName: 'नाम',
+    noSpendDay: 'इस दिन कुछ नहीं',
+    dueOnDay: 'देय',
+    leftoverDay: 'रोज़ बचा',
+    overBudget: 'बजट से ज़्यादा',
+    concurrentTrips: 'दो ट्रिप साथ',
+    concurrentTripsSub: 'दोनों लाइव रखें और स्विच करें। Pro।',
+    walletsInNet: 'वॉलेट',
+    extraHoldings: 'और',
+    nLiveTrips: '{n} लाइव ट्रिप',
+    yourTrips: 'आपकी ट्रिप',
+    pastTrips: 'पिछली ट्रिप',
+    allTrips: 'सभी ट्रिप',
+    openTrip: 'खोलें',
+    cloudAccount: 'क्लाउड बैकअप',
+    cloudSignIn: 'साइन इन',
+    cloudSignUp: 'खाता बनाएँ',
+    cloudEmail: 'ईमेल',
+    cloudPassword: 'पासवर्ड',
+    cloudPasswordHint: 'कम से कम 6 अक्षर। हर डिवाइस पर वही लॉगिन।',
+    cloudSynced: 'क्लाउड में सेव',
+    cloudSyncing: 'सेव हो रहा है…',
+    cloudSignedOut: 'दूसरे फ़ोन के लिए You में साइन इन करें।',
+    cloudOff: APP_NAME + ' डेटाबेस जुड़ने तक क्लाउड बैकअप बंद है।',
+    cloudNeedEmail: 'ईमेल और पासवर्ड डालें।',
+    signOut: 'साइन आउट',
+    cloudError: 'क्लाउड नहीं मिला। बही इसी फ़ोन पर है।',
+    cloudConfirmEmail: 'ईमेल में कन्फर्म करें, फिर साइन इन करें।',
+    people: 'लोग',
+    theyOweYou: 'वे आपको देते हैं',
+    youOweThem: 'आप देते हैं',
+    addPerson: 'व्यक्ति जोड़ें',
+    personName: 'नाम',
+    theyOwe: 'वे मुझे देते हैं',
+    iOwe: 'मैं उन्हें देता हूँ',
+    settleUp: 'क्लियर',
+    equalSplit: 'बराबर बाँटें',
+    youPaid: 'आपने दिया',
+    thisWeek: 'इस हफ्ते',
+    vsLastWeek: 'पिछले हफ्ते से',
+    repeatLast: 'पिछला दोहराएँ',
+    splitBill: 'स्प्लिट',
+    noPeopleYet: 'किसका कितना बाकी है, इसके लिए दोस्त जोड़ें।',
+    settledOk: 'क्लियर',
+    openIous: 'खुला',
+    subscriptionsBurn: 'सब्सक्रिप्शन / महीना',
+    incomeIn: 'इस महीने आया',
+    quickExpense: 'खर्च',
+    quickIncome: 'आय',
   },
 };
 
@@ -873,6 +1029,41 @@ function normalizeSettings(raw) {
   };
 }
 
+function normalizeHolding(row, i) {
+  const h = row && typeof row === 'object' ? row : {};
+  const kind = h.kind === 'liability' ? 'liability' : 'asset';
+  return {
+    id: h.id || ('hold-' + i + '-' + Date.now().toString(36)),
+    name: String(h.name || '').trim() || (kind === 'liability' ? 'Liability' : 'Asset'),
+    kind: kind,
+    amount: Math.max(0, Number(h.amount) || 0),
+    icon: h.icon || (kind === 'liability' ? '💳' : '🏦'),
+    color: h.color || (kind === 'liability' ? '#EF4444' : GOAL_COLORS[i % GOAL_COLORS.length]),
+  };
+}
+
+function normalizePerson(row, i) {
+  const p = row && typeof row === 'object' ? row : {};
+  const name = String(p.name || '').trim() || ('Friend ' + (i + 1));
+  return {
+    id: p.id || ('ppl-' + i + '-' + Date.now().toString(36)),
+    name: name,
+    color: p.color || GOAL_COLORS[i % GOAL_COLORS.length],
+  };
+}
+
+function normalizeIou(row, i) {
+  const x = row && typeof row === 'object' ? row : {};
+  return {
+    id: x.id || ('iou-' + i + '-' + Date.now().toString(36)),
+    personId: x.personId || '',
+    amount: Number(x.amount) || 0,
+    note: String(x.note || ''),
+    date: x.date || todayISO(),
+    settled: !!x.settled,
+  };
+}
+
 function normalizeGoal(row, i) {
   const g = row && typeof row === 'object' ? row : {};
   return {
@@ -967,7 +1158,11 @@ function createInitialStore() {
     recurring: [],
     trips: [],
     activeTripId: null,
+    holdings: [],
+    people: [],
+    ious: [],
     settings: defaultSettings(),
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -995,7 +1190,11 @@ function normalizeState(parsed) {
     recurring: Array.isArray(src.recurring) ? src.recurring.map(normalizeRecurring) : [],
     trips: trips,
     activeTripId: activeTripId,
+    holdings: Array.isArray(src.holdings) ? src.holdings.map(normalizeHolding) : [],
+    people: Array.isArray(src.people) ? src.people.map(normalizePerson) : [],
+    ious: Array.isArray(src.ious) ? src.ious.map(normalizeIou) : [],
     settings: normalizeSettings(src.settings),
+    updatedAt: typeof src.updatedAt === 'string' && src.updatedAt ? src.updatedAt : (base.updatedAt || new Date().toISOString()),
   };
 }
 
@@ -1107,6 +1306,139 @@ function leftToSpend(store, mk) {
   if (budget > 0) return budget - spent;
   const income = (Number(store.monthlyIncome) || 0) + monthIncomeTotal(store, mk);
   return (Number(store.openingCash) || 0) + income - spent;
+}
+
+function upcomingBillsThisMonth(store, mk, today) {
+  const key = mk || monthKey();
+  const day = today || todayISO();
+  return (store.recurring || [])
+    .filter((r) => r.active !== false && r.type !== 'income')
+    .filter((r) => r.nextOn && monthKey(r.nextOn + 'T12:00:00') === key && r.nextOn >= day)
+    .reduce((s, r) => s + (Number(r.amount) || 0), 0);
+}
+
+function dueSoonRecurring(store, today, withinDays) {
+  const day = today || todayISO();
+  const end = addDaysISO(day, withinDays == null ? 7 : withinDays);
+  return (store.recurring || [])
+    .filter((r) => r.active !== false && r.type !== 'income')
+    .filter((r) => r.nextOn && r.nextOn >= day && r.nextOn <= end)
+    .sort((a, b) => String(a.nextOn).localeCompare(String(b.nextOn)));
+}
+
+function monthsUntilISO(fromISO, toISO) {
+  if (!toISO) return 0;
+  const a = new Date((fromISO || todayISO()) + 'T12:00:00');
+  const b = new Date(toISO + 'T12:00:00');
+  if (isNaN(a.getTime()) || isNaN(b.getTime()) || b <= a) return 1;
+  const months = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+  return Math.max(1, months || 1);
+}
+
+function monthlyGoalNeed(store, today) {
+  const day = today || todayISO();
+  return (store.goals || []).reduce((sum, g) => {
+    const remaining = Math.max(0, (Number(g.target) || 0) - (Number(g.saved) || 0));
+    if (remaining <= 0 || !g.due) return sum;
+    return sum + remaining / monthsUntilISO(day, g.due);
+  }, 0);
+}
+
+function leftoverAfterBills(store, mk, today) {
+  return leftToSpend(store, mk) - upcomingBillsThisMonth(store, mk, today);
+}
+
+function leftoverAfterCommitments(store, mk, today) {
+  return leftoverAfterBills(store, mk, today) - monthlyGoalNeed(store, today);
+}
+
+function applyBudgetMove(store, fromId, toId, amount, mk) {
+  const key = mk || monthKey();
+  const fromLeft = Math.max(0, budgetLimit(store, fromId, key) - spentInCategory(store, fromId, key));
+  const move = Math.min(Math.max(0, Number(amount) || 0), fromLeft);
+  if (!fromId || !toId || fromId === toId || move <= 0) return store;
+  const upsert = (budgets, catId, delta) => {
+    const next = (budgets || []).slice();
+    const i = next.findIndex((b) => b.categoryId === catId && !b.accountId && b.monthKey === key);
+    if (i >= 0) next[i] = { ...next[i], limit: Math.max(0, (Number(next[i].limit) || 0) + delta) };
+    else next.push({ categoryId: catId, monthKey: key, limit: Math.max(0, delta) });
+    return next;
+  };
+  let budgets = store.budgets || [];
+  budgets = upsert(budgets, fromId, -move);
+  budgets = upsert(budgets, toId, move);
+  return { ...store, budgets: budgets };
+}
+
+function accountRunningBalance(store, account) {
+  if (!account) return 0;
+  let opening = Number(account.opening);
+  if (!Number.isFinite(opening) || (opening === 0 && account.id === 'cash')) {
+    opening = account.id === 'cash' ? (Number(store.openingCash) || 0) : (Number(account.opening) || 0);
+  }
+  let spent = 0;
+  let income = 0;
+  (store.transactions || []).forEach((tx) => {
+    if (tx.accountId !== account.id) return;
+    const amt = Number(tx.amount) || 0;
+    if (tx.type === 'income') income += amt;
+    else spent += amt;
+  });
+  return opening + income - spent;
+}
+
+function netWorthSnapshot(store) {
+  const wallets = (store.accounts || []).map((a) => ({
+    id: a.id,
+    name: a.name,
+    nameHi: a.nameHi,
+    kind: 'asset',
+    source: 'wallet',
+    amount: accountRunningBalance(store, a),
+    icon: a.id === 'cash' ? '💵' : a.id === 'card' ? '💳' : '🏦',
+    color: a.id === 'card' ? '#0F766E' : (typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB'),
+  }));
+  const extras = (store.holdings || []).map((h) => ({ ...h, source: 'holding' }));
+  const assets = wallets.concat(extras.filter((h) => h.kind !== 'liability'));
+  const liabilities = extras.filter((h) => h.kind === 'liability');
+  const assetTotal = assets.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+  const liabTotal = liabilities.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+  return {
+    wallets: wallets,
+    extras: extras,
+    assets: assets,
+    liabilities: liabilities,
+    assetTotal: assetTotal,
+    liabTotal: liabTotal,
+    net: assetTotal - liabTotal,
+  };
+}
+
+function cashflowMonth(store, mk) {
+  const key = mk || monthKey();
+  const parts = key.split('-').map(Number);
+  const year = parts[0];
+  const month = parts[1];
+  const daysIn = new Date(year, month, 0).getDate();
+  const firstDow = new Date(year, month - 1, 1).getDay();
+  const byDay = {};
+  monthTxns(store, key).forEach((tx) => {
+    const d = Number(String(tx.date || '').slice(8, 10));
+    if (!d) return;
+    if (!byDay[d]) byDay[d] = { spend: 0, income: 0, txns: [], dues: [] };
+    if (tx.type === 'income') byDay[d].income += Number(tx.amount) || 0;
+    else byDay[d].spend += Number(tx.amount) || 0;
+    byDay[d].txns.push(tx);
+  });
+  (store.recurring || []).filter((r) => r.active !== false && r.nextOn && monthKey(r.nextOn + 'T12:00:00') === key).forEach((r) => {
+    const d = Number(String(r.nextOn).slice(8, 10));
+    if (!d) return;
+    if (!byDay[d]) byDay[d] = { spend: 0, income: 0, txns: [], dues: [] };
+    byDay[d].dues.push(r);
+  });
+  let spendTotal = 0;
+  Object.keys(byDay).forEach((k) => { spendTotal += byDay[k].spend; });
+  return { key: key, year: year, month: month, daysIn: daysIn, firstDow: firstDow, byDay: byDay, spendTotal: spendTotal };
 }
 
 function buildAlerts(store) {
@@ -1286,16 +1618,137 @@ function travelTripCount(store) {
   return (store.trips || []).length;
 }
 
+function liveTrips(store) {
+  return (store.trips || []).filter((t) => t.status === 'active');
+}
+
 function activeTrip(store) {
   const id = store && store.activeTripId;
   if (!id) return null;
-  return (store.trips || []).find((t) => t.id === id && t.status === 'active') || null;
+  const pointed = (store.trips || []).find((t) => t.id === id && t.status === 'active');
+  if (pointed) return pointed;
+  return liveTrips(store)[0] || null;
 }
 
 function canStartTrip(store, loc) {
   if (zenithIsPro(store, loc)) return true;
-  if (activeTrip(store)) return false;
-  return travelTripCount(store) < TRAVEL_FREE_MAX_TRIPS;
+  return liveTrips(store).length < TRAVEL_FREE_MAX_LIVE_TRIPS;
+}
+
+function startOfWeekISO(iso) {
+  const day = iso || todayISO();
+  const d = new Date(day + 'T12:00:00');
+  const wd = d.getDay();
+  const back = wd === 0 ? 6 : wd - 1;
+  return addDaysISO(day, -back);
+}
+
+function rangeExpenseTotal(store, startISO, endISO) {
+  return ((store && store.transactions) || []).filter((tx) => (
+    tx.type === 'expense' && tx.date >= startISO && tx.date <= endISO
+  )).reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+}
+
+function weekRecap(store, today) {
+  const end = today || todayISO();
+  const start = startOfWeekISO(end);
+  const prevEnd = addDaysISO(start, -1);
+  const prevStart = startOfWeekISO(prevEnd);
+  const spent = rangeExpenseTotal(store, start, end);
+  const prev = rangeExpenseTotal(store, prevStart, prevEnd);
+  return {
+    start: start,
+    end: end,
+    spent: spent,
+    prev: prev,
+    delta: prev > 0 ? (spent - prev) / prev : null,
+  };
+}
+
+function monthlyRecurringBurn(store) {
+  return Math.round(((store && store.recurring) || []).filter((r) => r.active && r.type !== 'income').reduce((s, r) => {
+    const amt = Number(r.amount) || 0;
+    if (r.cadence === 'weekly') return s + amt * 4.33;
+    if (r.cadence === 'yearly') return s + amt / 12;
+    return s + amt;
+  }, 0));
+}
+
+function recentMerchants(store, limit) {
+  const cap = limit || 5;
+  const seen = {};
+  const out = [];
+  const txns = ((store && store.transactions) || []).slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  for (let i = 0; i < txns.length; i++) {
+    const tx = txns[i];
+    if (tx.type !== 'expense') continue;
+    const label = String(tx.merchant || tx.note || '').trim();
+    if (!label) continue;
+    const key = label.toLowerCase();
+    if (seen[key]) continue;
+    seen[key] = true;
+    out.push({
+      merchant: label,
+      amount: Number(tx.amount) || 0,
+      categoryId: tx.categoryId,
+      accountId: tx.accountId,
+    });
+    if (out.length >= cap) break;
+  }
+  return out;
+}
+
+function personBalance(store, personId) {
+  return ((store && store.ious) || []).filter((row) => row.personId === personId && !row.settled)
+    .reduce((s, row) => s + (Number(row.amount) || 0), 0);
+}
+
+function peopleSnapshot(store) {
+  const people = (store && store.people) || [];
+  const rows = people.map((p) => ({ ...p, balance: personBalance(store, p.id) }));
+  const owedToYou = rows.filter((r) => r.balance > 0).reduce((s, r) => s + r.balance, 0);
+  const youOwe = rows.filter((r) => r.balance < 0).reduce((s, r) => s + (-r.balance), 0);
+  return { rows: rows, owedToYou: owedToYou, youOwe: youOwe, net: owedToYou - youOwe };
+}
+
+function equalSplitShares(total, count) {
+  const n = Math.max(0, Number(count) || 0);
+  if (n < 1) return [];
+  const cents = Math.round((Number(total) || 0) * 100);
+  const base = Math.floor(cents / n);
+  const shares = [];
+  let rem = cents - base * n;
+  for (let i = 0; i < n; i++) {
+    shares.push((base + (i < rem ? 1 : 0)) / 100);
+  }
+  return shares;
+}
+
+function buildEqualSplitIous(personIds, total, note, date) {
+  const ids = (personIds || []).filter(Boolean);
+  const shares = equalSplitShares(total, ids.length + 1);
+  return ids.map((personId, i) => ({
+    personId: personId,
+    amount: shares[i] || 0,
+    note: note || '',
+    date: date || todayISO(),
+    settled: false,
+  }));
+}
+
+function tripPhase(trip, today) {
+  if (!trip || trip.status === 'ended') return 'ended';
+  const day = today || todayISO();
+  if (trip.startDate && trip.startDate > day) return 'planned';
+  return 'live';
+}
+
+function tripBudgetLeft(trip) {
+  return (Number(trip && trip.budgetINR) || 0) - tripSpentINR(trip);
+}
+
+function tripLeftoverPerDay(trip, today) {
+  return tripBudgetLeft(trip) / tripDaysLeft(trip, today);
 }
 
 function canAddTripExpense(store, trip, loc) {
@@ -1332,6 +1785,7 @@ function findTravelCountry(code) {
 }
 
 Object.assign(window, {
+  APP_NAME,
   ZENITH,
   zenithTone,
   zenithHeroGradient,
@@ -1364,6 +1818,22 @@ Object.assign(window, {
   spentInCategory,
   categorySpendRows,
   leftToSpend,
+  leftoverAfterBills,
+  leftoverAfterCommitments,
+  upcomingBillsThisMonth,
+  dueSoonRecurring,
+  monthlyGoalNeed,
+  applyBudgetMove,
+  accountRunningBalance,
+  netWorthSnapshot,
+  cashflowMonth,
+  normalizeHolding,
+  normalizePerson,
+  normalizeIou,
+  liveTrips,
+  tripPhase,
+  tripBudgetLeft,
+  tripLeftoverPerDay,
   buildAlerts,
   newTxnId,
   accountBudgetLimit,
@@ -1413,9 +1883,17 @@ Object.assign(window, {
   TRAVEL_CATS,
   TRAVEL_CAT_COLORS,
   TRAVEL_FREE_MAX_TRIPS,
+  TRAVEL_FREE_MAX_LIVE_TRIPS,
   TRAVEL_FREE_MAX_EXPENSES,
   ZENITH_PRO_PRICE_MO,
   ZENITH_PRO_PRICE_YR,
   GOAL_COLORS,
   GOAL_EMOJI,
+  weekRecap,
+  monthlyRecurringBurn,
+  recentMerchants,
+  personBalance,
+  peopleSnapshot,
+  equalSplitShares,
+  buildEqualSplitIous,
 });

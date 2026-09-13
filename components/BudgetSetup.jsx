@@ -1,6 +1,6 @@
 // BudgetSetup.jsx — Live store budgets + optional monthly income
 
-function BudgetSetupScreen({ store, onSetBudget, onSetIncome, onSetAccountBudget, onNavigate }) {
+function BudgetSetupScreen({ store, onSetBudget, onSetIncome, onSetAccountBudget, onMoveBudget, onNavigate }) {
   const locale = store.user.locale || 'en';
   const mk = monthKey();
   const rows = categorySpendRows(store, mk);
@@ -8,6 +8,11 @@ function BudgetSetupScreen({ store, onSetBudget, onSetIncome, onSetAccountBudget
   const [draft, setDraft] = React.useState('');
   const [incomeEdit, setIncomeEdit] = React.useState(false);
   const [incomeDraft, setIncomeDraft] = React.useState(String(store.monthlyIncome || ''));
+  const [moveOpen, setMoveOpen] = React.useState(false);
+  const withLeft = rows.filter((c) => c.budget > 0 && c.budget - c.spent > 0);
+  const [fromId, setFromId] = React.useState('');
+  const [toId, setToId] = React.useState('');
+  const [moveAmt, setMoveAmt] = React.useState('');
 
   const income = Number(store.monthlyIncome) || 0;
   const totalBudget = rows.reduce((s, c) => s + c.budget, 0);
@@ -162,7 +167,19 @@ function BudgetSetupScreen({ store, onSetBudget, onSetIncome, onSetAccountBudget
       </div>
 
       <div style={{ padding: '0 20px' }}>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10 }}>{t(locale, 'categories')}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#8E8E93', letterSpacing: 0.6, textTransform: 'uppercase' }}>{t(locale, 'categories')}</p>
+          {withLeft.length > 0 && onMoveBudget && (
+            <button type="button" onClick={() => {
+              setFromId(withLeft[0].id);
+              setToId((listed.find((c) => c.id !== withLeft[0].id) || listed[0] || {}).id || '');
+              setMoveAmt(String(Math.round(withLeft[0].budget - withLeft[0].spent)));
+              setMoveOpen(true);
+            }} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 800, color: '#2563EB' }}>
+              {t(locale, 'moveLeftover')}
+            </button>
+          )}
+        </div>
         <div style={{ background: '#FFFFFF', borderRadius: 22, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           {listed.map((cat, i) => {
             const pct = cat.budget > 0 ? cat.spent / cat.budget : 0;
@@ -229,6 +246,50 @@ function BudgetSetupScreen({ store, onSetBudget, onSetIncome, onSetAccountBudget
           })}
         </div>
       </div>
+      {moveOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 30, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'flex-end' }}>
+          <div role="dialog" aria-label={t(locale, 'moveLeftover')} style={{
+            width: '100%', background: '#fff', borderRadius: '24px 24px 0 0', padding: '18px 20px var(--zenith-pad-bottom)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 18, fontWeight: 800 }}>{t(locale, 'moveLeftover')}</h2>
+              <button type="button" onClick={() => setMoveOpen(false)} style={{ border: 'none', background: '#F2F2F7', borderRadius: 12, width: 36, height: 36, cursor: 'pointer' }}>×</button>
+            </div>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8E8E93', marginBottom: 6 }}>{t(locale, 'fromBudget')}</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+              {withLeft.map((c) => (
+                <button key={c.id} type="button" onClick={() => { setFromId(c.id); setMoveAmt(String(Math.round(c.budget - c.spent))); }} style={{
+                  padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer',
+                  background: fromId === c.id ? '#2563EB' : '#F2F2F7', color: fromId === c.id ? '#fff' : '#1C1C1E',
+                  fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
+                }}>{catLabel(c, locale)} · {fmt(c.budget - c.spent)}</button>
+              ))}
+            </div>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8E8E93', marginBottom: 6 }}>{t(locale, 'toBudget')}</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+              {listed.filter((c) => c.id !== fromId).map((c) => (
+                <button key={c.id} type="button" onClick={() => setToId(c.id)} style={{
+                  padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer',
+                  background: toId === c.id ? '#2563EB' : '#F2F2F7', color: toId === c.id ? '#fff' : '#1C1C1E',
+                  fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
+                }}>{catLabel(c, locale)}</button>
+              ))}
+            </div>
+            <input inputMode="decimal" value={moveAmt} onChange={(e) => setMoveAmt(e.target.value)} style={{
+              width: '100%', boxSizing: 'border-box', border: 'none', background: '#F2F2F7', borderRadius: 14, padding: '12px 14px',
+              fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, marginBottom: 12,
+            }} />
+            <button type="button" onClick={() => {
+              const n = parseFloat(moveAmt) || 0;
+              if (fromId && toId && n > 0) onMoveBudget(fromId, toId, n);
+              setMoveOpen(false);
+            }} style={{
+              width: '100%', padding: '14px', border: 'none', borderRadius: 14, background: '#2563EB', color: '#fff',
+              fontFamily: 'Manrope, sans-serif', fontWeight: 800, cursor: 'pointer',
+            }}>{t(locale, 'save')}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

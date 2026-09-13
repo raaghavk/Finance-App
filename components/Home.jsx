@@ -126,6 +126,54 @@ function GoalsPeek({ store, locale, onOpen }) {
   );
 }
 
+function WeekRecapCard({ store, locale, onOpen }) {
+  const recap = weekRecap(store);
+  const ink = ZENITH.ink;
+  const muted = ZENITH.muted;
+  const card = ZENITH.card;
+  const vs = recap.delta == null ? t(locale, 'noChange')
+    : recap.delta < 0 ? t(locale, 'lessSpend') : t(locale, 'moreSpend');
+  return (
+    <div style={{ padding: '0 20px', marginBottom: 16 }}>
+      <button type="button" onClick={onOpen} style={{
+        width: '100%', background: card, border: 'none', borderRadius: 18, padding: '14px 16px',
+        boxShadow: zenithSoftShadow(), cursor: 'pointer', textAlign: 'left',
+      }}>
+        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800, color: ink }}>{t(locale, 'thisWeek')}</p>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginTop: 4 }}>
+          {fmt(recap.spent)} · {t(locale, 'vsLastWeek')} {vs}
+          {recap.delta != null ? ' ' + Math.abs(Math.round(recap.delta * 100)) + '%' : ''}
+        </p>
+      </button>
+    </div>
+  );
+}
+
+function PeoplePeek({ store, locale, onOpen }) {
+  const snap = peopleSnapshot(store);
+  if (!snap.rows.length) return null;
+  const ink = ZENITH.ink;
+  const muted = ZENITH.muted;
+  const card = ZENITH.card;
+  const line = snap.owedToYou >= snap.youOwe
+    ? t(locale, 'theyOweYou') + ' ' + fmt(snap.owedToYou)
+    : t(locale, 'youOweThem') + ' ' + fmt(snap.youOwe);
+  return (
+    <div style={{ padding: '0 20px', marginBottom: 16 }}>
+      <button type="button" onClick={onOpen} style={{
+        width: '100%', background: card, border: 'none', borderRadius: 18, padding: '14px 16px',
+        boxShadow: zenithSoftShadow(), cursor: 'pointer', textAlign: 'left',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800, color: ink }}>{t(locale, 'people')}</p>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: ZENITH.accent, fontWeight: 600 }}>{t(locale, 'seeAll')}</span>
+        </div>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginTop: 4 }}>{line}</p>
+      </button>
+    </div>
+  );
+}
+
 function InsightsDigest({ store, locale, onOpen }) {
   const insight = typeof monthInsights === 'function' ? monthInsights(store) : null;
   if (!insight || insight.spent <= 0) return null;
@@ -196,12 +244,19 @@ function LocalBudgetsPreview({ store, locale, onOpen }) {
 
 function TravelHomeCard({ store, locale, onOpen }) {
   const trip = typeof activeTrip === 'function' ? activeTrip(store) : null;
+  const lives = typeof liveTrips === 'function' ? liveTrips(store) : (trip ? [trip] : []);
   const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A';
   const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#64748B';
   const card = typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF';
   const accent = typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB';
   const country = trip && typeof findTravelCountry === 'function' ? findTravelCountry(trip.currency) : null;
   const spent = trip && typeof tripSpentINR === 'function' ? tripSpentINR(trip) : 0;
+  const left = trip && typeof tripBudgetLeft === 'function' ? tripBudgetLeft(trip) : 0;
+  const sub = !trip
+    ? t(locale, 'headingSomewhere')
+    : lives.length > 1
+      ? t(locale, 'nLiveTrips', { n: String(lives.length) }) + ' · ' + fmt(spent)
+      : (fmt(left) + ' ' + t(locale, 'remaining') + (trip.currency ? ' · ' + trip.currency : ''));
   return (
     <div style={{ padding: '0 20px', marginBottom: 18 }}>
       <button
@@ -224,7 +279,7 @@ function TravelHomeCard({ store, locale, onOpen }) {
             {trip ? trip.name : t(locale, 'travel')}
           </p>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginTop: 4 }}>
-            {trip ? (fmt(spent) + (trip.currency ? ' · ' + trip.currency : '')) : t(locale, 'headingSomewhere')}
+            {sub}
           </p>
         </div>
         <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: accent, fontWeight: 600, flexShrink: 0 }}>
@@ -235,7 +290,7 @@ function TravelHomeCard({ store, locale, onOpen }) {
   );
 }
 
-function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
+function HomeScreen({ store, onSelectTx, onNavigate, onAdd, onAddIncome }) {
   const locale = store.user.locale || 'en';
   const mk = monthKey();
   const rows = categorySpendRows(store, mk);
@@ -244,7 +299,12 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
   const budget = totalBudgetLimit(store, mk);
   const left = leftToSpend(store, mk);
   const daysLeft = daysLeftInMonth();
-  const dailyAllowance = Math.max(0, Math.round(left / daysLeft));
+  const billsDue = typeof upcomingBillsThisMonth === 'function' ? upcomingBillsThisMonth(store, mk) : 0;
+  const goalNeed = typeof monthlyGoalNeed === 'function' ? monthlyGoalNeed(store) : 0;
+  const afterBills = typeof leftoverAfterBills === 'function' ? leftoverAfterBills(store, mk) : (left - billsDue);
+  const afterAll = typeof leftoverAfterCommitments === 'function' ? leftoverAfterCommitments(store, mk) : (afterBills - goalNeed);
+  const dueSoon = typeof dueSoonRecurring === 'function' ? dueSoonRecurring(store) : [];
+  const dailyAllowance = Math.max(0, Math.round((billsDue > 0 || goalNeed > 0 ? afterAll : left) / daysLeft));
   const spentPct = budget > 0 ? Math.min(totalSpent / budget, 1) : 0;
   const recents = [...(store.transactions || [])]
     .sort((a, b) => (b.date || '').localeCompare(a.date || '') || String(b.id).localeCompare(String(a.id)))
@@ -340,9 +400,16 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
                 <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: 'white' }}>{monthLabel(undefined, locale)}</span>
               </div>
             </div>
-            <h2 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 48, fontWeight: 800, color: '#FFFFFF', lineHeight: 1, marginBottom: 20, letterSpacing: -1 }}>
+            <h2 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 48, fontWeight: 800, color: '#FFFFFF', lineHeight: 1, marginBottom: 8, letterSpacing: -1 }}>
               {fmt(left)}
             </h2>
+            {(billsDue > 0 || goalNeed > 0) && (
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 14 }}>
+                {t(locale, 'safeAfterBills')} {fmt(afterAll)}
+                {billsDue > 0 ? ' · ' + t(locale, 'billsDueMonth', { n: fmt(billsDue) }) : ''}
+                {goalNeed > 0 ? ' · ' + t(locale, 'goalSetAside') + ' ' + fmt(goalNeed) : ''}
+              </p>
+            )}
             <div style={{ marginBottom: 20 }}>
               <div style={{ height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2 }}>
                 <div style={{ height: '100%', width: `${spentPct * 100}%`, background: 'rgba(255,255,255,0.9)', borderRadius: 2 }} />
@@ -362,7 +429,58 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
         </div>
       </div>
 
+      {dueSoon.length > 0 && (
+        <div style={{ padding: '0 20px', marginBottom: 16 }}>
+          <button type="button" onClick={() => onNavigate && onNavigate('recurring')} style={{
+            width: '100%', textAlign: 'left', border: 'none', borderRadius: 18, padding: '14px 16px', cursor: 'pointer',
+            background: typeof ZENITH !== 'undefined' ? ZENITH.card : '#fff',
+            boxShadow: typeof zenithSoftShadow === 'function' ? zenithSoftShadow() : '0 2px 14px rgba(15,23,42,0.06)',
+          }}>
+            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800, color: typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A', marginBottom: 6 }}>{t(locale, 'dueSoon')}</p>
+            {dueSoon.slice(0, 3).map((r) => (
+              <p key={r.id} style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: typeof ZENITH !== 'undefined' ? ZENITH.muted : '#64748B', marginTop: 2 }}>
+                {r.name} · {fmt(r.amount)} · {relDate(r.nextOn, locale)}
+              </p>
+            ))}
+          </button>
+        </div>
+      )}
+
       <TravelHomeCard store={store} locale={locale} onOpen={() => onNavigate && onNavigate('travel')} />
+
+      <div style={{ padding: '0 20px', marginBottom: 16, display: 'flex', gap: 8 }}>
+        {[
+          { id: 'add', label: t(locale, 'quickExpense'), go: () => onAdd && onAdd() },
+          { id: 'income', label: t(locale, 'quickIncome'), go: () => onAddIncome ? onAddIncome() : (onAdd && onAdd()) },
+          { id: 'people', label: t(locale, 'people'), go: () => onNavigate && onNavigate('people') },
+          { id: 'recurring', label: t(locale, 'recurring'), go: () => onNavigate && onNavigate('recurring') },
+        ].map((q) => (
+          <button key={q.id} type="button" onClick={q.go} style={{
+            flex: 1, border: 'none', borderRadius: 14, padding: '10px 6px', cursor: 'pointer',
+            background: typeof ZENITH !== 'undefined' ? ZENITH.card : '#fff',
+            boxShadow: typeof zenithSoftShadow === 'function' ? zenithSoftShadow() : '0 2px 10px rgba(15,23,42,0.06)',
+            fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: 800,
+            color: typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A',
+          }}>{q.label}</button>
+        ))}
+      </div>
+
+      {typeof weekRecap === 'function' && (
+        <WeekRecapCard store={store} locale={locale} onOpen={() => onNavigate && onNavigate('insights')} />
+      )}
+      {typeof peopleSnapshot === 'function' && (
+        <PeoplePeek store={store} locale={locale} onOpen={() => onNavigate && onNavigate('people')} />
+      )}
+      {typeof monthlyRecurringBurn === 'function' && monthlyRecurringBurn(store) > 0 && (
+        <button type="button" onClick={() => onNavigate && onNavigate('recurring')} style={{
+          margin: '0 20px 16px', width: 'calc(100% - 40px)', textAlign: 'left', border: 'none', borderRadius: 18, padding: '14px 16px', cursor: 'pointer',
+          background: typeof ZENITH !== 'undefined' ? ZENITH.card : '#fff',
+          boxShadow: typeof zenithSoftShadow === 'function' ? zenithSoftShadow() : '0 2px 14px rgba(15,23,42,0.06)',
+        }}>
+          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800, color: typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A' }}>{t(locale, 'subscriptionsBurn')}</p>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: typeof ZENITH !== 'undefined' ? ZENITH.muted : '#64748B', marginTop: 4 }}>{fmt(monthlyRecurringBurn(store))}</p>
+        </button>
+      )}
 
       {typeof zenithNotionEnabled === 'function' && zenithNotionEnabled() ? (
         <>

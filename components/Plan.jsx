@@ -9,13 +9,22 @@ function PlanScreen({ store, onNavigate }) {
   const cards = [
     { id: 'travel', title: t(locale, 'travel'), sub: zenithIsPro && zenithIsPro(store) ? t(locale, 'paid') : t(locale, 'headingSomewhere'), emoji: '✈️' },
     { id: 'budget', title: t(locale, 'budgets'), sub: budget > 0 ? fmt(spent) + ' / ' + fmt(budget) : t(locale, 'noBudgetYet'), emoji: '🎯' },
-    { id: 'recurring', title: t(locale, 'recurring'), sub: (store.recurring || []).filter((r) => r.active).length
-      ? String((store.recurring || []).filter((r) => r.active).length) + (locale === 'hi' ? ' सक्रिय' : ' active')
-      : (locale === 'hi' ? 'बिल और सब्सक्रिप्शन' : 'Bills & subscriptions'), emoji: '🔄' },
+    { id: 'people', title: t(locale, 'people'), sub: (function () {
+      const snap = typeof peopleSnapshot === 'function' ? peopleSnapshot(store) : null;
+      if (!snap || !snap.rows.length) return locale === 'hi' ? 'किसका कितना बाकी' : 'Who owes whom';
+      return t(locale, 'theyOweYou') + ' ' + fmt(snap.owedToYou);
+    }()), emoji: '🤝' },
+    { id: 'recurring', title: t(locale, 'recurring'), sub: typeof monthlyRecurringBurn === 'function' && monthlyRecurringBurn(store) > 0
+      ? fmt(monthlyRecurringBurn(store)) + ' / ' + (locale === 'hi' ? 'महीना' : 'mo')
+      : ((store.recurring || []).filter((r) => r.active).length
+        ? String((store.recurring || []).filter((r) => r.active).length) + (locale === 'hi' ? ' सक्रिय' : ' active')
+        : (locale === 'hi' ? 'बिल और सब्सक्रिप्शन' : 'Bills & subscriptions')), emoji: '🔄' },
     { id: 'goals', title: t(locale, 'goals'), sub: (store.goals || []).length
       ? String((store.goals || []).length)
       : (locale === 'hi' ? 'बचत लक्ष्य' : 'Savings targets'), emoji: '🏆' },
     { id: 'insights', title: t(locale, 'insights'), sub: locale === 'hi' ? 'इस vs पिछले महीने' : 'This vs last month', emoji: '📊' },
+    { id: 'calendar', title: t(locale, 'calendar'), sub: locale === 'hi' ? 'रोज़ का खर्च और देय बिल' : 'Day spend and bills due', emoji: '📅' },
+    { id: 'networth', title: t(locale, 'netWorth'), sub: locale === 'hi' ? 'वॉलेट + संपत्ति − देनदारी' : 'Wallets + assets − dues', emoji: '💎' },
   ];
   if (typeof zenithNotionEnabled === 'function' && zenithNotionEnabled()) {
     cards.unshift({ id: 'notionBudgets', title: t(locale, 'notionBudgets'), sub: t(locale, 'notionLeftMonth'), emoji: '📒' });

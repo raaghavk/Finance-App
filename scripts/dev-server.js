@@ -20,10 +20,9 @@ const handleOcr = require('../api/ocr');
 const ROOT = path.resolve(__dirname, '..');
 const PORT = Number(process.env.ZENITH_PORT || process.env.PORT || 5173);
 
-function loadDotenv() {
-  const envPath = path.join(ROOT, '.env');
-  if (!fs.existsSync(envPath)) return;
-  fs.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach((line) => {
+function applyEnvFile(file, override) {
+  if (!fs.existsSync(file)) return;
+  fs.readFileSync(file, 'utf8').split(/\r?\n/).forEach((line) => {
     const trimmed = line.trim();
     if (!trimmed || trimmed[0] === '#') return;
     const eq = trimmed.indexOf('=');
@@ -33,8 +32,12 @@ function loadDotenv() {
     if ((val[0] === '"' && val.endsWith('"')) || (val[0] === "'" && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
-    if (key && process.env[key] == null) process.env[key] = val;
+    if (key && (override || process.env[key] == null)) process.env[key] = val;
   });
+}
+function loadDotenv() {
+  applyEnvFile(path.join(ROOT, '.env'), false);
+  applyEnvFile(path.join(ROOT, '.env.local'), true);
 }
 loadDotenv();
 
@@ -49,6 +52,9 @@ const TYPES = {
   '.jpg': 'image/jpeg',
   '.webp': 'image/webp',
   '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
+  '.ico': 'image/x-icon',
   '.ts': 'text/plain; charset=utf-8',
 };
 
@@ -88,7 +94,10 @@ const server = http.createServer(async (req, res) => {
   }
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) {
+      const notFound = path.join(ROOT, '404.html');
       res.statusCode = 404;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      if (fs.existsSync(notFound)) return fs.createReadStream(notFound).pipe(res);
       res.end('not found');
       return;
     }
@@ -99,5 +108,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log('Zenith API at http://127.0.0.1:' + PORT + '/Zenith.html');
+  console.log('Liora at http://127.0.0.1:' + PORT + '/Zenith.html');
 });

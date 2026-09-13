@@ -25,15 +25,16 @@ function TravelBack({ onBack, label }) {
   );
 }
 
-function TripSetupScreen({ tripName, setTripName, startDate, setStartDate, endDate, setEndDate, budget, setBudget, onBack, onNext }) {
+function TripSetupScreen({ tripName, setTripName, startDate, setStartDate, endDate, setEndDate, budget, setBudget, onBack, onNext, nextLabel, extraLabel, onExtra, locale }) {
   const { page, ink, muted, accent, card, cream, shadow } = travelChrome();
   const valid = tripName.trim().length > 0 && budget && parseFloat(budget) > 0;
+  const loc = locale || 'en';
   return (
     <div style={{ height: '100%', background: page, display: 'flex', flexDirection: 'column', paddingTop: 'var(--zenith-pad-top)' }}>
       <div style={{ padding: '4px 20px 14px', flexShrink: 0 }}>
         <TravelBack onBack={onBack} />
-        <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 26, fontWeight: 800, color: ink, letterSpacing: -0.5, marginBottom: 4 }}>Trip details</h1>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted }}>Give your trip a name and set a budget</p>
+        <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 26, fontWeight: 800, color: ink, letterSpacing: -0.5, marginBottom: 4 }}>{t(loc, 'tripDetails')}</h1>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted }}>{t(loc, 'travelHero')}</p>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 20px' }}>
@@ -76,12 +77,18 @@ function TripSetupScreen({ tripName, setTripName, startDate, setStartDate, endDa
       </div>
 
       <div style={{ padding: '12px 20px var(--zenith-pad-bottom)', flexShrink: 0, background: page, borderTop: '0.5px solid ' + cream }}>
+        {extraLabel && onExtra ? (
+          <button type="button" onClick={() => valid && onExtra()} style={{
+            width: '100%', padding: '14px', border: 'none', borderRadius: 16, cursor: valid ? 'pointer' : 'default',
+            background: cream, color: accent, fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, marginBottom: 8,
+          }}>{extraLabel}</button>
+        ) : null}
         <button type="button" onClick={() => valid && onNext()} style={{
           width: '100%', padding: '17px', border: 'none', borderRadius: 18, cursor: valid ? 'pointer' : 'default',
           background: valid ? accent : cream, color: valid ? '#FFFFFF' : muted,
           fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 700,
           boxShadow: valid ? '0 8px 24px rgba(37,99,235,0.35)' : 'none',
-        }}>Choose Destination →</button>
+        }}>{nextLabel || t(loc, 'chooseDestination')}</button>
       </div>
     </div>
   );
@@ -209,7 +216,7 @@ function EmergencyScreen({ country, onBack }) {
           <span style={{ fontSize: 24 }}>🆘</span>
           <div>
             <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 700, color: ink, marginBottom: 2 }}>Pro includes this sheet on every trip</p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>Zenith does not freeze cards. Call your bank.</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>{typeof APP_NAME !== 'undefined' ? APP_NAME : 'Liora'} does not freeze cards. Call your bank.</p>
           </div>
         </div>
         <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: shadow }}>

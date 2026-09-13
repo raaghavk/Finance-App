@@ -59,7 +59,7 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
           <path d="M9 9C11.2 9 13 7.2 13 5S11.2 1 9 1 5 2.8 5 5s1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v1h16v-1c0-2.7-5.3-4-8-4z" fill="white"/>
         </svg>
       </div>
-      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB', letterSpacing: 1.4, textTransform: 'uppercase' }}>Zenith</span>
+      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB', letterSpacing: 1.4, textTransform: 'uppercase' }}>{typeof APP_NAME !== 'undefined' ? APP_NAME : 'Liora'}</span>
     </div>
   );
 
@@ -115,14 +115,15 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
           placeholder={t(L, 'yourName')}
           autoFocus
           aria-label={t(L, 'yourName')}
+          aria-invalid={focused === 'err' && !nameOk ? 'true' : 'false'}
           value={val}
-          onChange={(e) => setVal(e.target.value)}
+          onChange={(e) => { setVal(e.target.value); if (focused === 'err') setFocused(true); }}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && nameOk) {
-              onSetName(val.trim());
-              onNext();
+            if (e.key === 'Enter') {
+              if (nameOk) { onSetName(val.trim()); onNext(); }
+              else setFocused('err');
             }
           }}
           style={{
@@ -130,11 +131,18 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
             width: '100%',
             fontSize: 28, fontWeight: 700,
             padding: '16px 0',
-            borderBottom: `2.5px solid ${focused ? '#2563EB' : '#E5E5EA'}`,
+            borderBottom: `2.5px solid ${(!nameOk && focused === 'err') ? '#B91C1C' : (focused ? '#2563EB' : '#E5E5EA')}`,
           }}
         />
+        {focused === 'err' && !nameOk ? (
+          <p role="alert" style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#B91C1C', marginTop: 8 }}>{t(L, 'enterName')}</p>
+        ) : null}
       </div>
-      {continueBtn(t(L, 'continue') + ' →', () => { onSetName(val.trim()); onNext(); }, !nameOk)}
+      {continueBtn(t(L, 'continue') + ' →', () => {
+        if (!nameOk) { setFocused('err'); return; }
+        onSetName(val.trim());
+        onNext();
+      }, false)}
     </>);
   }
 

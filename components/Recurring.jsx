@@ -71,7 +71,7 @@ function RecurringScreen({ store, onSaveRule, onDeleteRule, onToggleRule, onBack
   const monthly = items.filter((i) => i.active && i.cadence === 'monthly').reduce((s, i) => s + (Number(i.amount) || 0), 0);
   const yearly = items.filter((i) => i.active && i.cadence === 'yearly').reduce((s, i) => s + (Number(i.amount) || 0), 0);
   const weekly = items.filter((i) => i.active && i.cadence === 'weekly').reduce((s, i) => s + (Number(i.amount) || 0), 0);
-  const monthlyEquiv = Math.round(monthly + yearly / 12 + weekly * 4.33);
+  const monthlyEquiv = typeof monthlyRecurringBurn === 'function' ? monthlyRecurringBurn({ recurring: items }) : Math.round(monthly + yearly / 12 + weekly * 4.33);
 
   const daysUntil = (dateStr) => {
     const today = new Date(todayISO() + 'T12:00:00');

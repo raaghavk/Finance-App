@@ -7,8 +7,19 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Zenith">
-  <title>Zenith — Finance</title>
+  <meta name="apple-mobile-web-app-title" content="Liora">
+  <title>Liora — Left to spend</title>
+  <meta name="description" content="See what you still have left to spend. Local ledger on this device. Hindi and English. No bank login.">
+  <link rel="canonical" href="https://zenith-raaghavks-projects.vercel.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Liora — Left to spend">
+  <meta property="og:description" content="See what you still have left to spend. Local ledger on this device.">
+  <meta property="og:image" content="https://zenith-raaghavks-projects.vercel.app/icons/og.png">
+  <meta property="og:image:alt" content="Liora leftover to spend">
+  <meta property="og:url" content="https://zenith-raaghavks-projects.vercel.app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <script>
     (function () {
       var onPages = location.pathname.indexOf('/Finance-App') === 0;
@@ -23,6 +34,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css">
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -91,13 +103,15 @@
 </head>
 <body>
   <div id="root">
-    <p style="padding: 96px 24px 24px; font-family: Inter, sans-serif; font-size: 15px; color: #2563EB; text-align: center;">Loading Zenith…</p>
+    <p class="loading-line" role="status">Loading Liora…</p>
   </div>
 
   <script src="lib/ios-safe-area.js"></script>
   <script src="lib/zenith-chrome.js"></script>
   <script src="lib/theme.js"></script>
   <script src="lib/local-ledger.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.8/dist/umd/supabase.js" integrity="sha384-l7yJnh/cWKcqeTC5adHUdc5b+J4Kb2QTGRSkCQehn1YT5xEFlrgwnXOYuvrtI1F6" crossorigin="anonymous"></script>
+  <script src="lib/cloud-ledger.js"></script>
   <script type="text/babel" src="state.js"></script>
   <script src="lib/notion/map.js"></script>
   <script src="lib/notion/browser.js"></script>
@@ -150,5 +164,6 @@
       <circle cx="60" cy="72" r="4" fill="#2563EB"/>
     </svg>
   </template>
+  <script src="site.js"></script>
 </body>
 </html>

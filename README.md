@@ -1,12 +1,14 @@
-# Zenith
+# Liora
 
-Personal finance app. INR. Cool blue. Your expenses and account balances are saved **on this device** (`localStorage`, key `zenith_v1_store`). No Notion or other remote database is required.
+Personal finance app. Leftover to spend. Cool blue. Your expenses and account balances are saved **on this device** (`localStorage`, key `zenith_v1_store`). No Notion or other remote database is required.
+
+The public name is **Liora**. Internal file names (`Zenith.html`) and the store key stay as they are so existing ledgers and bookmarks keep working.
 
 ## Install on iPhone
 
 Use this link only: **https://zenith-raaghavks-projects.vercel.app**
 
-Share with testers: **https://zenith-raaghavks-projects.vercel.app/invite.html** (install steps + feedback). Privacy: `/privacy.html`. Support: `/support.html`.
+Share with testers: **https://zenith-raaghavks-projects.vercel.app/invite.html**. Privacy: `/privacy.html`. Terms: `/terms.html`. Support: `/support.html`.
 
 Safari will not install from `http://localhost`. After it opens:
 
@@ -14,7 +16,7 @@ Safari will not install from `http://localhost`. After it opens:
 2. Tap **Add to Home Screen**
 3. Confirm **Add**
 
-1. Open Zenith in **Safari**
+1. Open Liora in **Safari**
 2. Tap **Share**
 3. Tap **Add to Home Screen**
 4. Confirm **Add**
@@ -50,9 +52,9 @@ Static files plus optional `/api/*` functions. `vercel.json` is in the repo so H
 
 - **Home** — spent this month, a Travel card (opens Travel Mode), health score, wallets, budgets, goals peek
 - **Activity** — local ledger with search and date range
-- **Plan** — Travel first, then budgets, recurring bills, savings goals, insights. One free demo trip; full travel is Zenith Pro. Travel includes a custom FX rate, packing kit, tips, and optional posting into a home wallet.
+- **Plan** — Travel first, then budgets, recurring bills, savings goals, insights. One free live trip; full travel is Liora Pro. Travel includes a custom FX rate, packing kit, tips, and optional posting into a home wallet.
 - **+** — Voice, Scan, or Manual (voice/OCR only if those keys are set; you can always type)
-- **You** — **Edit** (top-right), accounts, categories, dark mode, PIN lock, JSON backup, Zenith Pro
+- **You** — **Edit** (top-right), accounts, categories, dark mode, PIN lock, JSON backup, Liora Pro
 
 ## Tests
 
@@ -62,7 +64,7 @@ npm test
 
 ## Later: Notion (optional)
 
-Not needed to use Zenith. Left off unless `?notion=1` or `localStorage.zenith_notion = '1'`. Expense Tracker still owns any Notion writes.
+Not needed to use Liora. Left off unless `?notion=1` or `localStorage.zenith_notion = '1'`. Expense Tracker still owns any Notion writes.
 
 ### Notion Expenses (read path)
 

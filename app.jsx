@@ -32,7 +32,7 @@ class ZenithErrorBoundary extends React.Component {
     if (!this.state.error) return this.props.children;
     return (
       <div style={{ padding: '72px 24px 24px', fontFamily: 'Inter, sans-serif', color: '#0F172A', background: '#F2F5FA', height: '100%' }}>
-        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Zenith hit a snag.</p>
+        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, marginBottom: 8 }}>{(typeof APP_NAME !== 'undefined' ? APP_NAME : 'Liora')} hit a snag.</p>
         <p style={{ fontSize: 14, color: '#64748B', marginBottom: 16 }}>Reload the Home Screen app. Your ledger on this phone is still here.</p>
         <button type="button" onClick={() => { this.setState({ error: null }); if (typeof location !== 'undefined') location.reload(); }} style={{
           border: 'none', borderRadius: 14, padding: '12px 16px', background: '#2563EB', color: '#fff', fontWeight: 800,
@@ -85,8 +85,65 @@ function ZenithApp() {
     const s = loadStore();
     return !(s.settings && s.settings.lock && s.settings.lock.enabled);
   });
+  const cloudClientRef = React.useRef(null);
+  const skipCloudPushRef = React.useRef(true);
+  const storeRef = React.useRef(store);
+  storeRef.current = store;
+  const [cloud, setCloud] = React.useState({
+    ready: false, enabled: false, user: null, status: 'off', error: '', lastSyncedAt: null,
+  });
 
-  React.useEffect(() => { saveStore(store); }, [store]);
+  React.useEffect(() => {
+    saveStore(store);
+    if (skipCloudPushRef.current) {
+      skipCloudPushRef.current = false;
+      return;
+    }
+    const client = cloudClientRef.current;
+    const user = cloud.user;
+    if (!client || !user || typeof zenithCloudPush !== 'function') return;
+    const timer = setTimeout(() => {
+      setCloud((c) => (c.user ? { ...c, status: 'syncing' } : c));
+      zenithCloudPush(client, user.id, store).then(() => {
+        setCloud((c) => (c.user ? { ...c, status: 'synced', lastSyncedAt: new Date().toISOString(), error: '' } : c));
+      }).catch(() => {
+        setCloud((c) => (c.user ? { ...c, status: 'error', error: 'push' } : c));
+      });
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [store, cloud.user]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async function bootCloud() {
+      if (typeof zenithCloudBoot !== 'function') {
+        if (!cancelled) setCloud({ ready: true, enabled: false, user: null, status: 'off', error: '', lastSyncedAt: null });
+        return;
+      }
+      try {
+        const boot = await zenithCloudBoot({ local: storeRef.current });
+        if (cancelled) return;
+        cloudClientRef.current = boot.client;
+        if (boot.store) {
+          skipCloudPushRef.current = true;
+          setStore(boot.store);
+          saveStore(boot.store);
+          if (typeof applyZenithTheme === 'function') applyZenithTheme(boot.store.settings && boot.store.settings.theme);
+        }
+        setCloud({
+          ready: true,
+          enabled: !!boot.enabled,
+          user: boot.user || null,
+          status: boot.enabled ? (boot.user ? 'synced' : 'signedOut') : 'off',
+          error: boot.error || '',
+          lastSyncedAt: boot.user ? new Date().toISOString() : null,
+        });
+      } catch (err) {
+        if (!cancelled) setCloud({ ready: true, enabled: false, user: null, status: 'off', error: '', lastSyncedAt: null });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   React.useEffect(() => {
     setStore((prev) => {
@@ -111,7 +168,7 @@ function ZenithApp() {
   const overlay = screen === 'addExpense' || screen === 'voiceEntry' || screen === 'cameraScan';
   const showChrome = screen !== 'onboarding' && !overlay;
 
-  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
+  const TABS = ['home', 'activity', 'plan', 'you', 'accounts', 'categories', 'budget', 'goals', 'recurring', 'people', 'insights', 'calendar', 'networth', 'travel', 'notifications', 'categoryDetail', 'notionExpenses', 'notionAccounts', 'notionBudgets'];
 
   const patch = (fn) => setStore((prev) => {
     const next = fn({
@@ -125,9 +182,12 @@ function ZenithApp() {
       goals: [...(prev.goals || [])],
       recurring: [...(prev.recurring || [])],
       trips: (prev.trips || []).map((tr) => ({ ...tr, expenses: [...(tr.expenses || [])] })),
+      holdings: [...(prev.holdings || [])],
+      people: [...(prev.people || [])],
+      ious: [...(prev.ious || [])],
       settings: { ...(prev.settings || defaultSettings()), lock: { ...((prev.settings && prev.settings.lock) || {}) } },
     });
-    return next;
+    return { ...next, updatedAt: new Date().toISOString() };
   });
 
   const goTab = (tab, arg) => {
@@ -177,6 +237,26 @@ function ZenithApp() {
       if (limit > 0) next.push({ accountId, monthKey: mk, limit });
       return { ...s, budgets: next };
     });
+  };
+
+  const moveBudget = (fromId, toId, amount) => {
+    patch((s) => (typeof applyBudgetMove === 'function' ? applyBudgetMove(s, fromId, toId, amount) : s));
+  };
+
+  const saveHolding = (id, draft) => {
+    patch((s) => {
+      if (id) {
+        return { ...s, holdings: (s.holdings || []).map((h) => (h.id === id ? { ...h, ...draft, id } : h)) };
+      }
+      const row = typeof normalizeHolding === 'function'
+        ? normalizeHolding({ ...draft, id: typeof newMoneyId === 'function' ? newMoneyId('hold', draft.name) : ('hold-' + Date.now()) }, (s.holdings || []).length)
+        : { ...draft, id: 'hold-' + Date.now() };
+      return { ...s, holdings: (s.holdings || []).concat([row]) };
+    });
+  };
+
+  const deleteHolding = (id) => {
+    patch((s) => ({ ...s, holdings: (s.holdings || []).filter((h) => h.id !== id) }));
   };
 
   const saveAccount = (id, draft) => {
@@ -330,6 +410,49 @@ function ZenithApp() {
     patch((s) => ({ ...s, recurring: (s.recurring || []).map((r) => (r.id === id ? { ...r, active: !r.active } : r)) }));
   };
 
+  const settlePerson = (id) => {
+    patch((s) => ({ ...s, ious: (s.ious || []).map((row) => (row.personId === id ? { ...row, settled: true } : row)) }));
+  };
+
+  const savePerson = (id, draft) => {
+    patch((s) => {
+      if (id) return { ...s, people: (s.people || []).map((p) => (p.id === id ? { ...p, ...draft, id } : p)) };
+      const row = typeof normalizePerson === 'function'
+        ? normalizePerson({ ...draft, id: typeof newMoneyId === 'function' ? newMoneyId('ppl', draft.name) : ('ppl-' + Date.now()) }, (s.people || []).length)
+        : { ...draft, id: 'ppl-' + Date.now() };
+      return { ...s, people: (s.people || []).concat([row]) };
+    });
+  };
+
+  const deletePerson = (id) => {
+    patch((s) => ({
+      ...s,
+      people: (s.people || []).filter((p) => p.id !== id),
+      ious: (s.ious || []).filter((row) => row.personId !== id),
+    }));
+  };
+
+  const addIou = (personId, draft) => {
+    patch((s) => {
+      const row = typeof normalizeIou === 'function'
+        ? normalizeIou({ ...draft, personId, id: typeof newMoneyId === 'function' ? newMoneyId('iou', draft.note) : ('iou-' + Date.now()) }, (s.ious || []).length)
+        : { ...draft, personId, id: 'iou-' + Date.now(), settled: false };
+      return { ...s, ious: (s.ious || []).concat([row]) };
+    });
+  };
+
+  const splitEqual = (payload) => {
+    patch((s) => {
+      const drafts = typeof buildEqualSplitIous === 'function'
+        ? buildEqualSplitIous(payload.personIds, payload.amount, payload.note, typeof todayISO === 'function' ? todayISO() : undefined)
+        : [];
+      const rows = drafts.map((row, i) => (typeof normalizeIou === 'function'
+        ? normalizeIou({ ...row, id: typeof newMoneyId === 'function' ? newMoneyId('iou', (payload.note || '') + i) : ('iou-' + i + Date.now()) }, i)
+        : row));
+      return { ...s, ious: (s.ious || []).concat(rows) };
+    });
+  };
+
   const startTrip = (draft) => {
     if (typeof canStartTrip === 'function' && !canStartTrip(store)) {
       setPaywallFeature('trip');
@@ -341,11 +464,22 @@ function ZenithApp() {
   };
 
   const endTrip = (id) => {
-    patch((s) => ({
-      ...s,
-      trips: (s.trips || []).map((tr) => (tr.id === id ? { ...tr, status: 'ended' } : tr)),
-      activeTripId: s.activeTripId === id ? null : s.activeTripId,
-    }));
+    patch((s) => {
+      const trips = (s.trips || []).map((tr) => (tr.id === id ? { ...tr, status: 'ended' } : tr));
+      const other = trips.find((tr) => tr.status === 'active');
+      return {
+        ...s,
+        trips: trips,
+        activeTripId: s.activeTripId === id ? (other ? other.id : null) : s.activeTripId,
+      };
+    });
+  };
+
+  const switchTrip = (id) => {
+    patch((s) => {
+      const found = (s.trips || []).find((tr) => tr.id === id && tr.status === 'active');
+      return found ? { ...s, activeTripId: id } : s;
+    });
   };
 
   const addTripExpense = (tripId, draft) => {
@@ -507,9 +641,11 @@ function ZenithApp() {
       reader.onload = () => {
         try {
           const next = parseStorePayload(String(reader.result));
-          setStore(next);
-          saveStore(next);
-          if (typeof applyZenithTheme === 'function') applyZenithTheme(next.settings && next.settings.theme);
+          const stamped = { ...next, updatedAt: new Date().toISOString() };
+          skipCloudPushRef.current = false;
+          setStore(stamped);
+          saveStore(stamped);
+          if (typeof applyZenithTheme === 'function') applyZenithTheme(stamped.settings && stamped.settings.theme);
         } catch (err) {
           window.alert(t(locale, 'jsonInvalid'));
         }
@@ -537,6 +673,7 @@ function ZenithApp() {
   const resetAll = () => {
     if (!window.confirm(t(locale, 'confirmDelete'))) return;
     const fresh = createInitialStore();
+    skipCloudPushRef.current = false;
     setStore(fresh);
     saveStore(fresh);
     setScreen('onboarding');
@@ -544,10 +681,63 @@ function ZenithApp() {
     setActiveTab('home');
   };
 
+  const applyCloudUser = async (user) => {
+    const client = cloudClientRef.current;
+    let chosen = storeRef.current;
+    if (user && client && typeof zenithCloudPull === 'function') {
+      const row = await zenithCloudPull(client, user.id);
+      chosen = typeof zenithPickNewerLedger === 'function'
+        ? zenithPickNewerLedger(storeRef.current, row && row.store, row && row.updated_at)
+        : storeRef.current;
+      skipCloudPushRef.current = true;
+      setStore(chosen);
+      saveStore(chosen);
+    }
+    setCloud({
+      ready: true,
+      enabled: true,
+      user: user || null,
+      status: user ? 'synced' : 'signedOut',
+      error: '',
+      lastSyncedAt: user ? new Date().toISOString() : null,
+    });
+    if (user && client && typeof zenithCloudPush === 'function') {
+      try { await zenithCloudPush(client, user.id, chosen); } catch (e) { /* keep local */ }
+    }
+  };
+
+  const cloudSignIn = async (email, password) => {
+    const client = cloudClientRef.current;
+    if (!client || typeof zenithCloudSignIn !== 'function') return { error: { message: t(locale, 'cloudOff') } };
+    const result = await zenithCloudSignIn(client, email, password);
+    if (result.error) return result;
+    if (!result.session) return { needsConfirm: true, user: result.user };
+    await applyCloudUser(result.user);
+    return result;
+  };
+
+  const cloudSignUp = async (email, password) => {
+    const client = cloudClientRef.current;
+    if (!client || typeof zenithCloudSignUp !== 'function') return { error: { message: t(locale, 'cloudOff') } };
+    const result = await zenithCloudSignUp(client, email, password);
+    if (result.error) return result;
+    if (!result.session) return { needsConfirm: true, user: result.user };
+    await applyCloudUser(result.user);
+    return result;
+  };
+
+  const cloudSignOut = async () => {
+    if (typeof zenithCloudSignOut === 'function') {
+      try { await zenithCloudSignOut(cloudClientRef.current); } catch (e) { /* ignore */ }
+    }
+    setCloud((c) => ({ ...c, user: null, status: c.enabled ? 'signedOut' : 'off', lastSyncedAt: null }));
+  };
+
   const burstItems = [
-    { label: 'Voice', angle: -55, action: () => { setFabOpen(false); setTimeout(() => setScreen('voiceEntry'), 80); } },
-    { label: 'Scan', angle: 0, action: () => { setFabOpen(false); setTimeout(() => setScreen('cameraScan'), 80); } },
-    { label: 'Manual', angle: 55, action: () => { setFabOpen(false); setEditTx(null); setTimeout(() => setScreen('addExpense'), 80); } },
+    { label: 'Voice', angle: -70, action: () => { setFabOpen(false); setTimeout(() => setScreen('voiceEntry'), 80); } },
+    { label: 'Scan', angle: -25, action: () => { setFabOpen(false); setTimeout(() => setScreen('cameraScan'), 80); } },
+    { label: 'Manual', angle: 25, action: () => { setFabOpen(false); setEditTx(null); setTimeout(() => setScreen('addExpense'), 80); } },
+    { label: t(locale, 'splitBill'), angle: 70, action: () => { setFabOpen(false); goTab('people'); } },
   ];
 
   const drawerCat = drawerTx ? findCat(store, drawerTx.categoryId) : null;
@@ -599,7 +789,7 @@ function ZenithApp() {
                   transition: 'transform 0.38s cubic-bezier(0.4,0,0.2,1)',
                   zIndex: activeTab === tab ? 2 : 1,
                 }}>
-                  {tab === 'home' && <HomeScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} onAdd={() => { setEditTx(null); setScreen('addExpense'); }} />}
+                  {tab === 'home' && <HomeScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} onAdd={() => { setEditTx(null); setScreen('addExpense'); }} onAddIncome={() => { setEditTx({ type: 'income' }); setScreen('addExpense'); }} />}
                   {tab === 'activity' && <ActivityScreen store={store} onSelectTx={openDrawer} onNavigate={goTab} />}
                   {tab === 'plan' && <PlanScreen store={store} onNavigate={goTab} />}
                   {tab === 'you' && (
@@ -616,6 +806,10 @@ function ZenithApp() {
                       onExportJson={exportJson}
                       onImportJson={importJson}
                       onUnlockPro={() => setPaywallFeature('pro')}
+                      cloud={cloud}
+                      onCloudSignIn={cloudSignIn}
+                      onCloudSignUp={cloudSignUp}
+                      onCloudSignOut={cloudSignOut}
                     />
                   )}
                   {tab === 'accounts' && typeof AccountsManagerScreen === 'function' && (
@@ -637,7 +831,7 @@ function ZenithApp() {
                       onToggleSubcategories={toggleSubcategories}
                     />
                   )}
-                  {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetAccountBudget={setAccountBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
+                  {tab === 'budget' && <BudgetSetupScreen store={store} onSetBudget={setBudget} onSetAccountBudget={setAccountBudget} onMoveBudget={moveBudget} onSetIncome={(n) => patch((s) => ({ ...s, monthlyIncome: n }))} />}
                   {tab === 'goals' && (
                     <SavingsGoalsScreen
                       store={store}
@@ -656,8 +850,25 @@ function ZenithApp() {
                       onToggleRule={toggleRecurring}
                     />
                   )}
+                  {tab === 'people' && typeof PeopleScreen === 'function' && (
+                    <PeopleScreen
+                      store={store}
+                      onBack={() => goTab('plan')}
+                      onSavePerson={savePerson}
+                      onDeletePerson={deletePerson}
+                      onAddIou={addIou}
+                      onSettlePerson={settlePerson}
+                      onSplitEqual={splitEqual}
+                    />
+                  )}
                   {tab === 'insights' && typeof ReportsScreen === 'function' && (
                     <ReportsScreen store={store} onNavigate={goTab} onBack={() => goTab('plan')} />
+                  )}
+                  {tab === 'calendar' && typeof CashflowCalendarScreen === 'function' && (
+                    <CashflowCalendarScreen store={store} onBack={goBack} onSelectTx={openDrawer} />
+                  )}
+                  {tab === 'networth' && typeof NetWorthScreen === 'function' && (
+                    <NetWorthScreen store={store} onBack={goBack} onSaveHolding={saveHolding} onDeleteHolding={deleteHolding} />
                   )}
                   {tab === 'travel' && typeof TravelScreen === 'function' && (
                     <TravelScreen
@@ -665,6 +876,7 @@ function ZenithApp() {
                       onBack={() => goTab('plan')}
                       onStartTrip={startTrip}
                       onEndTrip={endTrip}
+                      onSwitchTrip={switchTrip}
                       onAddExpense={addTripExpense}
                       onSaveExpense={saveTripExpense}
                       onDeleteExpense={deleteTripExpense}
@@ -785,8 +997,8 @@ function ZenithApp() {
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h13" stroke={activeTab === 'activity' || activeTab === 'notionExpenses' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
                 <div style={{ width: 58 }} />
-                <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notionBudgets'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
-                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
+                <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring', 'insights', 'calendar', 'networth', 'travel', 'notionBudgets'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
+                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'calendar', 'networth', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'calendar', 'networth', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
                 <NavBtn label={t(locale, 'you')} active={['you', 'accounts', 'categories'].includes(activeTab)} accent={accent} onClick={() => goTab('you')}
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M5 19c1.4-3 4-4.5 7-4.5S17.6 16 19 19" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
