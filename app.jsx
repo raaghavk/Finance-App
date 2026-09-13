@@ -692,10 +692,10 @@ function ZenithApp() {
                     <ReportsScreen store={store} onNavigate={goTab} onBack={() => goTab('plan')} />
                   )}
                   {tab === 'calendar' && typeof CashflowCalendarScreen === 'function' && (
-                    <CashflowCalendarScreen store={store} onBack={() => goTab('insights')} onSelectTx={openDrawer} />
+                    <CashflowCalendarScreen store={store} onBack={goBack} onSelectTx={openDrawer} />
                   )}
                   {tab === 'networth' && typeof NetWorthScreen === 'function' && (
-                    <NetWorthScreen store={store} onBack={() => goTab('you')} onSaveHolding={saveHolding} onDeleteHolding={deleteHolding} />
+                    <NetWorthScreen store={store} onBack={goBack} onSaveHolding={saveHolding} onDeleteHolding={deleteHolding} />
                   )}
                   {tab === 'travel' && typeof TravelScreen === 'function' && (
                     <TravelScreen
@@ -824,8 +824,8 @@ function ZenithApp() {
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h13" stroke={activeTab === 'activity' || activeTab === 'notionExpenses' ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
                 <div style={{ width: 58 }} />
-                <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notionBudgets'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
-                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
+                <NavBtn label={t(locale, 'plan')} active={['plan', 'budget', 'goals', 'recurring', 'insights', 'calendar', 'networth', 'travel', 'notionBudgets'].includes(activeTab)} accent={accent} onClick={() => goTab('plan')}
+                  icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'calendar', 'networth', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M8 12h8M8 16h5" stroke={['plan', 'budget', 'goals', 'recurring', 'insights', 'calendar', 'networth', 'travel', 'notionBudgets'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}
                 />
                 <NavBtn label={t(locale, 'you')} active={['you', 'accounts', 'categories'].includes(activeTab)} accent={accent} onClick={() => goTab('you')}
                   icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9"/><path d="M5 19c1.4-3 4-4.5 7-4.5S17.6 16 19 19" stroke={['you', 'accounts', 'categories'].includes(activeTab) ? accent : '#8E8E93'} strokeWidth="1.9" strokeLinecap="round"/></svg>}

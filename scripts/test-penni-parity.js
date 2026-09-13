@@ -268,8 +268,8 @@ assert.match(app, /canAddTripExpense/);
 assert.match(app, /switchTrip/);
 assert.match(app, /moveBudget/);
 assert.match(app, /saveHolding/);
-assert.match(app, /CashflowCalendarScreen/);
-assert.match(app, /NetWorthScreen/);
+assert.match(app, /tab === 'calendar'/);
+assert.match(app, /tab === 'networth'/);
 assert.match(app, /firstEmoji/);
 assert.match(app, /exportJson/);
 
