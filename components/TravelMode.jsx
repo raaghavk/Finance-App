@@ -171,6 +171,7 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
   const [newCheck, setNewCheck] = React.useState('');
   const [rateDraft, setRateDraft] = React.useState('');
   const [forexDraft, setForexDraft] = React.useState(null);
+  const [hubOpen, setHubOpen] = React.useState(false);
   const countries = TRAVEL_COUNTRIES || [];
   const ink = ZENITH.ink;
   const muted = ZENITH.muted;
@@ -238,6 +239,7 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
       startDate, endDate,
       budgetINR: parseFloat(tripBudgetINR) || 0,
     });
+    setHubOpen(false);
     setStep(0);
   };
 
@@ -292,13 +294,13 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
     );
   }
 
-  if (!live) {
+  if (!live || hubOpen) {
     return (
       <div style={{ height: '100%', position: 'relative', background: page }}>
         <div style={{ height: '100%', overflowY: 'auto', paddingBottom: 'var(--zenith-pad-bottom)' }}>
           {typeof ZenithScreenHeader === 'function' ? (
             <ZenithScreenHeader
-              title={t(locale, 'travel')}
+              title={t(locale, 'yourTrips')}
               leftLabel="‹"
               onLeft={onBack}
               rightLabel={past.length ? t(locale, 'travelHistory') : (isPro ? t(locale, 'paid') : t(locale, 'upgrade'))}
@@ -321,9 +323,69 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
               <button type="button" onClick={beginTrip} style={{
                 background: '#FFFFFF', border: 'none', borderRadius: 16, padding: '16px 28px', cursor: 'pointer',
                 fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: accent,
-              }}>{t(locale, 'startTrip')}</button>
+              }}>{lives.length ? t(locale, 'anotherTrip') : t(locale, 'startTrip')}</button>
             </div>
           </div>
+          {lives.length > 0 && (
+            <div style={{ padding: '0 20px', marginBottom: 20 }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>{t(locale, 'liveChip')}</p>
+              <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: zenithSoftShadow() }}>
+                {lives.map((tr, i) => (
+                  <button
+                    key={tr.id}
+                    type="button"
+                    onClick={() => { onSwitchTrip && onSwitchTrip(tr.id); setHubOpen(false); }}
+                    style={{
+                      display: 'flex', width: '100%', alignItems: 'center', gap: 12, padding: '16px 18px', cursor: 'pointer',
+                      border: 'none', textAlign: 'left', background: card,
+                      borderBottom: i < lives.length - 1 ? '1px solid ' + cream : 'none',
+                    }}
+                  >
+                    <span style={{ fontSize: 22 }}>{tr.flag}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color: ink }}>{tr.name}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted }}>{t(locale, 'openTrip')} · {tr.startDate} – {tr.endDate}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {past.length > 0 && (
+            <div style={{ padding: '0 20px', marginBottom: 20 }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>{t(locale, 'pastTrips')}</p>
+              <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: zenithSoftShadow() }}>
+                {past.map((tr, i) => (
+                  <button
+                    key={tr.id}
+                    type="button"
+                    onClick={() => {
+                      if (!canUseTravelHistory(store)) { onNeedPro && onNeedPro('history'); return; }
+                      setHistoryDetail({
+                        ...tr,
+                        spentINR: tripSpentINR(tr),
+                        spentForeign: tripSpentForeign(tr),
+                        dates: tr.startDate + ' – ' + tr.endDate,
+                        country: tr.countryName,
+                        overBudget: tripSpentINR(tr) > (tr.budgetINR || 0),
+                      });
+                    }}
+                    style={{
+                      display: 'flex', width: '100%', alignItems: 'center', gap: 12, padding: '16px 18px', cursor: 'pointer',
+                      border: 'none', textAlign: 'left', background: card,
+                      borderBottom: i < past.length - 1 ? '1px solid ' + cream : 'none',
+                    }}
+                  >
+                    <span style={{ fontSize: 22 }}>{tr.flag}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color: ink }}>{tr.name}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted }}>{t(locale, 'endedChip')} · {tr.startDate} – {tr.endDate}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{ padding: '0 20px' }}>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>{t(locale, 'whatYouGet')}</p>
             <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: zenithSoftShadow() }}>
@@ -389,6 +451,11 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: page, position: 'relative' }}>
       <div style={{ paddingTop: 'var(--zenith-pad-top)', padding: 'var(--zenith-pad-top) 20px 12px' }}>
+        <button type="button" onClick={() => setHubOpen(true)} style={{
+          display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 10,
+        }}>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: accent, fontWeight: 600 }}>‹ {t(locale, 'allTrips')}</span>
+        </button>
         {!isPro && (
           <button type="button" onClick={() => onUnlockPro && onUnlockPro()} style={{
             width: '100%', marginBottom: 10, border: 'none', borderRadius: 12, padding: '8px 12px', cursor: 'pointer',

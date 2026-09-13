@@ -20,10 +20,9 @@ const handleOcr = require('../api/ocr');
 const ROOT = path.resolve(__dirname, '..');
 const PORT = Number(process.env.ZENITH_PORT || process.env.PORT || 5173);
 
-function loadDotenv() {
-  const envPath = path.join(ROOT, '.env');
-  if (!fs.existsSync(envPath)) return;
-  fs.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach((line) => {
+function applyEnvFile(file, override) {
+  if (!fs.existsSync(file)) return;
+  fs.readFileSync(file, 'utf8').split(/\r?\n/).forEach((line) => {
     const trimmed = line.trim();
     if (!trimmed || trimmed[0] === '#') return;
     const eq = trimmed.indexOf('=');
@@ -33,8 +32,12 @@ function loadDotenv() {
     if ((val[0] === '"' && val.endsWith('"')) || (val[0] === "'" && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
-    if (key && process.env[key] == null) process.env[key] = val;
+    if (key && (override || process.env[key] == null)) process.env[key] = val;
   });
+}
+function loadDotenv() {
+  applyEnvFile(path.join(ROOT, '.env'), false);
+  applyEnvFile(path.join(ROOT, '.env.local'), true);
 }
 loadDotenv();
 

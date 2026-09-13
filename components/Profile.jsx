@@ -1,6 +1,6 @@
 // Profile.jsx — You tab: obvious Edit, then dedicated account / category managers
 
-function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSaveAccount, onDeleteAccount, onSetTheme, onSetLock, onExportJson, onImportJson, onUnlockPro }) {
+function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSaveAccount, onDeleteAccount, onSetTheme, onSetLock, onExportJson, onImportJson, onUnlockPro, cloud, onCloudSignIn, onCloudSignUp, onCloudSignOut }) {
   const locale = store.user.locale || 'en';
   const [editing, setEditing] = React.useState(false);
   const [sheet, setSheet] = React.useState(null);
@@ -285,6 +285,17 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
       </div>
 
       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
+        {t(locale, 'cloudAccount')}
+      </p>
+      <CloudBackupCard
+        locale={locale}
+        cloud={cloud}
+        onSignIn={onCloudSignIn}
+        onSignUp={onCloudSignUp}
+        onSignOut={onCloudSignOut}
+      />
+
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: muted, letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 24px', marginBottom: 8 }}>
         {locale === 'hi' ? 'गोपनीयता' : 'Privacy'}
       </p>
       <div style={{ background: card, marginBottom: 20 }}>
@@ -314,7 +325,7 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
         />
         <Row
           label={t(locale, 'privacyPolicy')}
-          sub={locale === 'hi' ? 'डेटा इस फ़ोन पर रहता है' : 'Ledger stays on this device'}
+          sub={locale === 'hi' ? 'पहले इस फ़ोन पर · वैकल्पिक क्लाउड' : 'Local first · optional cloud account'}
           onClick={() => { window.location.href = 'privacy.html'; }}
           showChevron
         />
@@ -348,6 +359,82 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
           onCancel={() => setSheet(null)}
           onSave={(lock) => { onSetLock && onSetLock(lock); setSheet(null); }}
         />
+      )}
+    </div>
+  );
+}
+
+function CloudBackupCard({ locale, cloud, onSignIn, onSignUp, onSignOut }) {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+  const [msg, setMsg] = React.useState('');
+  const ink = typeof ZENITH !== 'undefined' ? ZENITH.ink : '#0F172A';
+  const muted = typeof ZENITH !== 'undefined' ? ZENITH.muted : '#64748B';
+  const card = typeof ZENITH !== 'undefined' ? ZENITH.card : '#FFFFFF';
+  const cream = typeof ZENITH !== 'undefined' ? ZENITH.cream : '#E8EEF7';
+  const accent = typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB';
+  const enabled = cloud && cloud.enabled;
+  const user = cloud && cloud.user;
+  const statusLine = !enabled ? t(locale, 'cloudOff')
+    : user ? (cloud.status === 'syncing' ? t(locale, 'cloudSyncing') : cloud.status === 'error' ? t(locale, 'cloudError') : t(locale, 'cloudSynced'))
+    : t(locale, 'cloudSignedOut');
+
+  const submit = async (mode) => {
+    if (!email.trim() || String(password).length < 6) {
+      setMsg(t(locale, 'cloudNeedEmail'));
+      return;
+    }
+    const fn = mode === 'up' ? onSignUp : onSignIn;
+    if (!fn) {
+      setMsg(t(locale, 'cloudOff'));
+      return;
+    }
+    setBusy(true);
+    setMsg('');
+    try {
+      const result = await fn(email.trim(), password);
+      if (result && result.error) setMsg(result.error.message || t(locale, 'cloudError'));
+      else if (result && result.needsConfirm) setMsg(t(locale, 'cloudConfirmEmail'));
+    } catch (err) {
+      setMsg(t(locale, 'cloudError'));
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div style={{ background: card, marginBottom: 20, padding: '16px 20px 18px' }}>
+      <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color: ink }}>{t(locale, 'cloudAccount')}</p>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginTop: 4, lineHeight: 1.45 }}>{statusLine}</p>
+      {user ? (
+        <>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: ink, margin: '12px 0' }}>{user.email || user.id}</p>
+          <button type="button" disabled={busy} onClick={() => onSignOut && onSignOut()} style={{
+            width: '100%', padding: '12px', border: 'none', borderRadius: 14, cursor: 'pointer',
+            background: cream, color: ink, fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800,
+          }}>{t(locale, 'signOut')}</button>
+        </>
+      ) : (
+        <>
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, margin: '12px 0 6px' }}>{t(locale, 'cloudEmail')}</label>
+          <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" style={typeof moneyInputStyle === 'function' ? moneyInputStyle() : { width: '100%', padding: 12, borderRadius: 12, border: 'none', background: cream }} />
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, margin: '12px 0 6px' }}>{t(locale, 'cloudPassword')}</label>
+          <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" style={typeof moneyInputStyle === 'function' ? moneyInputStyle() : { width: '100%', padding: 12, borderRadius: 12, border: 'none', background: cream }} />
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, margin: '8px 0 12px', lineHeight: 1.4 }}>{t(locale, 'cloudPasswordHint')}</p>
+          {msg ? <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#B91C1C', marginBottom: 10 }}>{msg}</p> : null}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" disabled={busy || !enabled} onClick={() => submit('in')} style={{
+              flex: 1, padding: '12px', border: 'none', borderRadius: 14, cursor: enabled ? 'pointer' : 'default',
+              background: enabled ? accent : cream, color: enabled ? '#fff' : muted,
+              fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800,
+            }}>{t(locale, 'cloudSignIn')}</button>
+            <button type="button" disabled={busy || !enabled} onClick={() => submit('up')} style={{
+              flex: 1, padding: '12px', border: 'none', borderRadius: 14, cursor: enabled ? 'pointer' : 'default',
+              background: cream, color: enabled ? accent : muted,
+              fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 800,
+            }}>{t(locale, 'cloudSignUp')}</button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -391,4 +478,4 @@ function LockSetupSheet({ locale, lock, onSave, onCancel }) {
   );
 }
 
-Object.assign(window, { ProfileScreen, LockSetupSheet });
+Object.assign(window, { ProfileScreen, LockSetupSheet, CloudBackupCard });

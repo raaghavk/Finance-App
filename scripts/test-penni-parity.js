@@ -98,8 +98,14 @@ const afterDemo = {
   trips: [ctx.normalizeTrip({ id: 't1', countryCode: 'THB', status: 'ended', expenses: [] }, 0)],
   activeTripId: null,
 };
-assert.strictEqual(ctx.canStartTrip(afterDemo), false);
+assert.strictEqual(ctx.canStartTrip(afterDemo), true);
 assert.strictEqual(ctx.canStartTrip({ ...afterDemo, settings: { ...afterDemo.settings, pro: true } }), true);
+const oneLive = {
+  ...emptyTravel,
+  trips: [ctx.normalizeTrip({ id: 'live-1', countryCode: 'THB', status: 'active', expenses: [] }, 0)],
+  activeTripId: 'live-1',
+};
+assert.strictEqual(ctx.canStartTrip(oneLive), false);
 
 const tripA = ctx.normalizeTrip({ id: 'live-a', countryCode: 'THB', status: 'active', name: 'Bangkok', budgetINR: 50000, startDate: '2026-09-01', endDate: '2026-09-20', expenses: [{ id: 'e1', merchant: 'Pad', cat: 'Food', amount: 100, inr: 2500, date: '2026-09-02' }] }, 0);
 const tripB = ctx.normalizeTrip({ id: 'live-b', countryCode: 'USD', status: 'active', name: 'NYC', budgetINR: 80000, startDate: '2026-10-01', endDate: '2026-10-10', expenses: [] }, 1);
@@ -234,6 +240,9 @@ assert.match(travel, /leftoverDay/);
 assert.match(travel, /anotherTrip/);
 assert.match(travel, /editTrip/);
 assert.match(travel, /onSwitchTrip/);
+assert.match(travel, /hubOpen/);
+assert.match(travel, /yourTrips/);
+assert.match(travel, /allTrips/);
 
 const extras = fs.readFileSync(path.join(root, 'components/TravelExtras.jsx'), 'utf8');
 assert.match(extras, /travelChrome/);
@@ -249,6 +258,8 @@ assert.match(profile, /zenithPro/);
 assert.doesNotMatch(profile, /travelLater/);
 assert.match(profile, /sendFeedback/);
 assert.match(profile, /privacy\.html/);
+assert.match(profile, /cloudAccount/);
+assert.match(profile, /CloudBackupCard/);
 
 const plan = fs.readFileSync(path.join(root, 'components/Plan.jsx'), 'utf8');
 assert.match(plan, /insights/);
@@ -272,6 +283,8 @@ assert.match(app, /tab === 'calendar'/);
 assert.match(app, /tab === 'networth'/);
 assert.match(app, /firstEmoji/);
 assert.match(app, /exportJson/);
+assert.match(app, /zenithCloudBoot/);
+assert.match(app, /onCloudSignIn/);
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 assert.match(pkg.scripts.test, /test-penni-parity/);

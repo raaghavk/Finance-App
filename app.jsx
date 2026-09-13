@@ -85,8 +85,65 @@ function ZenithApp() {
     const s = loadStore();
     return !(s.settings && s.settings.lock && s.settings.lock.enabled);
   });
+  const cloudClientRef = React.useRef(null);
+  const skipCloudPushRef = React.useRef(true);
+  const storeRef = React.useRef(store);
+  storeRef.current = store;
+  const [cloud, setCloud] = React.useState({
+    ready: false, enabled: false, user: null, status: 'off', error: '', lastSyncedAt: null,
+  });
 
-  React.useEffect(() => { saveStore(store); }, [store]);
+  React.useEffect(() => {
+    saveStore(store);
+    if (skipCloudPushRef.current) {
+      skipCloudPushRef.current = false;
+      return;
+    }
+    const client = cloudClientRef.current;
+    const user = cloud.user;
+    if (!client || !user || typeof zenithCloudPush !== 'function') return;
+    const timer = setTimeout(() => {
+      setCloud((c) => (c.user ? { ...c, status: 'syncing' } : c));
+      zenithCloudPush(client, user.id, store).then(() => {
+        setCloud((c) => (c.user ? { ...c, status: 'synced', lastSyncedAt: new Date().toISOString(), error: '' } : c));
+      }).catch(() => {
+        setCloud((c) => (c.user ? { ...c, status: 'error', error: 'push' } : c));
+      });
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [store, cloud.user]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async function bootCloud() {
+      if (typeof zenithCloudBoot !== 'function') {
+        if (!cancelled) setCloud({ ready: true, enabled: false, user: null, status: 'off', error: '', lastSyncedAt: null });
+        return;
+      }
+      try {
+        const boot = await zenithCloudBoot({ local: storeRef.current });
+        if (cancelled) return;
+        cloudClientRef.current = boot.client;
+        if (boot.store) {
+          skipCloudPushRef.current = true;
+          setStore(boot.store);
+          saveStore(boot.store);
+          if (typeof applyZenithTheme === 'function') applyZenithTheme(boot.store.settings && boot.store.settings.theme);
+        }
+        setCloud({
+          ready: true,
+          enabled: !!boot.enabled,
+          user: boot.user || null,
+          status: boot.enabled ? (boot.user ? 'synced' : 'signedOut') : 'off',
+          error: boot.error || '',
+          lastSyncedAt: boot.user ? new Date().toISOString() : null,
+        });
+      } catch (err) {
+        if (!cancelled) setCloud({ ready: true, enabled: false, user: null, status: 'off', error: '', lastSyncedAt: null });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   React.useEffect(() => {
     setStore((prev) => {
@@ -128,7 +185,7 @@ function ZenithApp() {
       holdings: [...(prev.holdings || [])],
       settings: { ...(prev.settings || defaultSettings()), lock: { ...((prev.settings && prev.settings.lock) || {}) } },
     });
-    return next;
+    return { ...next, updatedAt: new Date().toISOString() };
   });
 
   const goTab = (tab, arg) => {
@@ -539,9 +596,11 @@ function ZenithApp() {
       reader.onload = () => {
         try {
           const next = parseStorePayload(String(reader.result));
-          setStore(next);
-          saveStore(next);
-          if (typeof applyZenithTheme === 'function') applyZenithTheme(next.settings && next.settings.theme);
+          const stamped = { ...next, updatedAt: new Date().toISOString() };
+          skipCloudPushRef.current = false;
+          setStore(stamped);
+          saveStore(stamped);
+          if (typeof applyZenithTheme === 'function') applyZenithTheme(stamped.settings && stamped.settings.theme);
         } catch (err) {
           window.alert(t(locale, 'jsonInvalid'));
         }
@@ -569,11 +628,64 @@ function ZenithApp() {
   const resetAll = () => {
     if (!window.confirm(t(locale, 'confirmDelete'))) return;
     const fresh = createInitialStore();
+    skipCloudPushRef.current = false;
     setStore(fresh);
     saveStore(fresh);
     setScreen('onboarding');
     setOnboardStep(0);
     setActiveTab('home');
+  };
+
+  const applyCloudUser = async (user) => {
+    const client = cloudClientRef.current;
+    let chosen = storeRef.current;
+    if (user && client && typeof zenithCloudPull === 'function') {
+      const row = await zenithCloudPull(client, user.id);
+      chosen = typeof zenithPickNewerLedger === 'function'
+        ? zenithPickNewerLedger(storeRef.current, row && row.store, row && row.updated_at)
+        : storeRef.current;
+      skipCloudPushRef.current = true;
+      setStore(chosen);
+      saveStore(chosen);
+    }
+    setCloud({
+      ready: true,
+      enabled: true,
+      user: user || null,
+      status: user ? 'synced' : 'signedOut',
+      error: '',
+      lastSyncedAt: user ? new Date().toISOString() : null,
+    });
+    if (user && client && typeof zenithCloudPush === 'function') {
+      try { await zenithCloudPush(client, user.id, chosen); } catch (e) { /* keep local */ }
+    }
+  };
+
+  const cloudSignIn = async (email, password) => {
+    const client = cloudClientRef.current;
+    if (!client || typeof zenithCloudSignIn !== 'function') return { error: { message: t(locale, 'cloudOff') } };
+    const result = await zenithCloudSignIn(client, email, password);
+    if (result.error) return result;
+    if (!result.session) return { needsConfirm: true, user: result.user };
+    await applyCloudUser(result.user);
+    return result;
+  };
+
+  const cloudSignUp = async (email, password) => {
+    const client = cloudClientRef.current;
+    if (!client || typeof zenithCloudSignUp !== 'function') return { error: { message: t(locale, 'cloudOff') } };
+    const result = await zenithCloudSignUp(client, email, password);
+    if (result.error) return result;
+    if (!result.session) return { needsConfirm: true, user: result.user };
+    await applyCloudUser(result.user);
+    return result;
+  };
+
+  const cloudSignOut = async () => {
+    if (typeof zenithCloudSignOut === 'function') {
+      try { await zenithCloudSignOut(cloudClientRef.current); } catch (e) { /* ignore */ }
+    }
+    setCloud((c) => ({ ...c, user: null, status: c.enabled ? 'signedOut' : 'off', lastSyncedAt: null }));
   };
 
   const burstItems = [
@@ -648,6 +760,10 @@ function ZenithApp() {
                       onExportJson={exportJson}
                       onImportJson={importJson}
                       onUnlockPro={() => setPaywallFeature('pro')}
+                      cloud={cloud}
+                      onCloudSignIn={cloudSignIn}
+                      onCloudSignUp={cloudSignUp}
+                      onCloudSignOut={cloudSignOut}
                     />
                   )}
                   {tab === 'accounts' && typeof AccountsManagerScreen === 'function' && (

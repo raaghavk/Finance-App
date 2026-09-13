@@ -18,7 +18,8 @@ const ZENITH = {
 
 const ZENITH_PRO_PRICE_MO = 149;
 const ZENITH_PRO_PRICE_YR = 999;
-const TRAVEL_FREE_MAX_TRIPS = 1;
+const TRAVEL_FREE_MAX_LIVE_TRIPS = 1;
+const TRAVEL_FREE_MAX_TRIPS = TRAVEL_FREE_MAX_LIVE_TRIPS;
 const TRAVEL_FREE_MAX_EXPENSES = 8;
 
 const GOAL_COLORS = ['#2563EB', '#7C3AED', '#0F766E', '#C2410C', '#BE185D', '#0369A1'];
@@ -178,10 +179,10 @@ const COPY = {
     skipCash: 'Skip with ₹0',
     setBalance: 'Set opening cash',
     privacyTitle: 'Your data stays with you.',
-    noCloud: 'No Cloud Sync',
-    noCloudDesc: 'The ledger lives on this device. Optional voice and receipt OCR use Sarvam and Cloud Vision when those keys are set.',
+    noCloud: 'Local first',
+    noCloudDesc: 'The ledger lives on this device. Optional account backup uses our database when you sign in on You.',
     encrypt: 'Local storage',
-    encryptDesc: 'Your ledger stays in this browser. We never see it.',
+    encryptDesc: 'This phone keeps a copy. Sign in on You to back it up to your account.',
     noHarvest: 'Zero Data Harvest',
     noHarvestDesc: "We don't collect your name, spend, or contacts.",
     begin: "I understand — let's begin",
@@ -239,7 +240,7 @@ const COPY = {
     later: 'Later',
     travelLater: 'Travel Mode is coming later.',
     language: 'Language',
-    localOnly: 'Ledger stays in this browser and the Home Screen app. Notion sync is optional and off by default.',
+    localOnly: 'Ledger stays on this device. Sign in on You to back it up to the cloud for other phones.',
     alerts: 'Alerts',
     allCaughtUp: 'All caught up',
     allCaughtUpSub: 'Budget warnings will show here when a category hits 90%.',
@@ -328,7 +329,7 @@ const COPY = {
     importJson: 'Restore JSON',
     zenithPro: 'Zenith Pro',
     travel: 'Travel',
-    travelDemo: 'Free demo: one trip, 8 expenses. Pro unlocks overlapping live trips, history, SOS, and custom packing.',
+    travelDemo: 'Free: one live trip at a time, 8 expenses. End it and start the next. Pro unlocks overlapping trips, history, SOS, and custom packing.',
     upgrade: 'Upgrade',
     subscribe: 'Unlock Pro',
     restore: 'Restore purchases',
@@ -377,11 +378,11 @@ const COPY = {
     lockHint: 'PIN stays on this device. Optional passkey if the phone supports it.',
     proBlurb: 'Overlapping live trips, full history, and emergency assist. Home ledger stays free.',
     proPrice: '₹149 / month or ₹999 / year',
-    demoBanner: 'Demo trip — upgrade for unlimited travel.',
-    historyPro: 'Trip history is a Pro feature. Your demo trip still saves.',
+    demoBanner: 'One live trip on the free plan — end it to start another, or upgrade to run two at once.',
+    historyPro: 'Trip history is a Pro feature. Your trips still save, and you can start the next one after you end this one.',
     sosPro: 'Emergency assist is included in Pro.',
     expenseCap: 'Demo includes 8 trip expenses. Unlock Pro to keep logging.',
-    secondTrip: 'The free demo is one trip. Unlock Pro to run two at once.',
+    secondTrip: 'Free includes one live trip at a time. End this one to start the next, or unlock Pro to run two at once.',
     appearance: 'Appearance',
     security: 'Security',
     backup: 'Backup',
@@ -479,6 +480,24 @@ const COPY = {
     walletsInNet: 'Wallets',
     extraHoldings: 'Other',
     nLiveTrips: '{n} live trips',
+    yourTrips: 'Your trips',
+    pastTrips: 'Past trips',
+    allTrips: 'All trips',
+    openTrip: 'Open',
+    cloudAccount: 'Cloud backup',
+    cloudSignIn: 'Sign in',
+    cloudSignUp: 'Create account',
+    cloudEmail: 'Email',
+    cloudPassword: 'Password',
+    cloudPasswordHint: 'At least 6 characters. Same login on every device.',
+    cloudSynced: 'Saved in the cloud',
+    cloudSyncing: 'Saving…',
+    cloudSignedOut: 'Sign in to keep this ledger if you switch phones.',
+    cloudOff: 'Cloud backup is off until the Zenith database is connected.',
+    cloudNeedEmail: 'Enter email and password.',
+    signOut: 'Sign out',
+    cloudError: 'Could not reach the cloud. Your ledger is still on this phone.',
+    cloudConfirmEmail: 'Check your email to confirm, then sign in.',
   },
   hi: {
     hi: 'नमस्ते, मैं Zenith हूँ।',
@@ -493,10 +512,10 @@ const COPY = {
     skipCash: '₹0 से छोड़ें',
     setBalance: 'नकदी सेट करें',
     privacyTitle: 'आपका डेटा आपके पास रहता है।',
-    noCloud: 'कोई क्लाउड सिंक नहीं',
-    noCloudDesc: 'बही इस डिवाइस पर है। Voice और रसीद OCR तभी Sarvam/Vision पर जाते हैं जब कुंजी सेट हो।',
+    noCloud: 'पहले इस फ़ोन पर',
+    noCloudDesc: 'बही इस डिवाइस पर है। You में साइन इन करें तो वैकल्पिक क्लाउड बैकअप।',
     encrypt: 'लोकल स्टोरेज',
-    encryptDesc: 'आपकी बही इसी ब्राउज़र में रहती है।',
+    encryptDesc: 'कॉपी इसी फ़ोन पर रहती है। You में साइन इन कर खाते में बैकअप लें।',
     noHarvest: 'कोई डेटा कलेक्ट नहीं',
     noHarvestDesc: 'हम आपका नाम या खर्च नहीं देखते।',
     begin: 'समझ गया — शुरू करें',
@@ -554,7 +573,7 @@ const COPY = {
     later: 'बाद में',
     travelLater: 'ट्रैवल मोड बाद में आएगा।',
     language: 'भाषा',
-    localOnly: 'बही इस ब्राउज़र और होम स्क्रीन ऐप में रहती है। Notion सिंक वैकल्पिक है और डिफ़ॉल्ट बंद है।',
+    localOnly: 'बही इस डिवाइस पर रहती है। दूसरे फ़ोन के लिए You में साइन इन कर क्लाउड बैकअप लें।',
     alerts: 'अलर्ट',
     allCaughtUp: 'सब ठीक है',
     allCaughtUpSub: 'कोई श्रेणी 90% पर पहुँचे तो चेतावनी यहाँ दिखेगी।',
@@ -643,7 +662,7 @@ const COPY = {
     importJson: 'JSON रीस्टोर',
     zenithPro: 'Zenith Pro',
     travel: 'ट्रैवल',
-    travelDemo: 'फ्री डेमो: एक ट्रिप, 8 खर्च। Pro में दो लाइव ट्रिप, इतिहास, SOS और कस्टम पैकिंग।',
+    travelDemo: 'फ्री: एक समय पर एक लाइव ट्रिप, 8 खर्च। खत्म कर अगली शुरू करें। Pro में दो साथ, इतिहास, SOS और कस्टम पैकिंग।',
     upgrade: 'अपग्रेड',
     subscribe: 'Pro खोलें',
     restore: 'खरीद वापस लाएँ',
@@ -692,11 +711,11 @@ const COPY = {
     lockHint: 'PIN इसी डिवाइस पर रहता है। फ़ोन हो तो पासकी भी।',
     proBlurb: 'दो लाइव ट्रिप साथ-साथ, पूरा इतिहास, SOS। घर की बही फ्री रहती है।',
     proPrice: '₹149 / महीना या ₹999 / साल',
-    demoBanner: 'डेमो ट्रिप — अनलिमिटेड ट्रैवल के लिए अपग्रेड करें।',
-    historyPro: 'ट्रिप इतिहास Pro में है। डेमो ट्रिप फिर भी सेव होती है।',
+    demoBanner: 'फ्री में एक लाइव ट्रिप — खत्म कर अगली शुरू करें, या दो साथ के लिए अपग्रेड करें।',
+    historyPro: 'ट्रिप इतिहास Pro में है। ट्रिप सेव रहती है, और इसे खत्म कर अगली शुरू कर सकते हैं।',
     sosPro: 'इमरजेंसी असिस्ट Pro में है।',
     expenseCap: 'डेमो में 8 ट्रिप खर्च। आगे के लिए Pro खोलें।',
-    secondTrip: 'फ्री डेमो एक ट्रिप है। दो साथ चलाने के लिए Pro खोलें।',
+    secondTrip: 'फ्री में एक समय पर एक लाइव ट्रिप। इसे खत्म कर अगली शुरू करें, या दो साथ के लिए Pro खोलें।',
     appearance: 'दिखावट',
     security: 'सुरक्षा',
     backup: 'बैकअप',
@@ -794,6 +813,24 @@ const COPY = {
     walletsInNet: 'वॉलेट',
     extraHoldings: 'और',
     nLiveTrips: '{n} लाइव ट्रिप',
+    yourTrips: 'आपकी ट्रिप',
+    pastTrips: 'पिछली ट्रिप',
+    allTrips: 'सभी ट्रिप',
+    openTrip: 'खोलें',
+    cloudAccount: 'क्लाउड बैकअप',
+    cloudSignIn: 'साइन इन',
+    cloudSignUp: 'खाता बनाएँ',
+    cloudEmail: 'ईमेल',
+    cloudPassword: 'पासवर्ड',
+    cloudPasswordHint: 'कम से कम 6 अक्षर। हर डिवाइस पर वही लॉगिन।',
+    cloudSynced: 'क्लाउड में सेव',
+    cloudSyncing: 'सेव हो रहा है…',
+    cloudSignedOut: 'दूसरे फ़ोन के लिए You में साइन इन करें।',
+    cloudOff: 'Zenith डेटाबेस जुड़ने तक क्लाउड बैकअप बंद है।',
+    cloudNeedEmail: 'ईमेल और पासवर्ड डालें।',
+    signOut: 'साइन आउट',
+    cloudError: 'क्लाउड नहीं मिला। बही इसी फ़ोन पर है।',
+    cloudConfirmEmail: 'ईमेल में कन्फर्म करें, फिर साइन इन करें।',
   },
 };
 
@@ -1052,6 +1089,7 @@ function createInitialStore() {
     activeTripId: null,
     holdings: [],
     settings: defaultSettings(),
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -1081,6 +1119,7 @@ function normalizeState(parsed) {
     activeTripId: activeTripId,
     holdings: Array.isArray(src.holdings) ? src.holdings.map(normalizeHolding) : [],
     settings: normalizeSettings(src.settings),
+    updatedAt: typeof src.updatedAt === 'string' && src.updatedAt ? src.updatedAt : (base.updatedAt || new Date().toISOString()),
   };
 }
 
@@ -1518,8 +1557,7 @@ function activeTrip(store) {
 
 function canStartTrip(store, loc) {
   if (zenithIsPro(store, loc)) return true;
-  if (liveTrips(store).length > 0) return false;
-  return travelTripCount(store) < TRAVEL_FREE_MAX_TRIPS;
+  return liveTrips(store).length < TRAVEL_FREE_MAX_LIVE_TRIPS;
 }
 
 function tripPhase(trip, today) {
@@ -1666,6 +1704,7 @@ Object.assign(window, {
   TRAVEL_CATS,
   TRAVEL_CAT_COLORS,
   TRAVEL_FREE_MAX_TRIPS,
+  TRAVEL_FREE_MAX_LIVE_TRIPS,
   TRAVEL_FREE_MAX_EXPENSES,
   ZENITH_PRO_PRICE_MO,
   ZENITH_PRO_PRICE_YR,
