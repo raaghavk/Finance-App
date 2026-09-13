@@ -216,7 +216,7 @@ function EmergencyScreen({ country, onBack }) {
           <span style={{ fontSize: 24 }}>🆘</span>
           <div>
             <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 700, color: ink, marginBottom: 2 }}>Pro includes this sheet on every trip</p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>Zenith does not freeze cards. Call your bank.</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>{typeof APP_NAME !== 'undefined' ? APP_NAME : 'Liora'} does not freeze cards. Call your bank.</p>
           </div>
         </div>
         <div style={{ background: card, borderRadius: 22, overflow: 'hidden', boxShadow: shadow }}>

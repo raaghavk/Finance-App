@@ -26,7 +26,7 @@ assert.ok(!JSON.stringify(map.CATEGORY_COLORS).includes('#C45C26'));
 
 assert.match(html, /manifest\.webmanifest/);
 assert.match(html, /apple-mobile-web-app-capable/);
-assert.match(html, /apple-mobile-web-app-title" content="Zenith"/);
+assert.match(html, /apple-mobile-web-app-title" content="Liora"/);
 assert.match(html, /viewport-fit=cover/);
 assert.match(html, /data-zenith-chrome="native"/);
 assert.match(zenithHtml, /data-zenith-chrome="native"/);
@@ -50,7 +50,8 @@ assert.strictEqual(zenithShouldUseDeviceFrame({ hostname: '127.0.0.1', search: '
 assert.strictEqual(zenithShouldUseDeviceFrame({ hostname: 'example.com', search: '?demo=1' }, desktop), false);
 
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
-assert.strictEqual(manifest.name, 'Zenith');
+assert.strictEqual(manifest.name, 'Liora');
+assert.strictEqual(manifest.short_name, 'Liora');
 assert.strictEqual(manifest.display, 'standalone');
 assert.strictEqual(manifest.theme_color, '#2563EB');
 assert.strictEqual(manifest.background_color, '#F2F5FA');
@@ -88,11 +89,15 @@ assert.match(privacy, /zenith_v1_store/);
 assert.match(privacy, /localStorage/);
 assert.match(privacy, /No bank login/);
 const invite = fs.readFileSync(path.join(root, 'invite.html'), 'utf8');
-assert.match(invite, /Add to Home Screen/);
+assert.match(invite, /Open Liora/);
+assert.match(invite, /Liora%20feedback/);
+assert.match(state, /APP_NAME = 'Liora'/);
+assert.match(zenithHtml, /apple-mobile-web-app-title" content="Liora"/);
 assert.match(invite, /mailto:raaghavkanodia@gmail.com/);
 assert.match(fs.readFileSync(path.join(root, 'support.html'), 'utf8'), /mailto:raaghavkanodia@gmail.com/);
 const listing = JSON.parse(fs.readFileSync(path.join(root, 'store/app-store-listing.json'), 'utf8'));
 assert.ok(listing.avoidNames.includes('Zenith'));
+assert.strictEqual(listing.name, 'Liora');
 assert.ok(listing.privacyUrl.includes('privacy.html'));
 
 console.log('theme + PWA + no fake phone + local store ok');

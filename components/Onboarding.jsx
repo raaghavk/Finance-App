@@ -59,7 +59,7 @@ function OnboardingScreen({ step, onNext, onSetLocale, onSetName, onSetCash, loc
           <path d="M9 9C11.2 9 13 7.2 13 5S11.2 1 9 1 5 2.8 5 5s1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v1h16v-1c0-2.7-5.3-4-8-4z" fill="white"/>
         </svg>
       </div>
-      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB', letterSpacing: 1.4, textTransform: 'uppercase' }}>Zenith</span>
+      <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB', letterSpacing: 1.4, textTransform: 'uppercase' }}>{typeof APP_NAME !== 'undefined' ? APP_NAME : 'Liora'}</span>
     </div>
   );
 

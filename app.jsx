@@ -32,7 +32,7 @@ class ZenithErrorBoundary extends React.Component {
     if (!this.state.error) return this.props.children;
     return (
       <div style={{ padding: '72px 24px 24px', fontFamily: 'Inter, sans-serif', color: '#0F172A', background: '#F2F5FA', height: '100%' }}>
-        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Zenith hit a snag.</p>
+        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, marginBottom: 8 }}>{(typeof APP_NAME !== 'undefined' ? APP_NAME : 'Liora')} hit a snag.</p>
         <p style={{ fontSize: 14, color: '#64748B', marginBottom: 16 }}>Reload the Home Screen app. Your ledger on this phone is still here.</p>
         <button type="button" onClick={() => { this.setState({ error: null }); if (typeof location !== 'undefined') location.reload(); }} style={{
           border: 'none', borderRadius: 14, padding: '12px 16px', background: '#2563EB', color: '#fff', fontWeight: 800,

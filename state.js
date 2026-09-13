@@ -1,5 +1,6 @@
 // state.js — Zenith v1 local-first store, categories, formatters, copy
 
+const APP_NAME = 'Liora';
 const ZENITH_STORE_KEY = 'zenith_v1_store';
 
 const ZENITH = {
@@ -167,7 +168,7 @@ const DEFAULT_ACCOUNTS = [
 
 const COPY = {
   en: {
-    hi: "Hi, I'm Zenith.",
+    hi: "Hi, I'm " + APP_NAME + ".",
     callYou: 'What should I call you?',
     yourName: 'Your name',
     continue: 'Continue',
@@ -327,7 +328,7 @@ const COPY = {
     unlock: 'Unlock',
     backupJson: 'Backup JSON',
     importJson: 'Restore JSON',
-    zenithPro: 'Zenith Pro',
+    zenithPro: APP_NAME + ' Pro',
     travel: 'Travel',
     travelDemo: 'Free: one live trip at a time, 8 expenses. End it and start the next. Pro unlocks overlapping trips, history, SOS, and custom packing.',
     upgrade: 'Upgrade',
@@ -354,7 +355,7 @@ const COPY = {
     exportJson: 'Download a full copy of this ledger.',
     importOk: 'Ledger restored.',
     demoTrip: 'Demo trip',
-    proUnlock: 'Zenith Pro',
+    proUnlock: APP_NAME + ' Pro',
     travelHistory: 'Trip history',
     addTripExpense: 'Add trip expense',
     startTrip: 'Start a trip',
@@ -390,7 +391,7 @@ const COPY = {
     turnOffLock: 'Turn off lock',
     enterPin: 'Enter PIN',
     pinDigits: '4–8 digits',
-    jsonInvalid: 'That file is not a Zenith backup.',
+    jsonInvalid: 'That file is not a ' + APP_NAME + ' backup.',
     recurringName: 'Bill name',
     nextOn: 'Next on',
     cadence: 'Cadence',
@@ -493,7 +494,7 @@ const COPY = {
     cloudSynced: 'Saved in the cloud',
     cloudSyncing: 'Saving…',
     cloudSignedOut: 'Sign in to keep this ledger if you switch phones.',
-    cloudOff: 'Cloud backup is off until the Zenith database is connected.',
+    cloudOff: 'Cloud backup is off until the ' + APP_NAME + ' database is connected.',
     cloudNeedEmail: 'Enter email and password.',
     signOut: 'Sign out',
     cloudError: 'Could not reach the cloud. Your ledger is still on this phone.',
@@ -521,7 +522,7 @@ const COPY = {
     quickIncome: 'Income',
   },
   hi: {
-    hi: 'नमस्ते, मैं Zenith हूँ।',
+    hi: 'नमस्ते, मैं ' + APP_NAME + ' हूँ।',
     callYou: 'आपको क्या कहूँ?',
     yourName: 'आपका नाम',
     continue: 'आगे बढ़ें',
@@ -681,7 +682,7 @@ const COPY = {
     unlock: 'अनलॉक',
     backupJson: 'JSON बैकअप',
     importJson: 'JSON रीस्टोर',
-    zenithPro: 'Zenith Pro',
+    zenithPro: APP_NAME + ' Pro',
     travel: 'ट्रैवल',
     travelDemo: 'फ्री: एक समय पर एक लाइव ट्रिप, 8 खर्च। खत्म कर अगली शुरू करें। Pro में दो साथ, इतिहास, SOS और कस्टम पैकिंग।',
     upgrade: 'अपग्रेड',
@@ -708,7 +709,7 @@ const COPY = {
     exportJson: 'पूरी बही की कॉपी डाउनलोड करें।',
     importOk: 'बही रीस्टोर हो गई।',
     demoTrip: 'डेमो ट्रिप',
-    proUnlock: 'Zenith Pro',
+    proUnlock: APP_NAME + ' Pro',
     travelHistory: 'ट्रिप इतिहास',
     addTripExpense: 'ट्रिप खर्च जोड़ें',
     startTrip: 'ट्रिप शुरू करें',
@@ -744,7 +745,7 @@ const COPY = {
     turnOffLock: 'लॉक बंद करें',
     enterPin: 'PIN डालें',
     pinDigits: '4–8 अंक',
-    jsonInvalid: 'यह Zenith बैकअप नहीं है।',
+    jsonInvalid: 'यह ' + APP_NAME + ' बैकअप नहीं है।',
     recurringName: 'बिल का नाम',
     nextOn: 'अगली तारीख',
     cadence: 'चक्र',
@@ -847,7 +848,7 @@ const COPY = {
     cloudSynced: 'क्लाउड में सेव',
     cloudSyncing: 'सेव हो रहा है…',
     cloudSignedOut: 'दूसरे फ़ोन के लिए You में साइन इन करें।',
-    cloudOff: 'Zenith डेटाबेस जुड़ने तक क्लाउड बैकअप बंद है।',
+    cloudOff: APP_NAME + ' डेटाबेस जुड़ने तक क्लाउड बैकअप बंद है।',
     cloudNeedEmail: 'ईमेल और पासवर्ड डालें।',
     signOut: 'साइन आउट',
     cloudError: 'क्लाउड नहीं मिला। बही इसी फ़ोन पर है।',
@@ -1778,6 +1779,7 @@ function findTravelCountry(code) {
 }
 
 Object.assign(window, {
+  APP_NAME,
   ZENITH,
   zenithTone,
   zenithHeroGradient,

@@ -30,7 +30,7 @@ assert.match(html, /AccountsManager\.jsx/);
 assert.match(html, /CategoriesManager\.jsx/);
 assert.match(html, /--zenith-safe-top/);
 assert.match(html, /100dvh/);
-assert.match(html, /Loading Zenith/);
+assert.match(html, /Loading Liora/);
 assert.doesNotMatch(html, /-webkit-fill-available/);
 assert.doesNotMatch(html, /html, body \{/);
 assert.match(zenithHtml, /ios-safe-area\.js/);

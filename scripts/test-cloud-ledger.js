@@ -15,6 +15,11 @@ const ctx = {
 ctx.window = ctx;
 vm.runInNewContext(fs.readFileSync(path.join(root, 'state.js'), 'utf8'), ctx);
 
+assert.strictEqual(ctx.APP_NAME, 'Liora');
+assert.strictEqual(ctx.COPY.en.hi, "Hi, I'm Liora.");
+assert.strictEqual(ctx.COPY.en.zenithPro, 'Liora Pro');
+assert.strictEqual(ctx.COPY.hi.hi, 'नमस्ते, मैं Liora हूँ।');
+
 assert.strictEqual(cloud.zenithCloudConfigFromStatus({}), null);
 assert.strictEqual(cloud.zenithCloudConfigFromStatus({ supabaseUrl: 'https://x.supabase.co' }), null);
 const cfg = cloud.zenithCloudConfigFromStatus({

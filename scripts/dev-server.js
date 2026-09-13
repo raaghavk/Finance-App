@@ -102,5 +102,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log('Zenith API at http://127.0.0.1:' + PORT + '/Zenith.html');
+  console.log('Liora at http://127.0.0.1:' + PORT + '/Zenith.html');
 });
