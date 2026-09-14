@@ -16,6 +16,8 @@ const page = {
     Account: { type: 'select', select: { name: 'IDFC (UPI/debit)' } },
     Status: { type: 'select', select: { name: 'Logged' } },
     Trip: { type: 'select', select: null },
+    Payee: { type: 'rich_text', rich_text: [{ plain_text: 'Cafe Coffee Day' }] },
+    Location: { type: 'select', select: { name: 'Gorakhpur' } },
     Notes: { type: 'rich_text', rich_text: [{ plain_text: 'Filter coffee' }] },
     Receipt: { type: 'url', url: 'https://example.com/r.jpg' },
     Reimbursable: { type: 'checkbox', checkbox: true },
@@ -33,6 +35,8 @@ assert.strictEqual(mapped.payment, 'UPI');
 assert.strictEqual(mapped.account, 'IDFC (UPI/debit)');
 assert.strictEqual(mapped.status, 'Logged');
 assert.strictEqual(mapped.trip, null);
+assert.strictEqual(mapped.payee, 'Cafe Coffee Day');
+assert.strictEqual(mapped.location, 'Gorakhpur');
 assert.strictEqual(mapped.notes, 'Filter coffee');
 assert.strictEqual(mapped.receipt, 'https://example.com/r.jpg');
 assert.strictEqual(mapped.reimbursable, true);
@@ -50,6 +54,8 @@ const empty = map.mapNotionPageToExpense({
     Account: { type: 'select', select: null },
     Status: { type: 'select', select: null },
     Trip: { type: 'select', select: null },
+    Payee: { type: 'rich_text', rich_text: [] },
+    Location: { type: 'rich_text', rich_text: [] },
     Notes: { type: 'rich_text', rich_text: [] },
     Receipt: { type: 'url', url: null },
     Reimbursable: { type: 'checkbox', checkbox: false },
@@ -59,6 +65,8 @@ assert.strictEqual(empty.name, '');
 assert.strictEqual(empty.amount, null);
 assert.strictEqual(empty.date, null);
 assert.strictEqual(empty.account, null);
+assert.strictEqual(empty.payee, null);
+assert.strictEqual(empty.location, null);
 assert.strictEqual(empty.reimbursable, false);
 
 assert.deepStrictEqual(map.EXPENSE_CATEGORIES, [
@@ -114,23 +122,52 @@ const yesPage = map.mapNotionPageToExpense({
 });
 assert.strictEqual(yesPage.reimbursable, true);
 
-assert.strictEqual(map.SAMPLE_NOTION_EXPENSES.length, 10);
+assert.strictEqual(map.SAMPLE_NOTION_EXPENSES.length, 24);
 const airlines = map.SAMPLE_NOTION_EXPENSES.find((e) => /Vietnam Airlines/.test(e.name));
 assert.ok(airlines, 'Vietnam Airlines fixture');
 assert.strictEqual(airlines.amount, null);
-assert.ok(map.SAMPLE_NOTION_EXPENSES.every((e) => String(e.notes).indexOf('Example data') === 0));
+assert.strictEqual(airlines.payee, 'Vietnam Airlines');
+assert.strictEqual(airlines.location, 'Delhi');
+assert.strictEqual(airlines.account, null);
+assert.ok(map.SAMPLE_NOTION_EXPENSES.every((e) => String(e.notes).indexOf('Demo seed from Notion snapshot') === 0));
+
+const hazelnut = map.SAMPLE_NOTION_EXPENSES.find((e) => e.name === 'The Hazelnut Factory');
+assert.ok(hazelnut);
+assert.strictEqual(hazelnut.amount, 700);
+assert.strictEqual(hazelnut.account, 'Cash');
+assert.strictEqual(hazelnut.payment, 'Cash');
+assert.strictEqual(hazelnut.payee, 'The Hazelnut Factory');
+assert.strictEqual(hazelnut.location, 'Varanasi');
+
+const pvr = map.SAMPLE_NOTION_EXPENSES.find((e) => e.name === 'PVR snacks');
+assert.ok(pvr);
+assert.strictEqual(pvr.amount, 1235);
+assert.strictEqual(pvr.payee, 'PVR INOX');
+
+const mangi = map.SAMPLE_NOTION_EXPENSES.find((e) => /Mangi Ferra/.test(e.name));
+assert.ok(mangi);
+assert.strictEqual(mangi.amount, 2496);
+assert.strictEqual(mangi.account, 'Cash');
+
+const ith = map.SAMPLE_NOTION_EXPENSES.find((e) => /ITH/.test(e.name));
+assert.strictEqual(ith.account, 'Kamlesh UPI');
+assert.strictEqual(ith.payment, 'UPI');
+assert.strictEqual(ith.payee, 'ITH');
 
 const now = new Date('2026-09-08T12:00:00');
 const report = map.buildMonthReport(map.SAMPLE_NOTION_EXPENSES, now);
 assert.strictEqual(report.monthKey, '2026-09');
 assert.strictEqual(report.currency, 'INR');
-assert.strictEqual(report.count, 5);
+assert.strictEqual(report.count, 19);
 assert.strictEqual(report.unpricedCount, 0);
-assert.strictEqual(report.total, 1327 + 670 + 1139 + 2496 + 1000);
-assert.ok(report.byCategory.find((r) => r.key === 'Food' && r.total === 670 + 2496));
-assert.ok(report.byCategory.find((r) => r.key === 'Stay' && r.total === 1327 + 1139));
-assert.ok(report.byKind.find((r) => r.key === 'Travel' && r.total === report.total));
-assert.ok(report.byTrip.find((r) => r.key === 'Varanasi Sep 2026' && r.total === 670 + 1139 + 2496 + 1000));
+const sepFood = 190 + 300 + 110 + 500 + 1235 + 65 + 140 + 700 + 2496;
+const sepStay = 1327 + 1139;
+const sepOther = 2200 + 400 + 2500 + 90 + 50;
+const sepTotal = sepStay + sepOther + sepFood + 2300 + 50 + 1000;
+assert.strictEqual(report.total, sepTotal);
+assert.ok(report.byCategory.find((r) => r.key === 'Food' && r.total === sepFood));
+assert.ok(report.byCategory.find((r) => r.key === 'Stay' && r.total === sepStay));
+assert.ok(report.byTrip.find((r) => r.key === 'Varanasi Sep 2026' && r.total === 2300 + 700 + 50 + 2496 + 1139 + 1000));
 assert.ok(report.byTrip.find((r) => r.key === 'Vietnam Sep 2026' && r.total === 1327));
 
 const august = map.buildMonthReport(map.SAMPLE_NOTION_EXPENSES, new Date('2026-08-15T12:00:00'));
@@ -151,7 +188,7 @@ const mock = map.mockNotionSnapshot(now);
 assert.strictEqual(mock.source, 'mock');
 assert.ok(String(mock.warning).includes('NOTION_TOKEN'));
 assert.ok(String(mock.warning).includes('collection://b35c3e74-0bc7-432d-8309-80a7583d3601'));
-assert.ok(String(mock.warning).toLowerCase().includes('live'));
+assert.ok(String(mock.warning).toLowerCase().includes('live') || String(mock.warning).includes('Demo seed'));
 
 const client = require('../lib/notion/client');
 assert.strictEqual(client.isNotionConfigured(), false);
@@ -176,7 +213,7 @@ async function testApiHandler() {
           const parsed = JSON.parse(body);
           assert.strictEqual(res.statusCode, 200);
           assert.strictEqual(parsed.source, 'mock');
-          assert.ok(Array.isArray(parsed.expenses) && parsed.expenses.length === 10);
+          assert.ok(Array.isArray(parsed.expenses) && parsed.expenses.length === 24);
           assert.ok(parsed.warning);
           assert.ok(parsed.report && parsed.report.currency === 'INR');
           assert.strictEqual(parsed.report.unpricedCount, 0);

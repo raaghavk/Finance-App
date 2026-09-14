@@ -155,22 +155,22 @@ assert.strictEqual(mockAcct.balances.length, 3);
 assert.ok(!mockAcct.balances.find((b) => /inactive/i.test(b.name)));
 const mockCash = mockAcct.balances.find((b) => b.name === 'Cash');
 assert.strictEqual(mockCash.openingBalance, 15000);
-assert.ok(mockCash.spent > 0);
-assert.strictEqual(mockCash.balance, 15000 - mockCash.spent);
+assert.strictEqual(mockCash.spent, 15653);
+assert.strictEqual(mockCash.balance, 15000 - 15653);
 const mockIdfc = mockAcct.balances.find((b) => b.name === 'IDFC (UPI/debit)');
 assert.strictEqual(mockIdfc.openingMissing, true);
 const mockKamlesh = mockAcct.balances.find((b) => b.name === 'Kamlesh UPI');
 assert.strictEqual(mockKamlesh.spendOnly, true);
 assert.strictEqual(mockKamlesh.balance, null);
-assert.ok(mockKamlesh.spent > 0);
+assert.strictEqual(mockKamlesh.spent, 1139);
 
 const mockBud = map.mockNotionBudgetsSnapshot(now);
 assert.strictEqual(mockBud.source, 'mock');
 assert.ok(String(mockBud.warning).includes('3f8d31df-d13d-49a2-a9ac-f5b8489f737f'));
 assert.strictEqual(mockBud.monthKey, '2026-09');
 const mockFood = mockBud.progress.find((p) => p.category === 'Food');
-assert.strictEqual(mockFood.spent, 670 + 2496);
-assert.strictEqual(mockFood.left, 15000 - (670 + 2496));
+assert.strictEqual(mockFood.spent, 190 + 300 + 110 + 500 + 1235 + 65 + 140 + 700 + 2496);
+assert.strictEqual(mockFood.left, 15000 - mockFood.spent);
 const mockStay = mockBud.progress.find((p) => p.category === 'Stay');
 assert.strictEqual(mockStay.spent, 1327 + 1139, 'this-month Stay only');
 

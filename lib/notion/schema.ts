@@ -82,6 +82,10 @@ export interface NotionExpense {
   trip: ExpenseTrip | null;
   /** Account (select): Cash, IDFC (UPI/debit), Kamlesh UPI */
   account: ExpenseAccount | null;
+  /** Payee (text / select) */
+  payee: string | null;
+  /** Location (text / select) */
+  location: string | null;
   /** Notes (text) */
   notes: string;
   /** Receipt (url) */
@@ -129,6 +133,8 @@ export interface NotionExpenseWriteInput {
   status?: ExpenseStatus;
   trip?: ExpenseTrip;
   account?: ExpenseAccount;
+  payee?: string | null;
+  location?: string | null;
   notes?: string;
   receipt?: string | null;
   reimbursable?: boolean;

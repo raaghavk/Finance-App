@@ -103,6 +103,8 @@ function NotionExpenseRow({ expense, locale, last }) {
     expense.trip,
     expense.payment ? payLabel + ' ' + expense.payment : null,
     acctLabelText + ' ' + (expense.account || '—'),
+    expense.payee || null,
+    expense.location || null,
   ].filter(Boolean);
   const unpriced = expense.amount === null || expense.amount === undefined;
   return (

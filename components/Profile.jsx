@@ -180,11 +180,14 @@ function ProfileScreen({ store, onSetLocale, onReset, onNavigate, onExport, onSa
         ) : (
           (typeof localAccountBalances === 'function' ? localAccountBalances(store) : []).map((row) => {
             const cap = typeof accountBudgetLimit === 'function' ? accountBudgetLimit(store, row.id) : 0;
+            const sub = row.spendOnly
+              ? (t(locale, 'notionSpendOnly') + ' · ' + fmt(row.spent))
+              : ((row.openingMissing ? t(locale, 'notionOpeningMissing') + ' · ' : '') + (typeof fmtInr === 'function' ? fmtInr(row.balance) : fmt(row.balance)));
             return (
               <Row
                 key={row.id}
                 label={acctLabel(row, locale) || row.name}
-                sub={fmt(row.balance) + (cap > 0 ? ' · ' + t(locale, 'monthlyCap') + ' ' + fmt(cap) : '')}
+                sub={sub + (cap > 0 ? ' · ' + t(locale, 'monthlyCap') + ' ' + fmt(cap) : '')}
                 onClick={() => setSheet({ kind: 'account', item: row })}
                 showChevron={!editing}
               >
