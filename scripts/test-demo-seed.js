@@ -45,6 +45,7 @@ assert.strictEqual(kamlesh.spendOnly, true);
 assert.strictEqual(kamlesh.balance, null);
 assert.strictEqual(kamlesh.spent, 1139);
 
+assert.ok(!seeded.categories.some((c) => c.id === 'grp-ledger' && c.type === 'expense'));
 const foodBudget = seeded.budgets.find((b) => b.categoryId === 'food');
 assert.strictEqual(foodBudget.limit, 15000);
 assert.strictEqual(foodBudget.monthKey, '2026-09');
