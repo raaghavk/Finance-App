@@ -81,11 +81,13 @@ Database: [Expenses](https://app.notion.com/p/76941781c8ef4d258923b9c2a6750292).
 | Account | select: Cash, IDFC (UPI/debit), Kamlesh UPI (wallet). Ignore `(inactive)*` and legacy UPI / Primary debit / Primary credit / Corporate |
 | Status | select: Logged, Needs receipt, Submitted, Reimbursed |
 | Trip | select: Vietnam Sep 2026, Varanasi Sep 2026, Other trip |
+| Payee | text / select |
+| Location | text / select |
 | Notes | text |
 | Receipt | url |
 | Reimbursable | checkbox (`true`/`false` or `__YES__`/`__NO__`) |
 
-When `NOTION_TOKEN` is missing, the old Notion panels (if enabled) use **labeled example data**.
+When `NOTION_TOKEN` is missing, the old Notion panels (if enabled) use **Raaghav’s live ledger snapshot** (24 expenses, labeled “Demo seed from Notion snapshot”). The same snapshot seeds `localStorage` key `zenith_v1_store` on first load so Home / Activity / Accounts / Budgets show real merchants (Hazelnut, Mangi Ferra, PVR, …) in local-first mode.
 
 ### Notion Accounts (read path)
 
@@ -135,7 +137,7 @@ Copy `.env.example` only if you want live Notion, Sarvam voice, or Vision OCR.
 | `NOTION_ACCOUNTS_DATABASE_ID` | no | Defaults to `a9effaa05c66492a9780b5a36cda1d63` |
 | `NOTION_BUDGETS_DATA_SOURCE_ID` | no | Defaults to `3f8d31df-d13d-49a2-a9ac-f5b8489f737f` |
 | `NOTION_BUDGETS_DATABASE_ID` | no | Defaults to `301bb78c3c094fb1aee38bcb57f7beb0` |
-| `NOTION_EXPENSES_USE_MOCK` / `NOTION_USE_MOCK` | no | Set to `1` to force example data even when a token is present |
+| `NOTION_EXPENSES_USE_MOCK` / `NOTION_USE_MOCK` | no | Set to `1` to force the Notion snapshot seed even when a token is present |
 | `SARVAM_API_KEY` | no | Sarvam Saaras STT. If unset, log expenses manually. |
 | `GOOGLE_CLOUD_VISION_API_KEY` | no | Cloud Vision OCR. If unset, you can still attach a photo locally. |
 

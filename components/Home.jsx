@@ -1,4 +1,4 @@
-// Home.jsx — Left to spend from the live store (empty first run)
+// Home.jsx — Left to spend from the live store (demo-seeded on first load)
 
 function MerchantIcon({ merchant, color }) {
   const initials = String(merchant || '?').split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -32,6 +32,13 @@ function LocalWalletsStrip({ store, locale, onOpen }) {
           const cap = typeof accountBudgetLimit === 'function' ? accountBudgetLimit(store, row.id) : 0;
           const spent = typeof spentOnAccount === 'function' ? spentOnAccount(store, row.id) : 0;
           const pct = cap > 0 ? Math.min(spent / cap, 1) : 0;
+          const spendOnly = row.spendOnly || (typeof isLocalSpendOnlyAccount === 'function' && isLocalSpendOnlyAccount(row));
+          const hint = spendOnly
+            ? t(locale, 'notionSpendOnly')
+            : (row.openingMissing ? t(locale, 'notionOpeningMissing') : t(locale, 'notionBalance'));
+          const amount = spendOnly
+            ? (typeof fmtInr === 'function' ? fmtInr(row.spent) : fmt(row.spent))
+            : (typeof fmtInr === 'function' ? fmtInr(row.balance) : fmt(row.balance));
           return (
             <div key={row.id} style={{
               minWidth: 168, background: card, borderRadius: 22, padding: '16px 16px 14px',
@@ -40,8 +47,8 @@ function LocalWalletsStrip({ store, locale, onOpen }) {
               <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 800, color: row.color, marginBottom: 8 }}>
                 {acctLabel(row, locale) || row.name}
               </p>
-              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 22, fontWeight: 800, color: ink, letterSpacing: -0.5 }}>{fmt(row.balance)}</p>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 4 }}>{t(locale, 'notionBalance')}</p>
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 22, fontWeight: 800, color: !spendOnly && row.balance < 0 ? '#B42318' : ink, letterSpacing: -0.5 }}>{amount}</p>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 4 }}>{hint}</p>
               {cap > 0 && (
                 <div style={{ marginTop: 10 }}>
                   <div style={{ height: 4, background: cream, borderRadius: 2 }}>
@@ -278,6 +285,11 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
         <div>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#6E6E73', marginBottom: 4 }}>{greeting}</p>
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: 28, fontWeight: 800, color: '#121212' }}>{store.user.name} 👋</h1>
+          {store.demoSeed ? (
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: typeof ZENITH !== 'undefined' ? ZENITH.warn : '#D97706', marginTop: 6 }}>
+              {t(locale, 'demoSeedBanner')}
+            </p>
+          ) : null}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
           <button
@@ -490,10 +502,14 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
                     <MerchantIcon merchant={tx.merchant} color={cat ? cat.color : '#007AFF'} />
                     <div style={{ flex: 1 }}>
                       <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: '#121212', marginBottom: 3 }}>{tx.merchant}</p>
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6E6E73' }}>{cat ? catLabel(cat, locale) : tx.categoryId}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6E6E73' }}>
+                        {cat ? catLabel(cat, locale) : tx.categoryId}
+                        {tx.payee ? ' · ' + tx.payee : ''}
+                        {tx.location ? ' · ' + tx.location : ''}
+                      </p>
                     </div>
                     <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 700, color: amountColor(tx) }}>
-                      {sign}{fmt(tx.amount)}
+                      {tx.amount === null || tx.amount === undefined ? '₹—' : (sign + fmt(tx.amount))}
                     </p>
                   </div>
                 );

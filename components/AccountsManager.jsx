@@ -48,7 +48,10 @@ function AccountsManagerScreen({ store, onBack, onSaveAccount, onDeleteAccount, 
               >
                 <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#0F172A' }}>{acctLabel(row, locale) || row.name}</p>
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#64748B', marginTop: 3 }}>
-                  {fmt(row.balance)}{cap > 0 ? ' · ' + t(locale, 'monthlyCap') + ' ' + fmt(cap) : ''}
+                  {row.spendOnly
+                    ? (t(locale, 'notionSpendOnly') + ' · ' + (typeof fmtInr === 'function' ? fmtInr(row.spent) : fmt(row.spent)))
+                    : ((row.openingMissing ? t(locale, 'notionOpeningMissing') + ' · ' : '') + (typeof fmtInr === 'function' ? fmtInr(row.balance) : fmt(row.balance)))}
+                  {cap > 0 ? ' · ' + t(locale, 'monthlyCap') + ' ' + fmt(cap) : ''}
                 </p>
               </button>
               {editing && (

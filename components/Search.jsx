@@ -21,7 +21,7 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
   let results = list.filter((tx) => {
     const cat = findCat(store, tx.categoryId);
     const label = cat ? catLabel(cat, locale) : '';
-    const hay = ((tx.merchant || '') + ' ' + (tx.note || '') + ' ' + label).toLowerCase();
+    const hay = ((tx.merchant || '') + ' ' + (tx.note || '') + ' ' + (tx.payee || '') + ' ' + (tx.location || '') + ' ' + label).toLowerCase();
     const matchQ = !query || hay.includes(query.toLowerCase());
     const matchC = activeCat === 'All' || tx.categoryId === activeCat;
     const matchFrom = !fromDate || (tx.date || '') >= fromDate;
@@ -33,7 +33,7 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
   else if (sort === 'amount_asc') results.sort((a, b) => a.amount - b.amount);
   else results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-  const totalShown = results.filter((row) => row.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
+  const totalShown = results.filter((row) => row.type === 'expense').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
   const grouped = {};
   results.forEach((tx) => {
     const label = relDate(tx.date, locale);
@@ -170,9 +170,13 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
                         </div>
                         <div style={{ flex: 1 }}>
                           <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: ink }}>{tx.merchant}</p>
-                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted }}>{cat ? catLabel(cat, locale) : ''} · {tx.method}</p>
+                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted }}>
+                            {cat ? catLabel(cat, locale) : ''}{tx.method ? ' · ' + tx.method : ''}{tx.payee ? ' · ' + tx.payee : ''}{tx.location ? ' · ' + tx.location : ''}
+                          </p>
                         </div>
-                        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color }}>{sign}{fmt(tx.amount)}</p>
+                        <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color }}>
+                          {tx.amount === null || tx.amount === undefined ? '₹—' : (sign + fmt(tx.amount))}
+                        </p>
                       </div>
                     );
                   })}

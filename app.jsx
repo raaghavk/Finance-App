@@ -539,9 +539,9 @@ function ZenithApp() {
     const fresh = createInitialStore();
     setStore(fresh);
     saveStore(fresh);
-    setScreen('onboarding');
     setOnboardStep(0);
     setActiveTab('home');
+    setScreen(fresh.onboardingComplete ? 'home' : 'onboarding');
   };
 
   const burstItems = [

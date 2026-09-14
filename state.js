@@ -248,9 +248,9 @@ const COPY = {
     firstExpense: 'Add expense',
     notionExpenses: 'Notion Expenses',
     notionThisMonth: 'This month',
-    notionExample: 'Example data',
+    notionExample: 'Demo seed from Notion snapshot',
     notionLive: 'Live from Notion',
-    notionMissing: 'Notion env is not set. Showing example INR expenses until NOTION_TOKEN is wired.',
+    notionMissing: 'NOTION_TOKEN is not set. Showing Raaghav’s Notion ledger snapshot.',
     notionError: 'Could not load Notion',
     notionRetry: 'Try again',
     notionEmpty: 'No Notion expenses yet',
@@ -277,6 +277,7 @@ const COPY = {
     notionAccountsHint: 'Cash and IDFC: opening minus tagged spend. Kamlesh UPI is spend-only. Inactive wallets are hidden.',
     notionBudgetsHint: 'Monthly cap minus this-month spend in that Category. Expense Tracker owns the caps.',
     notionAcrossCaps: 'across category caps',
+    demoSeedBanner: 'Demo seed from Notion snapshot',
     voiceTitle: 'Voice',
     voiceHint: 'Try “Zomato pe 349” or “spent 200 on chai”.',
     voiceNeedKey: 'Add SARVAM_API_KEY to transcribe with Sarvam Saaras. You can still log manually.',
@@ -528,9 +529,9 @@ const COPY = {
     firstExpense: 'खर्च जोड़ें',
     notionExpenses: 'Notion खर्च',
     notionThisMonth: 'इस महीने',
-    notionExample: 'उदाहरण डेटा',
+    notionExample: 'Notion स्नैपशॉट डेमो',
     notionLive: 'Notion से लाइव',
-    notionMissing: 'Notion env सेट नहीं है। NOTION_TOKEN लगाने तक उदाहरण INR खर्च दिखेंगे।',
+    notionMissing: 'NOTION_TOKEN सेट नहीं है। राघव की Notion बही का स्नैपशॉट दिख रहा है।',
     notionError: 'Notion लोड नहीं हुआ',
     notionRetry: 'फिर कोशिश करें',
     notionEmpty: 'Notion में अभी खर्च नहीं',
@@ -557,6 +558,7 @@ const COPY = {
     notionAccountsHint: 'कैश और IDFC: शुरुआती शेष में से टैग खर्च। Kamlesh UPI सिर्फ़ खर्च। निष्क्रिय खाते छिपे हैं।',
     notionBudgetsHint: 'मासिक सीमा में से इस महीने की श्रेणी का खर्च। सीमा Expense Tracker लिखता है।',
     notionAcrossCaps: 'श्रेणी सीमाओं में',
+    demoSeedBanner: 'Notion स्नैपशॉट से डेमो सीड',
     voiceTitle: 'आवाज़',
     voiceHint: '“Zomato pe 349” या “spent 200 on chai” कहें।',
     voiceNeedKey: 'Sarvam Saaras के लिए SARVAM_API_KEY लगाएँ। मैन्युअल जोड़ अभी भी चलता है।',
@@ -949,7 +951,7 @@ function normalizeTrip(row, i) {
   };
 }
 
-function createInitialStore() {
+function createBlankStore() {
   return {
     version: 1,
     onboardingComplete: false,
@@ -968,11 +970,26 @@ function createInitialStore() {
     trips: [],
     activeTripId: null,
     settings: defaultSettings(),
+    demoSeed: '',
   };
 }
 
+function maybeApplyDemoSeed(store, now) {
+  const src = store && typeof store === 'object' ? store : createBlankStore();
+  if (src.demoSeed) return src;
+  if ((src.transactions || []).length > 0) return src;
+  if (typeof seedZenithStoreFromNotionSnapshot === 'function') {
+    return seedZenithStoreFromNotionSnapshot(src, now);
+  }
+  return src;
+}
+
+function createInitialStore() {
+  return maybeApplyDemoSeed(createBlankStore());
+}
+
 function normalizeState(parsed) {
-  const base = createInitialStore();
+  const base = createBlankStore();
   const src = parsed && typeof parsed === 'object' ? parsed : {};
   const trips = Array.isArray(src.trips) ? src.trips.map(normalizeTrip) : [];
   let activeTripId = src.activeTripId || null;
@@ -996,6 +1013,7 @@ function normalizeState(parsed) {
     trips: trips,
     activeTripId: activeTripId,
     settings: normalizeSettings(src.settings),
+    demoSeed: src.demoSeed || '',
   };
 }
 
@@ -1005,7 +1023,7 @@ function loadStore() {
     if (!raw) return createInitialStore();
     const parsed = JSON.parse(raw);
     if (!parsed || parsed.version !== 1) return createInitialStore();
-    return normalizeState(parsed);
+    return maybeApplyDemoSeed(normalizeState(parsed));
   } catch (e) {
     return createInitialStore();
   }
@@ -1352,6 +1370,8 @@ Object.assign(window, {
   monthLabel,
   daysLeftInMonth,
   relDate,
+  createBlankStore,
+  maybeApplyDemoSeed,
   createInitialStore,
   loadStore,
   saveStore,
