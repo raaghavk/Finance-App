@@ -255,7 +255,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd }) {
   const spentPct = budget > 0 ? Math.min(totalSpent / budget, 1) : 0;
   const recents = [...(store.transactions || [])]
     .sort((a, b) => (b.date || '').localeCompare(a.date || '') || String(b.id).localeCompare(String(a.id)))
-    .slice(0, 8);
+    .slice(0, 20);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t(locale, 'goodMorning') : hour < 17 ? t(locale, 'goodAfternoon') : t(locale, 'goodEvening');
