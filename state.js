@@ -43,7 +43,7 @@ const TRAVEL_COUNTRIES = [
   { name: 'UAE', flag: '🇦🇪', code: 'AED', symbol: 'د.إ', rate: 22.71 },
   { name: 'United Kingdom', flag: '🇬🇧', code: 'GBP', symbol: '£', rate: 104.72 },
   { name: 'United States', flag: '🇺🇸', code: 'USD', symbol: '$', rate: 83.45 },
-  { name: 'Vietnam', flag: '🇻🇳', code: 'VND', symbol: '₫', rate: 0.0033 },
+  { name: 'Vietnam', flag: '🇻🇳', code: 'VND', symbol: '₫', rate: 0.0033, aliases: ['hoi an', 'da nang', 'danang', 'hanoi', 'ho chi minh', 'saigon'] },
 ];
 
 const TRAVEL_CATS = ['Food', 'Transport', 'Stay', 'Shopping', 'Groceries', 'Other'];
@@ -97,10 +97,17 @@ function tripSummaryText(trip, locale) {
   const lines = [
     (trip.flag || '✈️') + ' ' + (trip.name || 'Trip'),
     (trip.startDate || '') + ' – ' + (trip.endDate || ''),
-    (trip.currency || '') + ' ' + (Number(fx) || 0) + ' ≈ ' + fmt(spent),
+    (typeof fmtForeign === 'function' ? fmtForeign(fx, trip) : ((trip.currency || '') + ' ' + (Number(fx) || 0))) + ' ≈ ' + fmt(spent),
   ];
+  const due = typeof tripDueINR === 'function' ? tripDueINR(trip) : 0;
+  if (due > 0) {
+    const dueFx = typeof tripDueForeign === 'function' ? tripDueForeign(trip) : 0;
+    lines.push('Due ' + (typeof fmtForeign === 'function' ? fmtForeign(dueFx, trip) : dueFx) + ' ≈ ' + fmt(due));
+  }
   ((trip.expenses) || []).forEach((e) => {
-    lines.push('- ' + e.merchant + ' · ' + (trip.currency || '') + ' ' + e.amount + ' · ' + fmt(e.inr));
+    const label = typeof fmtForeign === 'function' ? fmtForeign(e.amount, trip) : ((trip.currency || '') + ' ' + e.amount);
+    const pay = e.paymentStatus === 'partial' ? ' · part paid' : (e.paymentStatus === 'due' ? ' · due' : '');
+    lines.push('- ' + e.merchant + ' · ' + label + ' · ' + fmt(e.inr) + pay);
   });
   if (trip.notes) lines.push('', trip.notes);
   return lines.join('\n');
@@ -523,6 +530,12 @@ const COPY = {
     incomeIn: 'In this month',
     quickExpense: 'Expense',
     quickIncome: 'Income',
+    paidNow: 'Paid now',
+    dueLater: 'Due later',
+    paidChip: 'Paid',
+    dueChip: 'Due',
+    partPaid: 'Part paid',
+    tripDue: 'Still due',
   },
   hi: {
     hi: 'नमस्ते, मैं ' + APP_NAME + ' हूँ।',
@@ -880,6 +893,12 @@ const COPY = {
     incomeIn: 'इस महीने आया',
     quickExpense: 'खर्च',
     quickIncome: 'आय',
+    paidNow: 'अभी चुकाया',
+    dueLater: 'बाद में बाकी',
+    paidChip: 'चुकाया',
+    dueChip: 'बाकी',
+    partPaid: 'आधा चुकाया',
+    tripDue: 'अभी बाकी',
   },
 };
 
@@ -1094,6 +1113,266 @@ function normalizeRecurring(row, i) {
   };
 }
 
+const FX_WHOLE_CODES = { VND: true, IDR: true, JPY: true, KRW: true };
+
+function inrToForeign(inr, rate) {
+  const r = Number(rate) || 0;
+  if (!(r > 0)) return 0;
+  return (Number(inr) || 0) / r;
+}
+
+function fmtForeign(n, trip) {
+  const amount = Number(n) || 0;
+  const code = (trip && (trip.currency || trip.code)) || '';
+  const symbol = (trip && trip.symbol) || '';
+  const num = FX_WHOLE_CODES[code]
+    ? Math.round(amount).toLocaleString('en-US')
+    : (Math.round(amount * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (symbol) return String(symbol) + num;
+  return (code ? code + ' ' : '') + num;
+}
+
+function looksDueText(raw) {
+  return /\b(balance due|due later|not paid(?: yet)?|unpaid|placeholder)\b/i.test(String(raw || ''));
+}
+
+function txnPaymentStatus(tx) {
+  if (!tx) return 'paid';
+  if (tx.paymentStatus === 'due' || tx.paymentStatus === 'partial' || tx.paymentStatus === 'paid') return tx.paymentStatus;
+  if (looksDueText(tx.merchant) || looksDueText(tx.note)) return 'due';
+  return 'paid';
+}
+
+function txnPaidAmount(tx) {
+  const status = txnPaymentStatus(tx);
+  if (status === 'due') return 0;
+  if (status === 'partial') {
+    const paid = Number(tx.paidAmount);
+    if (Number.isFinite(paid) && paid >= 0) return paid;
+  }
+  return Number(tx && tx.amount) || 0;
+}
+
+function txnDueAmount(tx) {
+  const status = txnPaymentStatus(tx);
+  if (status === 'due') return Number(tx && tx.amount) || 0;
+  if (status === 'partial') {
+    const due = Number(tx.dueAmount);
+    if (Number.isFinite(due) && due >= 0) return due;
+    return Math.max(0, (Number(tx.amount) || 0) - txnPaidAmount(tx));
+  }
+  return 0;
+}
+
+function travelCatFromHome(tx) {
+  const id = String((tx && tx.categoryId) || '').toLowerCase();
+  const blob = [tx && tx.merchant, tx && tx.note, tx && tx.category, tx && tx.trip, id].join(' ').toLowerCase();
+  if (/stay|hotel|hostel|airbnb|dorm/.test(blob) || id === 'rent') return 'Stay';
+  if (/food|dining|tiffin|chai|restaurant|cafe/.test(blob) || id === 'dining' || id === 'tiffin' || id === 'chai') return 'Food';
+  if (/kirana|groc/.test(blob) || id === 'kirana') return 'Groceries';
+  if (/shop/.test(blob) || id === 'shopping') return 'Shopping';
+  if (/auto|cab|metro|fuel|flight|airline|visa|grab|transport/.test(blob) || id === 'cab' || id === 'auto' || id === 'metro' || id === 'fuel') return 'Transport';
+  return 'Other';
+}
+
+function merchantGroupKey(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/\b(hostelworld|booking\.com|deposit|balance due|due later|not paid yet|placeholder)\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function tripMatchNeedles(trip) {
+  const needles = [];
+  const push = (s) => {
+    const v = String(s || '').toLowerCase().trim();
+    if (v && v.length >= 4 && needles.indexOf(v) < 0) needles.push(v);
+  };
+  push(trip && trip.countryName);
+  push(String(trip && trip.name || '').replace(/\btrip\b/ig, ''));
+  String(trip && trip.name || '').toLowerCase().split(/[^a-z0-9]+/).forEach((w) => {
+    if (w.length >= 4 && w !== 'trip' && !/^\d{4}$/.test(w)) push(w);
+  });
+  const country = typeof findTravelCountry === 'function'
+    ? findTravelCountry(trip && (trip.countryCode || trip.currency))
+    : (TRAVEL_COUNTRIES || []).find((c) => c.code === (trip && trip.countryCode));
+  ((country && country.aliases) || (trip && trip.aliases) || []).forEach(push);
+  return needles;
+}
+
+function txnMatchesTrip(tx, trip) {
+  if (!tx || !trip) return false;
+  if (tx.type === 'income' || tx.type === 'transfer') return false;
+  if (tx.travelId && tx.travelId === trip.id) return true;
+  if (tx.travelId && tx.travelId !== trip.id) return false;
+  const hay = [tx.trip, tx.merchant, tx.note].join(' ').toLowerCase();
+  return tripMatchNeedles(trip).some((n) => hay.indexOf(n) >= 0);
+}
+
+function expensePaidInr(e) {
+  if (!e) return 0;
+  if (e.paidInr != null && e.paidInr !== '') return Number(e.paidInr) || 0;
+  if (e.paymentStatus === 'due') return 0;
+  return Number(e.inr) || 0;
+}
+
+function expenseDueInr(e) {
+  if (!e) return 0;
+  if (e.dueInr != null && e.dueInr !== '') return Number(e.dueInr) || 0;
+  if (e.paymentStatus === 'due') return Number(e.inr) || 0;
+  return 0;
+}
+
+function expensePaidForeign(e) {
+  if (!e) return 0;
+  if (e.paidAmount != null && e.paidAmount !== '') return Number(e.paidAmount) || 0;
+  if (e.paymentStatus === 'due') return 0;
+  return Number(e.amount) || 0;
+}
+
+function expenseDueForeign(e) {
+  if (!e) return 0;
+  if (e.dueAmount != null && e.dueAmount !== '') return Number(e.dueAmount) || 0;
+  if (e.paymentStatus === 'due') return Number(e.amount) || 0;
+  return 0;
+}
+
+function homeTxnIdsOf(exp) {
+  const ids = [];
+  if (exp && exp.homeTxnId) ids.push(exp.homeTxnId);
+  if (exp && Array.isArray(exp.homeTxnIds)) exp.homeTxnIds.forEach((id) => { if (id) ids.push(id); });
+  return ids;
+}
+
+function normalizeTripExpense(e, j) {
+  const row = e && typeof e === 'object' ? e : {};
+  const amount = Number(row.amount) || 0;
+  const inr = Number(row.inr) || 0;
+  let paymentStatus = row.paymentStatus === 'due' || row.paymentStatus === 'partial' || row.paymentStatus === 'paid'
+    ? row.paymentStatus
+    : (looksDueText(row.merchant) ? 'due' : 'paid');
+  const paidAmount = row.paidAmount != null && row.paidAmount !== ''
+    ? Number(row.paidAmount) || 0
+    : (paymentStatus === 'due' ? 0 : amount);
+  const dueAmount = row.dueAmount != null && row.dueAmount !== ''
+    ? Number(row.dueAmount) || 0
+    : (paymentStatus === 'due' ? amount : 0);
+  const paidInr = row.paidInr != null && row.paidInr !== ''
+    ? Number(row.paidInr) || 0
+    : (paymentStatus === 'due' ? 0 : inr);
+  const dueInr = row.dueInr != null && row.dueInr !== ''
+    ? Number(row.dueInr) || 0
+    : (paymentStatus === 'due' ? inr : 0);
+  if (dueAmount > 0 && paidAmount > 0) paymentStatus = 'partial';
+  else if (dueAmount > 0 && paidAmount <= 0) paymentStatus = 'due';
+  else paymentStatus = 'paid';
+  const homeTxnIds = homeTxnIdsOf(row);
+  return {
+    id: row.id || ('tex-' + j),
+    merchant: row.merchant || 'Expense',
+    cat: TRAVEL_CATS.indexOf(row.cat) >= 0 ? row.cat : 'Other',
+    amount: amount,
+    inr: inr,
+    paidAmount: paidAmount,
+    dueAmount: dueAmount,
+    paidInr: paidInr,
+    dueInr: dueInr,
+    paymentStatus: paymentStatus,
+    date: row.date || todayISO(),
+    accountId: row.accountId || '',
+    homeTxnId: row.homeTxnId || (homeTxnIds[0] || ''),
+    homeTxnIds: homeTxnIds,
+    postHome: !!row.postHome,
+    attached: !!row.attached,
+  };
+}
+
+function buildGroupedTripExpense(rows, trip) {
+  const rate = Number(trip && trip.rate) || 1;
+  const first = rows[0] || {};
+  let paidInr = 0;
+  let dueInr = 0;
+  rows.forEach((tx) => {
+    paidInr += txnPaidAmount(tx);
+    dueInr += txnDueAmount(tx);
+  });
+  const paidAmount = inrToForeign(paidInr, rate);
+  const dueAmount = inrToForeign(dueInr, rate);
+  const paymentStatus = dueInr > 0 && paidInr > 0 ? 'partial' : (dueInr > 0 ? 'due' : 'paid');
+  const merchant = String(first.merchant || first.note || 'Expense')
+    .replace(/\((?:Hostelworld )?deposit\)/i, '')
+    .replace(/\(balance due\)/i, '')
+    .replace(/\s+/g, ' ')
+    .trim() || 'Expense';
+  const dates = rows.map((tx) => tx.date).filter(Boolean).sort();
+  const ids = rows.map((tx) => tx.id).filter(Boolean);
+  return normalizeTripExpense({
+    id: 'tex-att-' + (ids[0] || merchantGroupKey(merchant) || 'x'),
+    merchant: merchant,
+    cat: travelCatFromHome(first),
+    amount: paidAmount + dueAmount,
+    inr: paidInr + dueInr,
+    paidAmount: paidAmount,
+    dueAmount: dueAmount,
+    paidInr: paidInr,
+    dueInr: dueInr,
+    paymentStatus: paymentStatus,
+    date: dates[0] || todayISO(),
+    accountId: first.accountId || '',
+    homeTxnId: ids[0] || '',
+    homeTxnIds: ids,
+    postHome: true,
+    attached: true,
+  }, 0);
+}
+
+function attachHomeTxnsToTrip(trip, transactions) {
+  if (!trip) return trip;
+  const existing = Array.isArray(trip.expenses) ? trip.expenses.slice() : [];
+  const claimed = {};
+  existing.forEach((e) => homeTxnIdsOf(e).forEach((id) => { claimed[id] = true; }));
+  const matched = (transactions || []).filter((tx) => {
+    if (!tx || !tx.id || claimed[tx.id]) return false;
+    if (tx.travelId && tx.travelId !== trip.id) return false;
+    return txnMatchesTrip(tx, trip);
+  });
+  if (!matched.length) return trip;
+  const groups = {};
+  const singles = [];
+  matched.forEach((tx) => {
+    const key = merchantGroupKey(tx.merchant || tx.note);
+    if (!key) {
+      singles.push([tx]);
+      return;
+    }
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(tx);
+  });
+  const extras = Object.keys(groups).map((k) => groups[k]).concat(singles).map((rows) => buildGroupedTripExpense(rows, trip));
+  return {
+    ...trip,
+    expenses: existing.concat(extras).sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))),
+  };
+}
+
+function attachHomeTxnsToStore(store) {
+  const src = store && typeof store === 'object' ? store : {};
+  let transactions = Array.isArray(src.transactions) ? src.transactions.map((tx) => {
+    const status = txnPaymentStatus(tx);
+    if (tx && tx.paymentStatus === status) return tx;
+    return { ...tx, paymentStatus: status };
+  }) : [];
+  const trips = (src.trips || []).map((trip) => attachHomeTxnsToTrip(trip, transactions));
+  transactions = transactions.map((tx) => {
+    if (!tx || tx.travelId) return tx;
+    const owner = trips.find((tr) => (tr.expenses || []).some((e) => homeTxnIdsOf(e).indexOf(tx.id) >= 0));
+    return owner ? { ...tx, travelId: owner.id } : tx;
+  });
+  return { ...src, trips: trips, transactions: transactions };
+}
+
 function normalizeTrip(row, i) {
   const t = row && typeof row === 'object' ? row : {};
   const country = (TRAVEL_COUNTRIES || []).find((c) => c.code === t.countryCode) || null;
@@ -1126,17 +1405,7 @@ function normalizeTrip(row, i) {
     notes: String(t.notes || ''),
     forexCash: Math.max(0, Number(t.forexCash) || 0),
     checklist: Object.keys(byId).map((k) => byId[k]),
-    expenses: Array.isArray(t.expenses) ? t.expenses.map((e, j) => ({
-      id: e.id || ('tex-' + j),
-      merchant: e.merchant || 'Expense',
-      cat: TRAVEL_CATS.indexOf(e.cat) >= 0 ? e.cat : 'Other',
-      amount: Number(e.amount) || 0,
-      inr: Number(e.inr) || 0,
-      date: e.date || todayISO(),
-      accountId: e.accountId || '',
-      homeTxnId: e.homeTxnId || '',
-      postHome: !!e.postHome,
-    })) : [],
+    expenses: Array.isArray(t.expenses) ? t.expenses.map((e, j) => normalizeTripExpense(e, j)) : [],
   };
 }
 
@@ -1175,7 +1444,7 @@ function normalizeState(parsed) {
     const live = trips.find((t) => t.status === 'active');
     activeTripId = live ? live.id : null;
   }
-  return {
+  return attachHomeTxnsToStore({
     ...base,
     ...src,
     version: 1,
@@ -1195,7 +1464,7 @@ function normalizeState(parsed) {
     ious: Array.isArray(src.ious) ? src.ious.map(normalizeIou) : [],
     settings: normalizeSettings(src.settings),
     updatedAt: typeof src.updatedAt === 'string' && src.updatedAt ? src.updatedAt : (base.updatedAt || new Date().toISOString()),
-  };
+  });
 }
 
 function loadStore() {
@@ -1234,7 +1503,7 @@ function monthTxns(store, mk) {
 function monthExpenseTotal(store, mk) {
   return monthTxns(store, mk)
     .filter((tx) => tx.type === 'expense')
-    .reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+    .reduce((s, tx) => s + txnPaidAmount(tx), 0);
 }
 
 function monthIncomeTotal(store, mk) {
@@ -1265,7 +1534,7 @@ function totalBudgetLimit(store, mk) {
 function spentOnAccount(store, accountId, mk) {
   return monthTxns(store, mk)
     .filter((tx) => tx.type === 'expense' && tx.accountId === accountId)
-    .reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+    .reduce((s, tx) => s + txnPaidAmount(tx), 0);
 }
 
 function newMoneyId(prefix, name) {
@@ -1285,7 +1554,7 @@ function spentInCategory(store, categoryId, mk) {
   const ids = new Set(categoryTreeIds(store.categories || [], categoryId));
   return monthTxns(store, mk)
     .filter((tx) => tx.type === 'expense' && ids.has(tx.categoryId))
-    .reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+    .reduce((s, tx) => s + txnPaidAmount(tx), 0);
 }
 
 function categorySpendRows(store, mk) {
@@ -1382,7 +1651,7 @@ function accountRunningBalance(store, account) {
     if (tx.accountId !== account.id) return;
     const amt = Number(tx.amount) || 0;
     if (tx.type === 'income') income += amt;
-    else spent += amt;
+    else spent += txnPaidAmount(tx);
   });
   return opening + income - spent;
 }
@@ -1427,7 +1696,7 @@ function cashflowMonth(store, mk) {
     if (!d) return;
     if (!byDay[d]) byDay[d] = { spend: 0, income: 0, txns: [], dues: [] };
     if (tx.type === 'income') byDay[d].income += Number(tx.amount) || 0;
-    else byDay[d].spend += Number(tx.amount) || 0;
+    else byDay[d].spend += txnPaidAmount(tx);
     byDay[d].txns.push(tx);
   });
   (store.recurring || []).filter((r) => r.active !== false && r.nextOn && monthKey(r.nextOn + 'T12:00:00') === key).forEach((r) => {
@@ -1588,7 +1857,7 @@ function monthInsights(store, mk) {
   const weekday = [0, 0, 0, 0, 0, 0, 0];
   txns.filter((tx) => tx.type === 'expense').forEach((tx) => {
     const d = new Date((tx.date || '') + 'T12:00:00');
-    if (!isNaN(d.getTime())) weekday[d.getDay()] += Number(tx.amount) || 0;
+    if (!isNaN(d.getTime())) weekday[d.getDay()] += txnPaidAmount(tx);
   });
   const delta = prevSpent > 0 ? (spent - prevSpent) / prevSpent : null;
   return {
@@ -1646,7 +1915,7 @@ function startOfWeekISO(iso) {
 function rangeExpenseTotal(store, startISO, endISO) {
   return ((store && store.transactions) || []).filter((tx) => (
     tx.type === 'expense' && tx.date >= startISO && tx.date <= endISO
-  )).reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+  )).reduce((s, tx) => s + txnPaidAmount(tx), 0);
 }
 
 function weekRecap(store, today) {
@@ -1753,7 +2022,8 @@ function tripLeftoverPerDay(trip, today) {
 
 function canAddTripExpense(store, trip, loc) {
   if (zenithIsPro(store, loc)) return true;
-  return ((trip && trip.expenses) || []).length < TRAVEL_FREE_MAX_EXPENSES;
+  const added = ((trip && trip.expenses) || []).filter((e) => !e.attached).length;
+  return added < TRAVEL_FREE_MAX_EXPENSES;
 }
 
 function canUseTravelHistory(store, loc) {
@@ -1765,11 +2035,19 @@ function canUseTravelSos(store, loc) {
 }
 
 function tripSpentINR(trip) {
-  return ((trip && trip.expenses) || []).reduce((s, e) => s + (Number(e.inr) || 0), 0);
+  return ((trip && trip.expenses) || []).reduce((s, e) => s + expensePaidInr(e), 0);
 }
 
 function tripSpentForeign(trip) {
-  return ((trip && trip.expenses) || []).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  return ((trip && trip.expenses) || []).reduce((s, e) => s + expensePaidForeign(e), 0);
+}
+
+function tripDueINR(trip) {
+  return ((trip && trip.expenses) || []).reduce((s, e) => s + expenseDueInr(e), 0);
+}
+
+function tripDueForeign(trip) {
+  return ((trip && trip.expenses) || []).reduce((s, e) => s + expenseDueForeign(e), 0);
 }
 
 function tripDaysLeft(trip, today) {
@@ -1820,6 +2098,18 @@ Object.assign(window, {
   leftToSpend,
   leftoverAfterBills,
   leftoverAfterCommitments,
+  txnPaidAmount,
+  txnDueAmount,
+  txnPaymentStatus,
+  txnMatchesTrip,
+  attachHomeTxnsToTrip,
+  attachHomeTxnsToStore,
+  inrToForeign,
+  fmtForeign,
+  tripDueINR,
+  tripDueForeign,
+  travelCatFromHome,
+  merchantGroupKey,
   upcomingBillsThisMonth,
   dueSoonRecurring,
   monthlyGoalNeed,
@@ -1878,6 +2168,7 @@ Object.assign(window, {
   tripSpentINR,
   tripSpentForeign,
   tripDaysLeft,
+  normalizeTripExpense,
   findTravelCountry,
   TRAVEL_COUNTRIES,
   TRAVEL_CATS,

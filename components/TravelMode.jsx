@@ -64,18 +64,31 @@ function CountryPickerScreen({ countries, selectedCountry, onSelect, onBack, onC
 function TripExpenseForm({ locale, trip, store, initial, onSave, onCancel, onDelete }) {
   const [merchant, setMerchant] = React.useState(initial && initial.merchant ? initial.merchant : '');
   const [amount, setAmount] = React.useState(initial && initial.amount != null ? String(initial.amount) : '');
+  const [paidNow, setPaidNow] = React.useState(initial && initial.paidAmount != null ? String(initial.paidAmount) : (initial && initial.paymentStatus === 'due' ? '0' : (initial && initial.amount != null ? String(initial.amount) : '')));
+  const [dueLater, setDueLater] = React.useState(initial && initial.dueAmount != null ? String(initial.dueAmount) : (initial && initial.paymentStatus === 'due' ? String(initial.amount || 0) : '0'));
+  const [splitPay, setSplitPay] = React.useState(!!(initial && ((Number(initial.dueAmount) || 0) > 0 || initial.paymentStatus === 'due' || initial.paymentStatus === 'partial')));
   const [cat, setCat] = React.useState((initial && initial.cat) || 'Food');
   const [postHome, setPostHome] = React.useState(!!(initial && initial.postHome));
   const accounts = (store && store.accounts) || [];
   const [accountId, setAccountId] = React.useState((initial && initial.accountId) || (accounts[0] && accounts[0].id) || 'cash');
-  const ok = merchant.trim() && (parseFloat(amount) || 0) > 0;
+  const total = parseFloat(amount) || 0;
+  const paidFx = splitPay ? (parseFloat(paidNow) || 0) : total;
+  const dueFx = splitPay ? (parseFloat(dueLater) || 0) : 0;
+  const ok = merchant.trim() && total > 0;
   const rate = Number(trip.rate) || 1;
-  const inr = Math.round((parseFloat(amount) || 0) * rate);
+  const inr = Math.round(total * rate);
+  const paidInr = Math.round(paidFx * rate);
+  const dueInr = Math.round(dueFx * rate);
   const card = ZENITH.card;
   const ink = ZENITH.ink;
   const muted = ZENITH.muted;
   const accent = ZENITH.accent;
   const cream = ZENITH.cream;
+  const fxLabel = (n) => (typeof fmtForeign === 'function' ? fmtForeign(n, trip) : ((trip.symbol || trip.currency || '') + ' ' + n));
+  const setTotal = (raw) => {
+    setAmount(raw);
+    if (!splitPay) setPaidNow(raw);
+  };
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'flex-end' }}>
       <div role="dialog" aria-label={t(locale, 'addTripExpense')} style={{
@@ -93,12 +106,58 @@ function TripExpenseForm({ locale, trip, store, initial, onSave, onCancel, onDel
           <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, marginBottom: 6 }}>{t(locale, 'note')}</label>
           <input value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="Pad Thai, Grab, hotel…" style={moneyInputStyle()} />
           <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted, margin: '12px 0 6px' }}>{trip.currency}</label>
-          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" style={moneyInputStyle()} />
+          <input inputMode="decimal" value={amount} onChange={(e) => setTotal(e.target.value)} placeholder="0" style={moneyInputStyle()} />
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 6 }}>≈ {fmt(inr)}</p>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+          <button type="button" onClick={() => {
+            setSplitPay((v) => {
+              const next = !v;
+              if (next) {
+                setPaidNow(amount || '0');
+                setDueLater('0');
+              } else {
+                setPaidNow(amount || '0');
+                setDueLater('0');
+              }
+              return next;
+            });
+          }} style={{
+            marginTop: 12, width: '100%', textAlign: 'left', border: 'none', borderRadius: 14, padding: '12px 14px',
+            background: cream, cursor: 'pointer',
+          }}>
+            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{t(locale, 'partPaid')}</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 3 }}>{splitPay ? t(locale, 'paidNow') + ' + ' + t(locale, 'dueLater') : (locale === 'hi' ? 'पूरा अभी चुकाया' : 'Pay in full now, or split paid / due')}</p>
+          </button>
+          {splitPay && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+              <div>
+                <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginBottom: 6 }}>{t(locale, 'paidNow')}</label>
+                <input inputMode="decimal" value={paidNow} onChange={(e) => {
+                  const v = e.target.value;
+                  setPaidNow(v);
+                  const p = parseFloat(v) || 0;
+                  setDueLater(String(Math.max(0, Math.round((total - p) * 100) / 100)));
+                }} placeholder="0" style={moneyInputStyle()} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginBottom: 6 }}>{t(locale, 'dueLater')}</label>
+                <input inputMode="decimal" value={dueLater} onChange={(e) => {
+                  const v = e.target.value;
+                  setDueLater(v);
+                  const d = parseFloat(v) || 0;
+                  setPaidNow(String(Math.max(0, Math.round((total - d) * 100) / 100)));
+                }} placeholder="0" style={moneyInputStyle()} />
+              </div>
+            </div>
+          )}
+          {splitPay && (
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 8 }}>
+              {t(locale, 'paidChip')} {fxLabel(paidFx)} · {t(locale, 'dueChip')} {fxLabel(dueFx)}
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', marginTop: 12 }}>
             {(TRAVEL_CATS || ['Food', 'Other']).map((c) => (
               <button key={c} type="button" onClick={() => setCat(c)} style={{
-                padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer',
+                padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer', flexShrink: 0,
                 background: cat === c ? accent : cream, color: cat === c ? '#fff' : ink,
                 fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
               }}>{c}</button>
@@ -109,13 +168,13 @@ function TripExpenseForm({ locale, trip, store, initial, onSave, onCancel, onDel
             background: cream, cursor: 'pointer',
           }}>
             <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{t(locale, 'logToHome')}</p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 3 }}>{postHome ? (locale === 'hi' ? 'घर के वॉलेट में भी लिखा जाएगा' : 'Also posts to your home wallet') : (locale === 'hi' ? 'केवल ट्रिप बही' : 'Trip ledger only')}</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: muted, marginTop: 3 }}>{postHome ? (locale === 'hi' ? 'घर के वॉलेट में चुकाया हिस्सा लिखा जाएगा' : 'Posts the paid amount to your home wallet') : (locale === 'hi' ? 'केवल ट्रिप बही' : 'Trip ledger only')}</p>
           </button>
           {postHome && accounts.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', marginTop: 10 }}>
               {accounts.map((a) => (
                 <button key={a.id} type="button" onClick={() => setAccountId(a.id)} style={{
-                  padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer',
+                  padding: '8px 12px', border: 'none', borderRadius: 12, cursor: 'pointer', flexShrink: 0,
                   background: accountId === a.id ? accent : cream, color: accountId === a.id ? '#fff' : ink,
                   fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 700,
                 }}>{acctLabel(a, locale) || a.name}</button>
@@ -131,8 +190,10 @@ function TripExpenseForm({ locale, trip, store, initial, onSave, onCancel, onDel
             }}>{t(locale, 'delete')}</button>
           ) : null}
           <button type="button" disabled={!ok} onClick={() => onSave({
-            merchant: merchant.trim(), amount: parseFloat(amount) || 0, cat, inr, date: (initial && initial.date) || todayISO(),
+            merchant: merchant.trim(), amount: total, cat, inr, date: (initial && initial.date) || todayISO(),
             postHome, accountId,
+            paidAmount: paidFx, dueAmount: dueFx, paidInr, dueInr,
+            paymentStatus: dueFx > 0 && paidFx > 0 ? 'partial' : (dueFx > 0 ? 'due' : 'paid'),
           })} style={{
             flex: 1, padding: '14px', border: 'none', borderRadius: 14,
             background: ok ? accent : cream, color: ok ? '#fff' : muted, fontFamily: 'Manrope, sans-serif', fontWeight: 800, cursor: ok ? 'pointer' : 'default',
@@ -436,11 +497,16 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
   const expenses = live.expenses || [];
   const totalForeign = tripSpentForeign(live);
   const totalINR = tripSpentINR(live);
+  const dueForeign = typeof tripDueForeign === 'function' ? tripDueForeign(live) : 0;
+  const dueINR = typeof tripDueINR === 'function' ? tripDueINR(live) : 0;
   const budgetINR = live.budgetINR || 0;
   const budgetPct = budgetINR > 0 ? totalINR / budgetINR : 0;
   const daysLeft = tripDaysLeft(live);
   const leftINR = typeof tripBudgetLeft === 'function' ? tripBudgetLeft(live) : (budgetINR - totalINR);
   const leftoverDay = typeof tripLeftoverPerDay === 'function' ? tripLeftoverPerDay(live) : (leftINR / daysLeft);
+  const fx = (n) => (typeof fmtForeign === 'function' ? fmtForeign(n, live) : ((country.symbol || country.code) + ' ' + n));
+  const leftFx = typeof inrToForeign === 'function' ? inrToForeign(leftINR, live.rate) : (leftINR / (Number(live.rate) || 1));
+  const leftoverDayFx = typeof inrToForeign === 'function' ? inrToForeign(leftoverDay, live.rate) : leftoverDay;
   const over = leftINR < 0;
   const convertedAmount = () => {
     const n = parseFloat(convertAmount) || 0;
@@ -535,19 +601,27 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
           <div style={{ padding: '0 20px' }}>
             <div style={{ background: zenithHeroGradient(), borderRadius: 24, padding: '22px', marginBottom: 14, boxShadow: zenithHeroShadow() }}>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>{t(locale, 'tripSpent')}</p>
-              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 40, fontWeight: 800, color: '#fff', letterSpacing: -1 }}>{country.code} {totalForeign.toFixed(2)}</p>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 16 }}>≈ {fmt(totalINR)}</p>
+              <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 40, fontWeight: 800, color: '#fff', letterSpacing: -1 }}>{fx(totalForeign)}</p>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>≈ {fmt(totalINR)}</p>
+              {dueINR > 0 && (
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.9)', marginBottom: 16 }}>
+                  {t(locale, 'tripDue')} {fx(dueForeign)} ≈ {fmt(dueINR)}
+                </p>
+              )}
+              {dueINR <= 0 && <div style={{ height: 8 }} />}
               <div style={{ height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 12 }}>
                 <div style={{ height: '100%', width: (Math.min(budgetPct, 1) * 100) + '%', borderRadius: 2, background: '#fff' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{over ? t(locale, 'overBudget') : t(locale, 'remaining')}</p>
-                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#fff' }}>{fmt(leftINR)}</p>
+                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#fff' }}>{fx(leftFx)}</p>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.65)' }}>≈ {fmt(leftINR)}</p>
                 </div>
                 <div>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{t(locale, 'leftoverDay')}</p>
-                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#fff' }}>{fmt(leftoverDay)}</p>
+                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 800, color: '#fff' }}>{fx(leftoverDayFx)}</p>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.65)' }}>≈ {fmt(leftoverDay)}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{t(locale, 'daysLeft')}</p>
@@ -602,11 +676,21 @@ function TravelScreen({ store, onStartTrip, onEndTrip, onAddExpense, onSaveExpen
                     </div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{exp.merchant}</p>
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>{exp.cat}{exp.postHome ? ' · ' + t(locale, 'logToHome') : ''}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>
+                        {exp.cat}
+                        {exp.paymentStatus === 'partial' ? ' · ' + t(locale, 'partPaid') : ''}
+                        {exp.paymentStatus === 'due' ? ' · ' + t(locale, 'dueChip') : ''}
+                        {exp.postHome ? ' · ' + t(locale, 'logToHome') : ''}
+                      </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{country.code} {exp.amount}</p>
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>{fmt(exp.inr)}</p>
+                      <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700, color: ink }}>{fx(exp.amount)}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>≈ {fmt(exp.inr)}</p>
+                      {(Number(exp.dueAmount) > 0 || exp.paymentStatus === 'partial' || exp.paymentStatus === 'due') && (
+                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 700, color: ZENITH.warn || '#D97706' }}>
+                          {t(locale, 'paidChip')} {fx(exp.paidAmount || 0)} · {t(locale, 'dueChip')} {fx(exp.dueAmount || 0)}
+                        </p>
+                      )}
                     </div>
                   </button>
                 ))}

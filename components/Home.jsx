@@ -252,11 +252,13 @@ function TravelHomeCard({ store, locale, onOpen }) {
   const country = trip && typeof findTravelCountry === 'function' ? findTravelCountry(trip.currency) : null;
   const spent = trip && typeof tripSpentINR === 'function' ? tripSpentINR(trip) : 0;
   const left = trip && typeof tripBudgetLeft === 'function' ? tripBudgetLeft(trip) : 0;
+  const spentFx = trip && typeof tripSpentForeign === 'function' ? tripSpentForeign(trip) : 0;
+  const leftFx = trip && typeof inrToForeign === 'function' ? inrToForeign(left, trip.rate) : 0;
   const sub = !trip
     ? t(locale, 'headingSomewhere')
     : lives.length > 1
-      ? t(locale, 'nLiveTrips', { n: String(lives.length) }) + ' · ' + fmt(spent)
-      : (fmt(left) + ' ' + t(locale, 'remaining') + (trip.currency ? ' · ' + trip.currency : ''));
+      ? t(locale, 'nLiveTrips', { n: String(lives.length) }) + ' · ' + (typeof fmtForeign === 'function' ? fmtForeign(spentFx, trip) : fmt(spent))
+      : ((typeof fmtForeign === 'function' ? fmtForeign(leftFx, trip) : fmt(left)) + ' ' + t(locale, 'remaining'));
   return (
     <div style={{ padding: '0 20px', marginBottom: 18 }}>
       <button
@@ -325,6 +327,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd, onAddIncome }) {
   const amountColor = (tx) => {
     if (tx.type === 'income') return '#16A34A';
     if (tx.type === 'transfer') return '#64748B';
+    if (typeof txnPaymentStatus === 'function' && txnPaymentStatus(tx) === 'due') return (typeof ZENITH !== 'undefined' ? ZENITH.warn : '#D97706');
     return '#FF3B30';
   };
 
@@ -608,7 +611,7 @@ function HomeScreen({ store, onSelectTx, onNavigate, onAdd, onAddIncome }) {
                     <MerchantIcon merchant={tx.merchant} color={cat ? cat.color : '#007AFF'} />
                     <div style={{ flex: 1 }}>
                       <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: '#121212', marginBottom: 3 }}>{tx.merchant}</p>
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6E6E73' }}>{cat ? catLabel(cat, locale) : tx.categoryId}</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6E6E73' }}>{cat ? catLabel(cat, locale) : tx.categoryId}{typeof txnPaymentStatus === 'function' && txnPaymentStatus(tx) === 'due' ? ' · ' + t(locale, 'dueLater') : ''}</p>
                     </div>
                     <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 16, fontWeight: 700, color: amountColor(tx) }}>
                       {sign}{fmt(tx.amount)}

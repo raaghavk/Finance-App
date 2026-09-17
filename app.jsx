@@ -205,12 +205,15 @@ function ZenithApp() {
   const saveTxn = (entry) => {
     patch((s) => {
       const idx = s.transactions.findIndex((t) => t.id === entry.id);
+      let nextStore;
       if (idx >= 0) {
         const next = [...s.transactions];
         next[idx] = { ...s.transactions[idx], ...entry };
-        return { ...s, transactions: next };
+        nextStore = { ...s, transactions: next };
+      } else {
+        nextStore = { ...s, transactions: [entry, ...s.transactions] };
       }
-      return { ...s, transactions: [entry, ...s.transactions] };
+      return typeof attachHomeTxnsToStore === 'function' ? attachHomeTxnsToStore(nextStore) : nextStore;
     });
     setEditTx(null);
     setScreen(activeTab);
@@ -460,7 +463,10 @@ function ZenithApp() {
     }
     const id = typeof newMoneyId === 'function' ? newMoneyId('trip', draft.name) : ('trip-' + Date.now());
     const trip = typeof normalizeTrip === 'function' ? normalizeTrip({ ...draft, id, status: 'active', expenses: [] }, 0) : { ...draft, id, status: 'active', expenses: [] };
-    patch((s) => ({ ...s, trips: (s.trips || []).concat([trip]), activeTripId: id }));
+    patch((s) => {
+      const next = { ...s, trips: (s.trips || []).concat([trip]), activeTripId: id };
+      return typeof attachHomeTxnsToStore === 'function' ? attachHomeTxnsToStore(next) : next;
+    });
   };
 
   const endTrip = (id) => {
@@ -478,7 +484,9 @@ function ZenithApp() {
   const switchTrip = (id) => {
     patch((s) => {
       const found = (s.trips || []).find((tr) => tr.id === id && tr.status === 'active');
-      return found ? { ...s, activeTripId: id } : s;
+      if (!found) return s;
+      const next = { ...s, activeTripId: id };
+      return typeof attachHomeTxnsToStore === 'function' ? attachHomeTxnsToStore(next) : next;
     });
   };
 
@@ -493,23 +501,45 @@ function ZenithApp() {
       const expId = typeof newMoneyId === 'function' ? newMoneyId('tex', draft.merchant) : ('tex-' + Date.now());
       let transactions = s.transactions || [];
       let homeTxnId = '';
-      if (draft.postHome) {
+      const paidInr = draft.paidInr != null ? Number(draft.paidInr) : (draft.paymentStatus === 'due' ? 0 : (Number(draft.inr) || 0));
+      const dueInr = draft.dueInr != null ? Number(draft.dueInr) : (draft.paymentStatus === 'due' ? (Number(draft.inr) || 0) : 0);
+      const paidAmount = draft.paidAmount != null ? Number(draft.paidAmount) : (draft.paymentStatus === 'due' ? 0 : (Number(draft.amount) || 0));
+      const dueAmount = draft.dueAmount != null ? Number(draft.dueAmount) : (draft.paymentStatus === 'due' ? (Number(draft.amount) || 0) : 0);
+      const paymentStatus = dueAmount > 0 && paidAmount > 0 ? 'partial' : (dueAmount > 0 ? 'due' : 'paid');
+      if (draft.postHome && paidInr > 0) {
         const txnId = typeof newTxnId === 'function' ? newTxnId() : ('tx-' + Date.now());
         homeTxnId = txnId;
         const accountId = draft.accountId || ((s.accounts || [])[0] && (s.accounts || [])[0].id) || 'cash';
         transactions = [{
           id: txnId,
           type: 'expense',
-          amount: Number(draft.inr) || 0,
+          amount: paidInr,
           categoryId: typeof travelHomeCategoryId === 'function' ? travelHomeCategoryId(s, draft.cat) : 'other',
           accountId: accountId,
           date: draft.date || todayISO(),
           note: ((live && live.name) || 'Trip') + ' · ' + (draft.merchant || ''),
           method: typeof methodForAccount === 'function' ? methodForAccount(accountId) : 'upi',
           travelId: tripId,
+          paymentStatus: 'paid',
         }].concat(transactions);
       }
-      const exp = {
+      const exp = typeof normalizeTripExpense === 'function' ? normalizeTripExpense({
+        merchant: draft.merchant,
+        amount: draft.amount,
+        cat: draft.cat,
+        inr: draft.inr,
+        paidAmount: paidAmount,
+        dueAmount: dueAmount,
+        paidInr: paidInr,
+        dueInr: dueInr,
+        paymentStatus: paymentStatus,
+        date: draft.date || todayISO(),
+        id: expId,
+        accountId: draft.accountId || '',
+        postHome: !!draft.postHome,
+        homeTxnId: homeTxnId,
+        homeTxnIds: homeTxnId ? [homeTxnId] : [],
+      }, 0) : {
         merchant: draft.merchant,
         amount: draft.amount,
         cat: draft.cat,
@@ -536,15 +566,17 @@ function ZenithApp() {
       let homeTxnId = prev && prev.homeTxnId ? prev.homeTxnId : '';
       if (draft.postHome) {
         const accountId = draft.accountId || (prev && prev.accountId) || ((s.accounts || [])[0] && (s.accounts || [])[0].id) || 'cash';
+        const paidInrHome = draft.paidInr != null ? Number(draft.paidInr) : (Number(draft.inr) || 0);
         const txnBody = {
           type: 'expense',
-          amount: Number(draft.inr) || 0,
+          amount: paidInrHome,
           categoryId: typeof travelHomeCategoryId === 'function' ? travelHomeCategoryId(s, draft.cat) : 'other',
           accountId: accountId,
           date: draft.date || todayISO(),
           note: ((live && live.name) || 'Trip') + ' · ' + (draft.merchant || ''),
           method: typeof methodForAccount === 'function' ? methodForAccount(accountId) : 'upi',
           travelId: tripId,
+          paymentStatus: 'paid',
         };
         if (homeTxnId && transactions.some((tx) => tx.id === homeTxnId)) {
           transactions = transactions.map((tx) => (tx.id === homeTxnId ? { ...tx, ...txnBody } : tx));
@@ -561,7 +593,23 @@ function ZenithApp() {
         transactions: transactions,
         trips: (s.trips || []).map((tr) => (tr.id === tripId ? {
           ...tr,
-          expenses: (tr.expenses || []).map((e) => (e.id === expId ? {
+          expenses: (tr.expenses || []).map((e) => (e.id === expId ? (typeof normalizeTripExpense === 'function' ? normalizeTripExpense({
+            ...e,
+            merchant: draft.merchant,
+            amount: draft.amount,
+            cat: draft.cat,
+            inr: draft.inr,
+            paidAmount: draft.paidAmount,
+            dueAmount: draft.dueAmount,
+            paidInr: draft.paidInr,
+            dueInr: draft.dueInr,
+            paymentStatus: draft.paymentStatus,
+            date: draft.date || e.date,
+            accountId: draft.accountId || e.accountId || '',
+            postHome: !!draft.postHome,
+            homeTxnId: homeTxnId,
+            homeTxnIds: homeTxnId ? [homeTxnId] : [],
+          }, 0) : {
             ...e,
             merchant: draft.merchant,
             amount: draft.amount,
@@ -571,7 +619,7 @@ function ZenithApp() {
             accountId: draft.accountId || e.accountId || '',
             postHome: !!draft.postHome,
             homeTxnId: homeTxnId,
-          } : e)),
+          }) : e)),
         } : tr)),
       };
     });

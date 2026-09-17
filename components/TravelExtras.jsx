@@ -120,7 +120,8 @@ function TripHistoryScreen({ trips, onBack, onSelect }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div>
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: muted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 }}>Total Spent</p>
-                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, color: ink }}>₹{(t.spentINR || 0).toLocaleString('en-IN')}</p>
+                <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 20, fontWeight: 800, color: ink }}>{typeof fmtForeign === 'function' ? fmtForeign(t.spentForeign, t) : ('₹' + (t.spentINR || 0).toLocaleString('en-IN'))}</p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: muted }}>≈ ₹{(t.spentINR || 0).toLocaleString('en-IN')}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: muted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 }}>Budget</p>
@@ -155,8 +156,8 @@ function TripSummaryScreen({ trip, onDone }) {
       <div style={{ padding: '0 20px' }}>
         <div style={{ background: hero, borderRadius: 26, padding: '26px 24px', marginBottom: 16, boxShadow: heroShadow }}>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 }}>Total Spent</p>
-          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 40, fontWeight: 800, color: '#FFFFFF', letterSpacing: -1, marginBottom: 4 }}>₹{(trip.spentINR || 0).toLocaleString('en-IN')}</p>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>{trip.spentForeign} {trip.code} · {pctOfBudget}% of budget</p>
+          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 40, fontWeight: 800, color: '#FFFFFF', letterSpacing: -1, marginBottom: 4 }}>{typeof fmtForeign === 'function' ? fmtForeign(trip.spentForeign, trip) : ('₹' + (trip.spentINR || 0).toLocaleString('en-IN'))}</p>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>≈ ₹{(trip.spentINR || 0).toLocaleString('en-IN')} · {pctOfBudget}% of budget</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
@@ -179,7 +180,7 @@ function TripSummaryScreen({ trip, onDone }) {
                 <div key={cat} style={{ marginBottom: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                     <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 500, color: muted }}>{cat}</span>
-                    <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: 700, color: ink }}>{trip.code} {Number(amt).toFixed(0)}</span>
+                    <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, fontWeight: 700, color: ink }}>{typeof fmtForeign === 'function' ? fmtForeign(amt, trip) : ((trip.code || '') + ' ' + Number(amt).toFixed(0))}</span>
                   </div>
                   <div style={{ height: 6, background: cream, borderRadius: 3 }}>
                     <div style={{ height: '100%', width: (pct * 100) + '%', background: CAT_COLORS[cat] || accent, borderRadius: 3 }} />

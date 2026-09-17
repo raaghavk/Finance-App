@@ -151,7 +151,7 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
                   {txs.map((tx, i) => {
                     const cat = findCat(store, tx.categoryId);
                     const sign = tx.type === 'income' ? '+' : tx.type === 'transfer' ? '' : '−';
-                    const color = tx.type === 'income' ? '#16A34A' : tx.type === 'transfer' ? '#64748B' : '#FF3B30';
+                    const color = tx.type === 'income' ? '#16A34A' : tx.type === 'transfer' ? '#64748B' : (typeof txnPaymentStatus === 'function' && txnPaymentStatus(tx) === 'due' ? (ZENITH.warn || '#D97706') : '#FF3B30');
                     return (
                       <div
                         key={tx.id}
@@ -170,7 +170,7 @@ function ActivityScreen({ store, onSelectTx, onNavigate }) {
                         </div>
                         <div style={{ flex: 1 }}>
                           <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 700, color: ink }}>{tx.merchant}</p>
-                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted }}>{cat ? catLabel(cat, locale) : ''} · {tx.method}</p>
+                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: muted }}>{cat ? catLabel(cat, locale) : ''} · {tx.method}{typeof txnPaymentStatus === 'function' && txnPaymentStatus(tx) === 'due' ? ' · ' + t(locale, 'dueLater') : ''}</p>
                         </div>
                         <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 15, fontWeight: 800, color }}>{sign}{fmt(tx.amount)}</p>
                       </div>

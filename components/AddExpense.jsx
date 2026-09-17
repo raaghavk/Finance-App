@@ -1,4 +1,4 @@
-// AddExpense.jsx — Expense / Income / Transfer. Scrollable form so chips never overlap the keypad.
+// AddExpense.jsx — Expense / Income / Transfer. Native decimal keyboard; chips scroll sideways.
 
 function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, onQuickAddCategory }) {
   const locale = (store && store.user && store.user.locale) || 'en';
@@ -6,7 +6,8 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
   const accounts = (store && store.accounts) || DEFAULT_ACCOUNTS;
 
   const [type, setType] = React.useState(initial && initial.type ? initial.type : 'expense');
-  const [amount, setAmount] = React.useState(initial && initial.amount ? String(initial.amount) : '0');
+  const [amount, setAmount] = React.useState(initial && initial.amount ? String(initial.amount) : '');
+  const [payStatus, setPayStatus] = React.useState((initial && initial.paymentStatus) || (initial && typeof txnPaymentStatus === 'function' ? txnPaymentStatus(initial) : 'paid'));
   const [note, setNote] = React.useState(initial && (initial.note || initial.merchant) ? (initial.note || initial.merchant) : '');
   const [selectedCat, setSelectedCat] = React.useState(initial && initial.categoryId ? initial.categoryId : null);
   const [accountId, setAccountId] = React.useState(initial && initial.accountId ? initial.accountId : (accounts[0] && accounts[0].id) || 'cash');
@@ -32,19 +33,6 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
     if (type === 'transfer') setSelectedCat('transfer');
   }, [type]);
 
-  const handleNum = (n) => {
-    setAmount((prev) => {
-      if (prev === '0' && n !== '.') return String(n);
-      if (n === '.' && prev.includes('.')) return prev;
-      if (prev.replace('.', '').length >= 7) return prev;
-      return prev + n;
-    });
-  };
-
-  const handleBack = () => {
-    setAmount((prev) => (prev.length <= 1 ? '0' : prev.slice(0, -1) || '0'));
-  };
-
   const amt = parseFloat(amount) || 0;
   const canSave = amt > 0 && date && accountId && (type === 'transfer' || !!selectedCat);
   const selectedAccount = accounts.find((a) => a.id === accountId);
@@ -69,11 +57,11 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
       method,
       date,
       receiptPhoto: receiptPhoto || undefined,
+      paymentStatus: type === 'expense' ? payStatus : 'paid',
     });
   };
 
   const cat = findCat({ categories: cats }, selectedCat);
-  const numpad = [[1, 2, 3], [4, 5, 6], [7, 8, 9], ['.', 0, '⌫']];
   const title = initial ? t(locale, 'edit') : t(locale, 'addTxn');
   const chip = (active, color) => ({
     display: 'flex', alignItems: 'center', gap: 6,
@@ -83,6 +71,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
     color: active ? '#fff' : '#0F172A',
     fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600,
   });
+  const chipRow = { display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', WebkitOverflowScrolling: 'touch' };
 
   return (
     <div style={{
@@ -137,11 +126,28 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
             <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 28, fontWeight: 700, color: typeof ZENITH !== 'undefined' ? ZENITH.accent : '#2563EB' }}>₹</span>
-            <span style={{
-              fontFamily: 'Manrope, sans-serif',
-              fontSize: amount.length > 5 ? 36 : 48,
-              fontWeight: 800, color: '#121212', letterSpacing: -2,
-            }}>{amt === 0 ? '0' : amount}</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              enterKeyHint="done"
+              autoComplete="off"
+              aria-label={t(locale, 'enterAmount')}
+              placeholder="0"
+              value={amount}
+              onChange={(e) => {
+                const v = String(e.target.value || '').replace(/[^\d.]/g, '');
+                if ((v.match(/\./g) || []).length > 1) return;
+                if (v.replace('.', '').length > 7) return;
+                setAmount(v);
+              }}
+              style={{
+                border: 'none', outline: 'none', background: 'transparent',
+                fontFamily: 'Manrope, sans-serif',
+                fontSize: String(amount || '').length > 5 ? 36 : 48,
+                fontWeight: 800, color: '#121212', letterSpacing: -2,
+                textAlign: 'left', width: 'auto', minWidth: 80, maxWidth: '70%',
+              }}
+            />
           </div>
           <input
             type="text"
@@ -163,7 +169,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
         {!initial && type === 'expense' && typeof recentMerchants === 'function' && recentMerchants(store, 5).length > 0 && (
           <>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '14px 0 8px' }}>{t(locale, 'repeatLast')}</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div style={chipRow}>
               {recentMerchants(store, 5).map((row) => (
                 <button
                   key={row.merchant}
@@ -184,7 +190,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
         )}
 
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '14px 0 8px' }}>{t(locale, 'category')}</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <div style={chipRow}>
           {parentChips.map((c) => (
             <button
               key={c.id}
@@ -205,7 +211,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
         {childChips.length > 0 && (
           <>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '12px 0 8px' }}>{t(locale, 'subcategory')}</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div style={chipRow}>
               {childChips.map((c) => (
                 <button
                   key={c.id}
@@ -227,7 +233,7 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
         )}
 
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '14px 0 8px' }}>{t(locale, 'account')}</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <div style={chipRow}>
           {accounts.map((a) => (
             <button
               key={a.id}
@@ -241,6 +247,16 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
             + {t(locale, 'newAccount')}
           </button>
         </div>
+
+        {type === 'expense' && (
+          <>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', margin: '14px 0 8px' }}>{t(locale, 'paidNow')}</p>
+            <div style={chipRow}>
+              <button type="button" aria-pressed={payStatus === 'paid'} onClick={() => setPayStatus('paid')} style={chip(payStatus === 'paid', typeof ZENITH !== 'undefined' ? ZENITH.live : '#059669')}>{t(locale, 'paidChip')}</button>
+              <button type="button" aria-pressed={payStatus === 'due'} onClick={() => setPayStatus('due')} style={chip(payStatus === 'due', typeof ZENITH !== 'undefined' ? ZENITH.warn : '#D97706')}>{t(locale, 'dueLater')}</button>
+            </div>
+          </>
+        )}
 
         <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#6E6E73', marginTop: 14 }}>
           {t(locale, 'date')}
@@ -283,28 +299,6 @@ function AddExpenseScreen({ store, onClose, onSave, initial, onQuickAddAccount, 
             fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 700,
           }}
         >{t(locale, 'attachPhoto')}</button>
-      </div>
-
-      <div style={{ flexShrink: 0, padding: '4px 16px 0' }}>
-        {numpad.map((row, ri) => (
-          <div key={ri} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 6 }}>
-            {row.map((key) => (
-              <button
-                key={key}
-                type="button"
-                aria-label={key === '⌫' ? t(locale, 'backspace') : String(key)}
-                onClick={() => (key === '⌫' ? handleBack() : handleNum(key))}
-                style={{
-                  height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
-                  background: key === '⌫' ? '#F0F0F3' : '#F5F5F7',
-                  fontFamily: 'Manrope, sans-serif',
-                  fontSize: key === '⌫' ? 16 : 20,
-                  fontWeight: 700, color: '#121212',
-                }}
-              >{key}</button>
-            ))}
-          </div>
-        ))}
       </div>
 
       <div style={{ flexShrink: 0, padding: '6px 16px calc(12px + env(safe-area-inset-bottom, 0px))' }}>

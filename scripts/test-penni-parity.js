@@ -327,5 +327,87 @@ assert.doesNotMatch(splitUi, /#007AFF/);
 assert.match(fs.readFileSync(path.join(root, 'components/Home.jsx'), 'utf8'), /WeekRecapCard/);
 assert.match(fs.readFileSync(path.join(root, 'components/Home.jsx'), 'utf8'), /PeoplePeek/);
 assert.match(fs.readFileSync(path.join(root, 'components/AddExpense.jsx'), 'utf8'), /repeatLast/);
+assert.match(fs.readFileSync(path.join(root, 'components/AddExpense.jsx'), 'utf8'), /inputMode="decimal"/);
+assert.match(fs.readFileSync(path.join(root, 'components/AddExpense.jsx'), 'utf8'), /overflowX: 'auto'/);
+assert.doesNotMatch(fs.readFileSync(path.join(root, 'components/AddExpense.jsx'), 'utf8'), /handleNum/);
+assert.doesNotMatch(fs.readFileSync(path.join(root, 'components/AddExpense.jsx'), 'utf8'), /numpad/);
+assert.match(fs.readFileSync(path.join(root, 'components/AddExpense.jsx'), 'utf8'), /dueLater/);
+assert.match(travel, /partPaid/);
+assert.match(travel, /paidNow/);
+assert.match(travel, /fmtForeign/);
 
-console.log('penni parity: leftover after bills, concurrent trips, calendar, net worth ok');
+const vietnam = ctx.normalizeTrip({
+  id: 'trip-vn',
+  name: 'Vietnam Sep 2026',
+  countryCode: 'VND',
+  status: 'active',
+  startDate: '2026-09-17',
+  endDate: '2026-09-28',
+  budgetINR: 120000,
+  expenses: [],
+}, 0);
+assert.strictEqual(vietnam.currency, 'VND');
+assert.strictEqual(vietnam.symbol, '₫');
+const vnTxns = [
+  { id: 'tx-due', type: 'expense', amount: 1327, date: '2026-09-19', accountId: 'cash', categoryId: 'other', merchant: 'Mad Monkey Hoi An (balance due)', note: 'Balance placeholder — not paid yet', trip: 'Vietnam Sep 2026' },
+  { id: 'tx-food', type: 'expense', amount: 670, date: '2026-09-07', accountId: 'bank', categoryId: 'dining', merchant: 'The Hazelnut Factory', trip: 'Varanasi Sep 2026' },
+  { id: 'tx-ins', type: 'expense', amount: 692, date: '2026-08-29', accountId: 'bank', categoryId: 'other', merchant: 'ACKO travel insurance', trip: 'Vietnam Sep 2026' },
+  { id: 'tx-visa', type: 'expense', amount: 2441, date: '2026-08-22', accountId: 'card', categoryId: 'other', merchant: 'Vietnam e-visa', trip: 'Vietnam Sep 2026' },
+  { id: 'tx-air', type: 'expense', amount: 0, date: '2026-08-12', accountId: 'card', categoryId: 'cab', merchant: 'Vietnam Airlines DEL–HAN–DAD RT', trip: 'Vietnam Sep 2026' },
+  { id: 'tx-dep', type: 'expense', amount: 561, date: '2026-08-01', accountId: 'card', categoryId: 'other', merchant: 'Mad Monkey Hoi An (Hostelworld deposit)', trip: 'Vietnam Sep 2026' },
+  { id: 'tx-pkg', type: 'expense', amount: 85273.14, date: '2026-07-20', accountId: 'bank', categoryId: 'other', merchant: 'Experience Co / BHX package', trip: 'Vietnam Sep 2026' },
+];
+assert.ok(ctx.txnMatchesTrip(vnTxns[5], vietnam));
+assert.ok(!ctx.txnMatchesTrip(vnTxns[1], vietnam));
+assert.strictEqual(ctx.txnPaymentStatus(vnTxns[0]), 'due');
+assert.strictEqual(ctx.txnPaidAmount(vnTxns[0]), 0);
+assert.strictEqual(ctx.txnDueAmount(vnTxns[0]), 1327);
+assert.strictEqual(ctx.merchantGroupKey('Mad Monkey Hoi An (Hostelworld deposit)'), ctx.merchantGroupKey('Mad Monkey Hoi An (balance due)'));
+assert.strictEqual(ctx.fmtForeign(170000, vietnam), '₫170,000');
+assert.ok(Math.abs(ctx.inrToForeign(561, 0.0033) - 170000) < 1);
+
+const attachedVn = ctx.attachHomeTxnsToStore({
+  ...emptyTravel,
+  monthlyIncome: 100000,
+  openingCash: 0,
+  transactions: vnTxns,
+  trips: [vietnam],
+  activeTripId: 'trip-vn',
+});
+const liveVn = ctx.activeTrip(attachedVn);
+assert.ok(liveVn);
+const merchants = (liveVn.expenses || []).map((e) => e.merchant);
+assert.ok(merchants.some((m) => /Mad Monkey/i.test(m)));
+assert.ok(merchants.some((m) => /e-visa/i.test(m)));
+assert.ok(merchants.some((m) => /ACKO/i.test(m)));
+assert.ok(merchants.some((m) => /Experience Co/i.test(m)));
+assert.ok(!merchants.some((m) => /Hazelnut/i.test(m)));
+const monkey = (liveVn.expenses || []).find((e) => /Mad Monkey/i.test(e.merchant));
+assert.ok(monkey);
+assert.strictEqual(monkey.paymentStatus, 'partial');
+assert.strictEqual(Math.round(monkey.paidInr), 561);
+assert.strictEqual(Math.round(monkey.dueInr), 1327);
+assert.ok(monkey.homeTxnIds.indexOf('tx-dep') >= 0);
+assert.ok(monkey.homeTxnIds.indexOf('tx-due') >= 0);
+assert.ok((liveVn.expenses || []).some((e) => e.date < liveVn.startDate), 'pre-trip spend belongs on the trip');
+assert.strictEqual(Math.round(ctx.tripSpentINR(liveVn)), Math.round(561 + 692 + 2441 + 85273.14));
+assert.strictEqual(Math.round(ctx.tripDueINR(liveVn)), 1327);
+assert.ok(ctx.canAddTripExpense(attachedVn, liveVn));
+assert.strictEqual(ctx.monthExpenseTotal(attachedVn, '2026-09'), 670);
+assert.strictEqual(ctx.leftoverAfterBills(attachedVn, '2026-09', '2026-09-11'), 99330);
+
+const again = ctx.attachHomeTxnsToStore(attachedVn);
+assert.strictEqual(again.trips[0].expenses.length, liveVn.expenses.length);
+
+const seededVn = ctx.normalizeState({
+  version: 1,
+  user: { name: 'R', locale: 'en' },
+  monthlyIncome: 100000,
+  transactions: vnTxns,
+  trips: [{ id: 'trip-vn', name: 'Vietnam Sep 2026', countryCode: 'VND', status: 'active', startDate: '2026-09-17', endDate: '2026-09-28', budgetINR: 120000, expenses: [] }],
+  activeTripId: 'trip-vn',
+});
+assert.ok(ctx.activeTrip(seededVn).expenses.length >= 4);
+assert.ok(seededVn.transactions.find((tx) => tx.id === 'tx-dep').travelId === 'trip-vn');
+
+console.log('penni parity: leftover after bills, concurrent trips, calendar, net worth, trip attach ok');
