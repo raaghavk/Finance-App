@@ -1115,10 +1115,12 @@ function normalizeRecurring(row, i) {
 
 const FX_WHOLE_CODES = { VND: true, IDR: true, JPY: true, KRW: true };
 
-function inrToForeign(inr, rate) {
+function inrToForeign(inr, rate, code) {
   const r = Number(rate) || 0;
   if (!(r > 0)) return 0;
-  return (Number(inr) || 0) / r;
+  const n = (Number(inr) || 0) / r;
+  if (code && FX_WHOLE_CODES[code]) return Math.round(n);
+  return Math.round(n * 100) / 100;
 }
 
 function fmtForeign(n, trip) {
@@ -1298,8 +1300,8 @@ function buildGroupedTripExpense(rows, trip) {
     paidInr += txnPaidAmount(tx);
     dueInr += txnDueAmount(tx);
   });
-  const paidAmount = inrToForeign(paidInr, rate);
-  const dueAmount = inrToForeign(dueInr, rate);
+  const paidAmount = inrToForeign(paidInr, rate, trip && trip.currency);
+  const dueAmount = inrToForeign(dueInr, rate, trip && trip.currency);
   const paymentStatus = dueInr > 0 && paidInr > 0 ? 'partial' : (dueInr > 0 ? 'due' : 'paid');
   const merchant = String(first.merchant || first.note || 'Expense')
     .replace(/\((?:Hostelworld )?deposit\)/i, '')
@@ -1311,7 +1313,12 @@ function buildGroupedTripExpense(rows, trip) {
   return normalizeTripExpense({
     id: 'tex-att-' + (ids[0] || merchantGroupKey(merchant) || 'x'),
     merchant: merchant,
-    cat: travelCatFromHome(first),
+    cat: travelCatFromHome({
+      merchant: rows.map((tx) => tx.merchant).join(' '),
+      note: rows.map((tx) => tx.note).join(' '),
+      categoryId: first.categoryId,
+      trip: first.trip,
+    }),
     amount: paidAmount + dueAmount,
     inr: paidInr + dueInr,
     paidAmount: paidAmount,

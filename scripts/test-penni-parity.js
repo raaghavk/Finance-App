@@ -364,7 +364,8 @@ assert.strictEqual(ctx.txnPaidAmount(vnTxns[0]), 0);
 assert.strictEqual(ctx.txnDueAmount(vnTxns[0]), 1327);
 assert.strictEqual(ctx.merchantGroupKey('Mad Monkey Hoi An (Hostelworld deposit)'), ctx.merchantGroupKey('Mad Monkey Hoi An (balance due)'));
 assert.strictEqual(ctx.fmtForeign(170000, vietnam), '₫170,000');
-assert.ok(Math.abs(ctx.inrToForeign(561, 0.0033) - 170000) < 1);
+assert.strictEqual(ctx.inrToForeign(561, 0.0033, 'VND'), 170000);
+assert.strictEqual(ctx.inrToForeign(1327, 0.0033, 'VND'), 402121);
 
 const attachedVn = ctx.attachHomeTxnsToStore({
   ...emptyTravel,
@@ -384,6 +385,7 @@ assert.ok(merchants.some((m) => /Experience Co/i.test(m)));
 assert.ok(!merchants.some((m) => /Hazelnut/i.test(m)));
 const monkey = (liveVn.expenses || []).find((e) => /Mad Monkey/i.test(e.merchant));
 assert.ok(monkey);
+assert.strictEqual(monkey.cat, 'Stay');
 assert.strictEqual(monkey.paymentStatus, 'partial');
 assert.strictEqual(Math.round(monkey.paidInr), 561);
 assert.strictEqual(Math.round(monkey.dueInr), 1327);
